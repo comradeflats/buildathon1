@@ -53,6 +53,8 @@ export async function POST(request: NextRequest) {
     }
 
     const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
     if (!projectId) {
       return NextResponse.json(
@@ -61,10 +63,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Initialize Vertex AI
+    // Initialize Vertex AI with explicit credentials for Vercel environment
     const vertexAI = new VertexAI({
       project: projectId,
       location: 'us-central1',
+      googleAuthOptions: (clientEmail && privateKey) ? {
+        credentials: {
+          client_email: clientEmail,
+          private_key: privateKey,
+        }
+      } : undefined
     });
 
     const generativeModel = vertexAI.getGenerativeModel({
