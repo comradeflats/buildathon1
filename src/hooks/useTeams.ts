@@ -14,8 +14,8 @@ export function useTeams() {
     async function loadTeams() {
       try {
         // Build correct path for fetching (basePath + filename)
-        const isProd = process.env.NODE_ENV === 'production';
-        const prefix = isProd ? '/buildathon1' : '';
+        const isGithubActions = process.env.GITHUB_ACTIONS === 'true';
+        const prefix = isGithubActions ? '/buildathon1' : '';
         const response = await fetch(`${prefix}/teams.json`);
         
         if (!response.ok) {

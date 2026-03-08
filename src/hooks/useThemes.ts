@@ -11,8 +11,8 @@ export function useThemes() {
   useEffect(() => {
     async function fetchThemes() {
       try {
-        const isProd = process.env.NODE_ENV === 'production';
-        const prefix = isProd ? '/buildathon1' : '';
+        const isGithubActions = process.env.GITHUB_ACTIONS === 'true';
+        const prefix = isGithubActions ? '/buildathon1' : '';
         const response = await fetch(`${prefix}/themes.json`);
         
         if (!response.ok) {

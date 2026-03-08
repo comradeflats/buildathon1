@@ -1,11 +1,11 @@
 /** @type {import('next').NextConfig} */
-const isProd = process.env.NODE_ENV === 'production';
+// Only apply the prefix if we're deploying to GitHub Actions
+const isGithubActions = process.env.GITHUB_ACTIONS === 'true';
 
 const nextConfig = {
   output: 'export',
-  // Only apply basePath and assetPrefix in production (GitHub Pages)
-  basePath: isProd ? '/buildathon1' : '',
-  assetPrefix: isProd ? '/buildathon1' : '',
+  basePath: isGithubActions ? '/buildathon1' : '',
+  assetPrefix: isGithubActions ? '/buildathon1' : '',
 };
 
 module.exports = nextConfig;
