@@ -13,7 +13,11 @@ export function useTeams() {
   useEffect(() => {
     async function loadTeams() {
       try {
-        const response = await fetch('./teams.json');
+        // Build correct path for fetching (basePath + filename)
+        const isProd = process.env.NODE_ENV === 'production';
+        const prefix = isProd ? '/buildathon1' : '';
+        const response = await fetch(`${prefix}/teams.json`);
+        
         if (!response.ok) {
           throw new Error('Failed to fetch static teams');
         }

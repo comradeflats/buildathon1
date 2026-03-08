@@ -1,9 +1,11 @@
 /** @type {import('next').NextConfig} */
+const isProd = process.env.NODE_ENV === 'production';
+
 const nextConfig = {
   output: 'export',
-  // This must match your NEW repository name
-  basePath: '/buildathon1',
-  assetPrefix: '/buildathon1',
+  // Only apply basePath and assetPrefix in production (GitHub Pages)
+  basePath: isProd ? '/buildathon1' : '',
+  assetPrefix: isProd ? '/buildathon1' : '',
 };
 
 module.exports = nextConfig;

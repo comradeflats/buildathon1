@@ -11,7 +11,10 @@ export function useThemes() {
   useEffect(() => {
     async function fetchThemes() {
       try {
-        const response = await fetch('./themes.json');
+        const isProd = process.env.NODE_ENV === 'production';
+        const prefix = isProd ? '/buildathon1' : '';
+        const response = await fetch(`${prefix}/themes.json`);
+        
         if (!response.ok) {
           throw new Error('Failed to load themes');
         }
