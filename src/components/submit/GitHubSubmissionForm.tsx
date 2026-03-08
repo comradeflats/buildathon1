@@ -26,6 +26,7 @@ export function GitHubSubmissionForm({ initialTeam }: GitHubSubmissionFormProps)
   const [repoData, setRepoData] = useState<GitHubRepoData | null>(initialTeam?.githubData || null);
 
   const [deploymentUrl, setDeploymentUrl] = useState(initialTeam?.deploymentUrl || '');
+  const [description, setDescription] = useState(initialTeam?.description || '');
   const [teamName, setTeamName] = useState(initialTeam?.name || '');
   const [projectName, setProjectName] = useState(initialTeam?.projectName || '');
   const [members, setMembers] = useState(initialTeam?.members.join(', ') || '');
@@ -61,6 +62,9 @@ export function GitHubSubmissionForm({ initialTeam }: GitHubSubmissionFormProps)
       if (!projectName) {
         setProjectName(parts[1] || parts[0] || '');
       }
+      if (!description && data.description) {
+        setDescription(data.description);
+      }
     } catch (err) {
       setFetchError(err instanceof Error ? err.message : 'Failed to fetch repository');
     } finally {
@@ -90,7 +94,7 @@ export function GitHubSubmissionForm({ initialTeam }: GitHubSubmissionFormProps)
       id: initialTeam?.id || uuidv4(),
       name: teamName || repoData.fullName.split('/')[0] || 'Team',
       projectName: projectName || repoData.fullName.split('/')[1] || repoData.fullName,
-      description: repoData.description || 'No description provided',
+      description: description || repoData.description || 'No description provided',
       members: members
         .split(',')
         .map((m) => m.trim())
@@ -244,6 +248,19 @@ export function GitHubSubmissionForm({ initialTeam }: GitHubSubmissionFormProps)
                 onChange={(e) => setProjectName(e.target.value)}
                 placeholder="Awesome Project"
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-zinc-400 mb-2">
+                Project Description
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Briefly describe your project..."
+                rows={3}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none"
               />
             </div>
 
