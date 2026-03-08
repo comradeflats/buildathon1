@@ -115,14 +115,32 @@ export async function DELETE(request: NextRequest) {
     }
 
     const db = getFirestoreAdmin();
+    const batch = db.batch();
 
     // Delete associated themes
     const themesSnapshot = await db.collection('themes')
       .where('eventId', '==', eventId)
       .get();
 
-    const batch = db.batch();
     themesSnapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    // Delete associated teams
+    const teamsSnapshot = await db.collection('teams')
+      .where('eventId', '==', eventId)
+      .get();
+
+    teamsSnapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    // Delete associated votes (optional, but good for cleanup)
+    const votesSnapshot = await db.collection('votes')
+      .where('eventId', '==', eventId)
+      .get();
+
+    votesSnapshot.docs.forEach((doc) => {
       batch.delete(doc.ref);
     });
 

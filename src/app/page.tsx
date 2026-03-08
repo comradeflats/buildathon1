@@ -51,7 +51,7 @@ export default function HomePage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">
-              Buildathon Portal
+              Buildathon Leaderboard
             </h1>
             <p className="text-zinc-400 text-sm md:text-base">
               Join an event, pick a theme, and submit your project
@@ -67,7 +67,7 @@ export default function HomePage() {
             <Link href="/leaderboard" className="flex-1 md:flex-none">
               <Button variant="secondary" className="w-full">
                 <Trophy size={18} className="mr-2" />
-                Stats
+                Leaderboard
               </Button>
             </Link>
             <Link href={isAdmin ? '/admin/dashboard' : '/admin'} className="flex-1 md:flex-none">

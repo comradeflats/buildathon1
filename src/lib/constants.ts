@@ -44,4 +44,4 @@ export const STORAGE_KEYS = {
 export const DEFAULT_THEME_ID = 'micro-helper';
 
 // Event name constant
-export const EVENT_NAME = 'March Buildathon 2026';
+export const EVENT_NAME = 'Buildathon Leaderboard';

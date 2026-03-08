@@ -69,49 +69,55 @@ export async function POST(request: NextRequest) {
 
     const generativeModel = vertexAI.getGenerativeModel({
       model: 'gemini-2.0-flash',
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              emoji: { type: 'string' },
+              concept: { type: 'string' },
+              judgingCriteria: {
+                type: 'array',
+                items: { type: 'string' },
+                minItems: 5,
+                maxItems: 5,
+              },
+            },
+            required: ['name', 'emoji', 'concept', 'judgingCriteria'],
+          },
+          minItems: 10,
+          maxItems: 10,
+        },
+      },
     });
 
-    const prompt = `Generate 10 unique "Creative Prompts" for a 1-HOUR "speed build" coding challenge.
+    const prompt = `Generate 10 "Efficiency Catalyst" web app themes for a 1-HOUR "speed build".
 
-IMPORTANT: The goal is to provide themes that allow for HUMAN INTERPRETATION. Avoid rigid technical specs that can be solved by a single copy-paste into an AI agent. Each theme should feel like a "Creative Brief" rather than a Jira ticket.
+IMPORTANT: The goal is "The Micro-App." Each theme should be a broad problem space that a web application could solve. Keep descriptions extremely concise (1 sentence) and open to interpretation. Avoid technical specifics or step-by-step instructions.
 
 For each theme, provide:
-1. A memorable, slightly abstract name (2-4 words)
+1. A memorable name (2-4 words)
 2. A single relevant emoji
-3. A "Creative Brief" (2-3 sentences) that describes a problem space or a vibe, rather than a specific feature list.
-4. A "Unique Twist" or "Constraint" that forces participants to think differently.
-5. Exactly 5 judging criteria that reward interpretation, cleverness, and polish.
+3. A "Micro-App Concept": Exactly ONE sentence. Describe a broad friction point or "Superpower" the web app provides.
+4. Exactly 5 judging criteria that reward creative execution and utility.
 
-Example good "Interpretive" 1-hour themes:
-- "The Distracted Writer" ✍️ - Brief: Build an interface for writing that actively fights against the user's focus or celebrates their distractions. Twist: The UI must change or react based on how fast or slow the user is typing.
-- "Non-Linear Time" ⏳ - Brief: Create a way to visualize or track time that doesn't use standard numbers or progress bars. Twist: Must use a metaphor from nature (growth, decay, tides, etc.) to represent the passing of time.
-- "The Opinionated Assistant" 🤖 - Brief: Build a tool that helps a user make a decision, but it must have a very specific "personality" or "bias" that influences its advice. Twist: No traditional "Yes/No" or "Pick one" UI elements allowed.
-- "Data as Art" 🎭 - Brief: Take a mundane stream of data (like mouse movements, system clock, or random numbers) and transform it into a living digital "painting". Twist: The "art" must be interactive and change based on user proximity or hover.
+Example good "Open-Ended" themes:
+- "The Clarity Engine" ✨ - Concept: A web app that transforms complex, messy data into a single, beautiful visual summary.
+- "Focus Horizon" 🌅 - Concept: A minimal workspace that eliminates digital noise and gamifies deep-work productivity.
+- "The Connector" 🔗 - Concept: A creative interface for bridging two unrelated APIs or data streams into a single useful flow.
+- "Style Alchemist" 🧪 - Concept: A playground for generating and previewing complex UI components or design systems in real-time.
 
-Exactly 5 judging criteria (measurable but focused on interpretation):
-- "Originality of interpretation: How unique was the approach to the brief?"
-- "Clever execution of the Twist: Did they lean into the constraint or work around it?"
-- "Aesthetic Cohesion: Does the UI/UX match the 'vibe' of the prompt?"
-- "Technical Bravery: Did they try a smart architectural pattern or a new library to solve the problem?"
-- "Completeness: Is the core 'hook' functional and polished within the 60 minutes?"
+Exactly 5 judging criteria:
+- "Creative Interpretation: How unique was the approach to the theme?"
+- "Technical Execution: How robust is the web app's implementation?"
+- "UI/UX Polish: Is the interface clean, intuitive, and visually engaging?"
+- "Utility Impact: Does the app solve the core problem effectively?"
+- "The 'Ship' Factor: How complete and polished is the prototype for a 1-hour build?"
 
-Return the response as a valid JSON array with this exact structure:
-[
-  {
-    "name": "Theme Name",
-    "emoji": "🔧",
-    "concept": "Creative Brief and the Unique Twist",
-    "judgingCriteria": [
-      "Criterion 1",
-      "Criterion 2",
-      "Criterion 3",
-      "Criterion 4",
-      "Criterion 5"
-    ]
-  }
-]
-
-Only respond with the JSON array, no other text.`;
+Return the response as a valid JSON array of objects.`;
 
     const result = await generativeModel.generateContent(prompt);
     const response = result.response;
@@ -121,13 +127,7 @@ Only respond with the JSON array, no other text.`;
       throw new Error('No response from AI model');
     }
 
-    // Parse the JSON response
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      throw new Error('Invalid response format from AI model');
-    }
-
-    const themes: GeneratedTheme[] = JSON.parse(jsonMatch[0]);
+    const themes: GeneratedTheme[] = JSON.parse(text);
 
     if (!Array.isArray(themes) || themes.length !== 10) {
       throw new Error('Expected 10 themes from AI model');

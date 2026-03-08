@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Trophy, Heart } from 'lucide-react';
+import { ChevronDown, ChevronUp, Trophy, Heart, Trash2 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { StarRating } from '@/components/ui/StarRating';
+import { DeleteButton } from '@/components/admin/DeleteButton';
 import { TeamScore } from '@/lib/types';
 import { useVoting } from '@/context/VotingContext';
+import { useAdmin } from '@/context/AdminContext';
 import { formatScore } from '@/lib/scoring';
 
 interface LeaderboardRowProps {
@@ -16,11 +18,22 @@ interface LeaderboardRowProps {
 
 export function LeaderboardRow({ teamScore, rank }: LeaderboardRowProps) {
   const [expanded, setExpanded] = useState(false);
-  const { getThemeById, getThemeCriteria } = useVoting();
+  const { getThemeById, getThemeCriteria, deleteTeam, showToast } = useVoting();
+  const { isAdmin } = useAdmin();
 
   const isWinner = rank === 1 && teamScore.voteCount > 0;
   const theme = getThemeById(teamScore.team.themeId);
   const criteria = getThemeCriteria(teamScore.team.themeId);
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await deleteTeam(teamScore.teamId);
+      showToast(`${teamScore.team.projectName} has been removed`, 'success');
+    } catch (err) {
+      showToast('Failed to remove project.', 'error');
+    }
+  };
 
   return (
     <Card
@@ -28,60 +41,74 @@ export function LeaderboardRow({ teamScore, rank }: LeaderboardRowProps) {
         isWinner ? 'border-winner/50 ring-1 ring-winner/30' : ''
       }`}
     >
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full p-4 flex items-center gap-4 text-left hover:bg-card-hover transition-colors"
-      >
-        <div
-          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-            isWinner
-              ? 'bg-winner/20 text-winner'
-              : rank <= 3
-              ? 'bg-accent/20 text-accent'
-              : 'bg-zinc-700 text-zinc-400'
-          }`}
+      <div className="flex items-center w-full">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex-1 p-4 flex items-center gap-4 text-left hover:bg-card-hover transition-colors min-w-0"
         >
-          {isWinner ? <Trophy size={20} /> : rank}
-        </div>
+          <div
+            className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+              isWinner
+                ? 'bg-winner/20 text-winner'
+                : rank <= 3
+                ? 'bg-accent/20 text-accent'
+                : 'bg-zinc-700 text-zinc-400'
+            }`}
+          >
+            {isWinner ? <Trophy size={20} /> : rank}
+          </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-white font-semibold truncate text-sm md:text-base">
-              {teamScore.team.projectName}
-            </h3>
-            {isWinner && <Badge variant="winner" className="text-[10px] py-0 px-1">Winner</Badge>}
-            {theme && (
-              <span className="text-sm" title={theme.name}>
-                {theme.emoji}
-              </span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-white font-semibold truncate text-sm md:text-base">
+                {teamScore.team.projectName}
+              </h3>
+              {isWinner && <Badge variant="winner" className="text-[10px] py-0 px-1">Winner</Badge>}
+              {theme && (
+                <span className="text-sm" title={theme.name}>
+                  {theme.emoji}
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-zinc-400 truncate">{teamScore.team.name}</p>
+          </div>
+
+          {/* Favorites */}
+          {teamScore.favoriteCount > 0 && (
+            <div className="hidden sm:flex items-center gap-1 text-red-400 shrink-0" title="Favorites">
+              <Heart size={16} className="fill-current" />
+              <span className="text-sm font-medium">{teamScore.favoriteCount}</span>
+            </div>
+          )}
+
+          <div className="text-right ml-auto shrink-0 pr-2">
+            <div className="text-lg md:text-xl font-bold text-white leading-tight">
+              {teamScore.voteCount > 0 ? formatScore(teamScore.totalAverage) : '-'}
+            </div>
+            <div className="text-[10px] md:text-xs text-zinc-500 uppercase tracking-wider font-medium">
+              {teamScore.voteCount} {teamScore.voteCount === 1 ? 'vote' : 'votes'}
+            </div>
+          </div>
+        </button>
+
+        <div className="flex items-center gap-2 pr-4">
+          {isAdmin && (
+            <div onClick={(e) => e.stopPropagation()}>
+              <DeleteButton onDelete={handleDelete as any} itemName={teamScore.team.projectName} />
+            </div>
+          )}
+          <button 
+            onClick={() => setExpanded(!expanded)}
+            className="p-1 hover:bg-zinc-800 rounded-full transition-colors"
+          >
+            {expanded ? (
+              <ChevronUp size={20} className="text-zinc-400" />
+            ) : (
+              <ChevronDown size={20} className="text-zinc-400" />
             )}
-          </div>
-          <p className="text-sm text-zinc-400 truncate">{teamScore.team.name}</p>
+          </button>
         </div>
-
-        {/* Favorites */}
-        {teamScore.favoriteCount > 0 && (
-          <div className="hidden sm:flex items-center gap-1 text-red-400" title="Favorites">
-            <Heart size={16} className="fill-current" />
-            <span className="text-sm font-medium">{teamScore.favoriteCount}</span>
-          </div>
-        )}
-
-        <div className="text-right ml-auto">
-          <div className="text-lg md:text-xl font-bold text-white leading-tight">
-            {teamScore.voteCount > 0 ? formatScore(teamScore.totalAverage) : '-'}
-          </div>
-          <div className="text-[10px] md:text-xs text-zinc-500 uppercase tracking-wider font-medium">
-            {teamScore.voteCount} {teamScore.voteCount === 1 ? 'vote' : 'votes'}
-          </div>
-        </div>
-
-        {expanded ? (
-          <ChevronUp size={20} className="text-zinc-400" />
-        ) : (
-          <ChevronDown size={20} className="text-zinc-400" />
-        )}
-      </button>
+      </div>
 
       {expanded && teamScore.voteCount > 0 && (
         <div className="px-4 pb-4 border-t border-zinc-800">

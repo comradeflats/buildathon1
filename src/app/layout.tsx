@@ -5,7 +5,7 @@ import { Toast } from '@/components/ui/Toast';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Crowd Judge - Hackathon Voting',
+  title: 'Buildathon Leaderboard',
   description: 'Vote on hackathon projects and see the leaderboard',
 };
 
