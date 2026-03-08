@@ -56,34 +56,41 @@ export async function POST(request: NextRequest) {
 
     const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+    if (privateKey) {
+      // Handle both literal and escaped newlines
+      privateKey = privateKey.replace(/\\n/g, '\n');
+      if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+        privateKey = privateKey.substring(1, privateKey.length - 1);
+      }
+    }
 
     console.log('Vertex AI Debug Info:', {
       projectId,
       hasEmail: !!clientEmail,
-      emailPrefix: clientEmail?.substring(0, 10),
       hasKey: !!privateKey,
       keyLength: privateKey?.length,
-      keyPrefix: privateKey?.substring(0, 30),
     });
 
-    if (!projectId) {
+    if (!projectId || !clientEmail || !privateKey) {
       return NextResponse.json(
-        { error: 'Google Cloud project not configured' },
+        { error: 'Vertex AI credentials missing (ProjectID, Email, or Key)' },
         { status: 500 }
       );
     }
 
-    // Initialize Vertex AI with explicit credentials for Vercel environment
+    // Initialize Vertex AI with explicit credentials and scopes
     const vertexAI = new VertexAI({
       project: projectId,
       location: 'us-central1',
-      googleAuthOptions: (clientEmail && privateKey) ? {
+      googleAuthOptions: {
         credentials: {
           client_email: clientEmail,
           private_key: privateKey,
-        }
-      } : undefined
+        },
+        scopes: 'https://www.googleapis.com/auth/cloud-platform',
+      }
     });
 
     const generativeModel = vertexAI.getGenerativeModel({
