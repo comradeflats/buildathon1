@@ -46,10 +46,10 @@ export function LeaderboardRow({ teamScore, rank }: LeaderboardRowProps) {
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-white font-semibold truncate">
+            <h3 className="text-white font-semibold truncate text-sm md:text-base">
               {teamScore.team.projectName}
             </h3>
-            {isWinner && <Badge variant="winner">Winner</Badge>}
+            {isWinner && <Badge variant="winner" className="text-[10px] py-0 px-1">Winner</Badge>}
             {theme && (
               <span className="text-sm" title={theme.name}>
                 {theme.emoji}
@@ -61,18 +61,18 @@ export function LeaderboardRow({ teamScore, rank }: LeaderboardRowProps) {
 
         {/* Favorites */}
         {teamScore.favoriteCount > 0 && (
-          <div className="flex items-center gap-1 text-red-400" title="Favorites">
+          <div className="hidden sm:flex items-center gap-1 text-red-400" title="Favorites">
             <Heart size={16} className="fill-current" />
             <span className="text-sm font-medium">{teamScore.favoriteCount}</span>
           </div>
         )}
 
-        <div className="text-right">
-          <div className="text-xl font-bold text-white">
+        <div className="text-right ml-auto">
+          <div className="text-lg md:text-xl font-bold text-white leading-tight">
             {teamScore.voteCount > 0 ? formatScore(teamScore.totalAverage) : '-'}
           </div>
-          <div className="text-xs text-zinc-500">
-            {teamScore.voteCount} vote{teamScore.voteCount !== 1 ? 's' : ''}
+          <div className="text-[10px] md:text-xs text-zinc-500 uppercase tracking-wider font-medium">
+            {teamScore.voteCount} {teamScore.voteCount === 1 ? 'vote' : 'votes'}
           </div>
         </div>
 

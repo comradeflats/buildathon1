@@ -15,34 +15,34 @@ export default function HomePage() {
   return (
     <div>
       <header className="mb-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-1">
+            <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">
               {eventName || 'Crowd Judge'}
             </h1>
-            <p className="text-zinc-400">
+            <p className="text-zinc-400 text-sm md:text-base">
               {totalCount > 0
                 ? `${votedCount} of ${totalCount} projects rated`
                 : 'Loading projects...'}
             </p>
           </div>
-          <div className="flex gap-3">
-            <Link href="/themes">
-              <Button variant="secondary">
+          <div className="flex flex-wrap gap-2 md:gap-3">
+            <Link href="/themes" className="flex-1 md:flex-none">
+              <Button variant="secondary" className="w-full">
                 <Palette size={18} className="mr-2" />
-                Browse Themes
+                Themes
               </Button>
             </Link>
-            <Link href="/submit">
-              <Button variant="secondary">
+            <Link href="/submit" className="flex-1 md:flex-none">
+              <Button variant="secondary" className="w-full">
                 <Plus size={18} className="mr-2" />
-                Submit Project
+                Submit
               </Button>
             </Link>
-            <Link href="/leaderboard">
-              <Button variant="secondary">
+            <Link href="/leaderboard" className="flex-1 md:flex-none">
+              <Button variant="secondary" className="w-full">
                 <Trophy size={18} className="mr-2" />
-                Leaderboard
+                Stats
               </Button>
             </Link>
           </div>

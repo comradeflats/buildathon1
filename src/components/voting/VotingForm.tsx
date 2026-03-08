@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Send, CheckCircle, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Send, CheckCircle, ExternalLink, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -152,13 +152,13 @@ export function VotingForm({ team }: VotingFormProps) {
         </div>
 
         {alreadyVoted ? (
-          <div className="bg-success/10 border border-success/30 rounded-lg p-4 text-center">
-            <CheckCircle className="w-8 h-8 text-success mx-auto mb-2" />
-            <p className="text-success font-medium">
-              You've already voted for this project
+          <div className="bg-success/10 border border-success/30 rounded-lg p-6 text-center">
+            <CheckCircle className="w-12 h-12 text-success mx-auto mb-3" />
+            <p className="text-success font-bold text-lg">
+              Rated!
             </p>
-            <p className="text-sm text-zinc-400 mt-1">
-              Thank you for your feedback!
+            <p className="text-sm text-zinc-400 mt-2">
+              Thanks for supporting {team.projectName}.
             </p>
           </div>
         ) : (
@@ -189,27 +189,29 @@ export function VotingForm({ team }: VotingFormProps) {
             )}
 
             {/* Favorite Toggle */}
-            <div className="mb-8">
-              <h3 className="text-sm font-medium text-zinc-400 mb-3">
+            <div className="p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/50 my-6">
+              <h3 className="text-sm font-semibold text-zinc-400 mb-4 flex items-center gap-2">
+                <Heart size={16} className={isFavorite ? 'fill-red-400 text-red-400' : ''} />
                 Personal Favorite
               </h3>
-              <FavoriteToggle
-                isActive={isFavorite}
-                onChange={setIsFavorite}
-              />
-              {hasOtherFavorite && !isFavorite && (
-                <p className="text-xs text-zinc-500 mt-2">
-                  You've already marked another project as your favorite.
-                  Selecting this will replace it.
-                </p>
-              )}
+              <div className="flex flex-col gap-3">
+                <FavoriteToggle
+                  isActive={isFavorite}
+                  onChange={setIsFavorite}
+                />
+                {hasOtherFavorite && !isFavorite && (
+                  <p className="text-[10px] text-zinc-500 italic">
+                    Note: This will replace your current favorite project.
+                  </p>
+                )}
+              </div>
             </div>
 
             <Button
               type="submit"
               size="lg"
               disabled={!isValid || isSubmitting}
-              className="w-full"
+              className="w-full py-6 text-lg font-bold shadow-lg shadow-accent/20"
             >
               {isSubmitting ? (
                 'Submitting...'

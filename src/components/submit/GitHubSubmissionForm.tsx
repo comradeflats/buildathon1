@@ -129,7 +129,7 @@ export function GitHubSubmissionForm({ initialTeam }: GitHubSubmissionFormProps)
         </h2>
 
         <div className="space-y-4">
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
               value={githubUrl}
@@ -138,13 +138,13 @@ export function GitHubSubmissionForm({ initialTeam }: GitHubSubmissionFormProps)
                 setFetchError(null);
               }}
               placeholder="https://github.com/owner/repo"
-              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-sm"
             />
             <Button
               type="button"
               onClick={handleFetchRepo}
               disabled={isFetching}
-              className="shrink-0"
+              className="shrink-0 h-12 sm:h-auto"
             >
               {isFetching ? (
                 <Loader2 size={18} className="animate-spin" />
@@ -289,7 +289,7 @@ export function GitHubSubmissionForm({ initialTeam }: GitHubSubmissionFormProps)
         type="submit"
         size="lg"
         disabled={!isFormValid || isSubmitting}
-        className="w-full"
+        className="w-full py-6 text-lg font-bold shadow-lg shadow-accent/20"
       >
         {isSubmitting ? (
           <>
