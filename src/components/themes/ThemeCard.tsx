@@ -37,7 +37,7 @@ export function ThemeCard({ theme }: ThemeCardProps) {
         </ul>
       </div>
 
-      <Link href={`/submit?theme=${theme.id}`}>
+      <Link href={`/submit?eventId=${theme.eventId}&themeId=${theme.id}`}>
         <Button variant="secondary" size="sm" className="w-full">
           Submit with this theme
           <ArrowRight size={16} className="ml-2" />

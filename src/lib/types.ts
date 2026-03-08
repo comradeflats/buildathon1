@@ -1,9 +1,23 @@
+export interface Event {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  status: 'upcoming' | 'active' | 'archived';
+  startDate: string;              // ISO date
+  endDate: string;                // ISO date
+  submissionDeadline?: string;    // ISO date
+  createdAt: string;
+  themesGenerated: boolean;
+}
+
 export interface Theme {
   id: string;
   name: string;
   emoji: string;
   concept: string;
   judgingCriteria: string[];
+  eventId: string;
 }
 
 export interface GitHubRepoData {
@@ -23,6 +37,7 @@ export interface Team {
   members: string[];
   techStack: string[];
   themeId: string;
+  eventId: string;
   githubUrl?: string;
   githubData?: GitHubRepoData;
   deploymentUrl?: string;

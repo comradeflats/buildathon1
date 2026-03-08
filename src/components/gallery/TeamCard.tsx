@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Badge';
 import { DeleteButton } from '@/components/admin/DeleteButton';
 import { Team } from '@/lib/types';
 import { useVoting } from '@/context/VotingContext';
+import { useAdmin } from '@/context/AdminContext';
 import { ensureAbsoluteUrl } from '@/lib/github';
 
 interface TeamCardProps {
@@ -15,6 +16,7 @@ interface TeamCardProps {
 
 export function TeamCard({ team }: TeamCardProps) {
   const { hasVotedFor, getThemeById, deleteTeam, showToast } = useVoting();
+  const { isAdmin } = useAdmin();
   const voted = hasVotedFor(team.id);
   const theme = getThemeById(team.themeId);
 
@@ -109,7 +111,9 @@ export function TeamCard({ team }: TeamCardProps) {
               >
                 <Edit2 size={16} />
               </Link>
-              <DeleteButton onDelete={handleDelete} itemName={team.projectName} />
+              {isAdmin && (
+                <DeleteButton onDelete={handleDelete} itemName={team.projectName} />
+              )}
             </div>
           </div>
         </Card>

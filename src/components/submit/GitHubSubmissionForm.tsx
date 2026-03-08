@@ -1,24 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Github, Loader2, Star, GitFork, ExternalLink, AlertCircle } from 'lucide-react';
+import { Github, Loader2, Star, GitFork, ExternalLink, AlertCircle, Calendar } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { ThemeSelector } from './ThemeSelector';
+import { EventSelector } from './EventSelector';
 import { useVoting } from '@/context/VotingContext';
+import { useEvents } from '@/hooks/useEvents';
 import { parseGitHubUrl, fetchGitHubRepoFromUrl } from '@/lib/github';
 import { GitHubRepoData, Team } from '@/lib/types';
 
 interface GitHubSubmissionFormProps {
   initialTeam?: Team;
+  preselectedEventId?: string;
+  preselectedThemeId?: string;
 }
 
-export function GitHubSubmissionForm({ initialTeam }: GitHubSubmissionFormProps) {
+export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselectedThemeId }: GitHubSubmissionFormProps) {
   const router = useRouter();
   const { themes, addTeam, updateTeam, showToast } = useVoting();
+  const { events, getEventsForSubmission } = useEvents();
 
   const [githubUrl, setGithubUrl] = useState(initialTeam?.githubUrl || '');
   const [isFetching, setIsFetching] = useState(false);
@@ -30,10 +35,32 @@ export function GitHubSubmissionForm({ initialTeam }: GitHubSubmissionFormProps)
   const [teamName, setTeamName] = useState(initialTeam?.name || '');
   const [projectName, setProjectName] = useState(initialTeam?.projectName || '');
   const [members, setMembers] = useState(initialTeam?.members.join(', ') || '');
-  const [selectedThemeId, setSelectedThemeId] = useState(initialTeam?.themeId || '');
+  const [selectedEventId, setSelectedEventId] = useState(initialTeam?.eventId || preselectedEventId || '');
+  const [selectedThemeId, setSelectedThemeId] = useState(initialTeam?.themeId || preselectedThemeId || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isEditMode = !!initialTeam;
+
+  // Get available events for submission
+  const availableEvents = useMemo(() => getEventsForSubmission(), [getEventsForSubmission]);
+
+  // Filter themes by selected event
+  const eventThemes = useMemo(() => {
+    if (!selectedEventId) return themes;
+    return themes.filter((theme) => theme.eventId === selectedEventId);
+  }, [themes, selectedEventId]);
+
+  // Clear theme selection when event changes (unless it's still valid)
+  const handleEventChange = (eventId: string) => {
+    setSelectedEventId(eventId);
+    // Reset theme if it doesn't belong to the new event
+    const themeStillValid = themes.some(
+      (t) => t.id === selectedThemeId && t.eventId === eventId
+    );
+    if (!themeStillValid) {
+      setSelectedThemeId('');
+    }
+  };
 
   const handleFetchRepo = async () => {
     if (!githubUrl.trim()) {
@@ -80,6 +107,11 @@ export function GitHubSubmissionForm({ initialTeam }: GitHubSubmissionFormProps)
       return;
     }
 
+    if (!selectedEventId) {
+      showToast('Please select an event', 'error');
+      return;
+    }
+
     if (!selectedThemeId) {
       showToast('Please select a theme', 'error');
       return;
@@ -105,6 +137,7 @@ export function GitHubSubmissionForm({ initialTeam }: GitHubSubmissionFormProps)
           ? [repoData.language]
           : [],
       themeId: selectedThemeId,
+      eventId: selectedEventId,
       githubUrl: githubUrl.trim(),
       githubData: repoData,
       deploymentUrl: deploymentUrl.trim(),
@@ -118,7 +151,8 @@ export function GitHubSubmissionForm({ initialTeam }: GitHubSubmissionFormProps)
         await addTeam(teamData);
         showToast(`${teamData.projectName} added to competition!`, 'success');
       }
-      router.push('/');
+      // Redirect to event gallery instead of home
+      router.push(`/events/${selectedEventId}`);
     } catch (err) {
       showToast('Failed to save project. Please try again.', 'error');
     } finally {
@@ -126,7 +160,7 @@ export function GitHubSubmissionForm({ initialTeam }: GitHubSubmissionFormProps)
     }
   };
 
-  const isFormValid = repoData && selectedThemeId;
+  const isFormValid = repoData && selectedEventId && selectedThemeId;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -222,15 +256,36 @@ export function GitHubSubmissionForm({ initialTeam }: GitHubSubmissionFormProps)
         </Card>
       )}
 
-      {/* Theme Selection */}
+      {/* Event Selection */}
       <Card className="p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Competition Theme</h2>
-        <ThemeSelector
-          themes={themes}
-          selectedThemeId={selectedThemeId}
-          onChange={setSelectedThemeId}
+        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <Calendar size={20} />
+          Select Event
+        </h2>
+        <EventSelector
+          events={availableEvents}
+          selectedEventId={selectedEventId}
+          onChange={handleEventChange}
         />
       </Card>
+
+      {/* Theme Selection */}
+      {selectedEventId && (
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-white mb-4">Competition Theme</h2>
+          {eventThemes.length > 0 ? (
+            <ThemeSelector
+              themes={eventThemes}
+              selectedThemeId={selectedThemeId}
+              onChange={setSelectedThemeId}
+            />
+          ) : (
+            <p className="text-zinc-400 text-sm">
+              No themes available for this event yet. An admin needs to generate themes first.
+            </p>
+          )}
+        </Card>
+      )}
 
       {/* Team Details (Optional Override) */}
       {repoData && (
@@ -325,7 +380,9 @@ export function GitHubSubmissionForm({ initialTeam }: GitHubSubmissionFormProps)
 
       {!isFormValid && repoData && (
         <p className="text-sm text-zinc-500 text-center">
-          Please select a theme to continue
+          {!selectedEventId
+            ? 'Please select an event to continue'
+            : 'Please select a theme to continue'}
         </p>
       )}
     </form>

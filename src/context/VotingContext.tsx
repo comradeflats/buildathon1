@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, ReactNode, useState, useCallback } from 'react';
+import React, { createContext, useContext, ReactNode, useState, useCallback, useMemo } from 'react';
 import { useVotes } from '@/hooks/useVotes';
 import { useTeams } from '@/hooks/useTeams';
 import { useThemes } from '@/hooks/useThemes';
@@ -19,15 +19,19 @@ interface VotingContextType {
   teams: Team[];
   themes: Theme[];
   eventName: string;
+  currentEventId: string | null;
+  setCurrentEventId: (eventId: string | null) => void;
   isLoading: boolean;
   isVotesLoaded: boolean;
   favoriteTeamId: string | null;
   submitVote: (teamId: string, scores: Scores, isFavorite?: boolean) => Promise<void>;
   hasVotedFor: (teamId: string) => boolean;
   getTeamById: (id: string) => Team | undefined;
+  getTeamsByEventId: (eventId: string) => Team[];
   getThemeById: (id: string) => Theme | undefined;
   getThemeCriteria: (themeId: string) => string[];
-  getLeaderboard: () => TeamScore[];
+  getThemesByEventId: (eventId: string) => Theme[];
+  getLeaderboard: (eventId?: string) => TeamScore[];
   addTeam: (team: Omit<Team, 'id'>) => Promise<void>;
   updateTeam: (team: Team) => Promise<void>;
   deleteTeam: (teamId: string) => Promise<void>;
@@ -52,12 +56,29 @@ export function VotingProvider({ children }: { children: ReactNode }) {
     isFavorite,
   } = useVotes();
   const { teams, eventName, isLoading, getTeamById, addTeam, updateTeam, removeTeam } = useTeams();
-  const { themes, getThemeById, getThemeCriteria } = useThemes();
+  const { themes, getThemeById, getThemeCriteria, getThemesByEventId } = useThemes();
   const [toast, setToast] = useState<Toast | null>(null);
+  const [currentEventId, setCurrentEventId] = useState<string | null>(null);
 
-  const getLeaderboard = useCallback(() => {
-    return calculateTeamScores(votes, teams, themes);
-  }, [votes, teams, themes]);
+  const getTeamsByEventId = useCallback(
+    (eventId: string): Team[] => {
+      return teams.filter((team) => team.eventId === eventId);
+    },
+    [teams]
+  );
+
+  const getLeaderboard = useCallback(
+    (eventId?: string) => {
+      const filteredTeams = eventId
+        ? teams.filter((team) => team.eventId === eventId)
+        : teams;
+      const filteredThemes = eventId
+        ? themes.filter((theme) => theme.eventId === eventId)
+        : themes;
+      return calculateTeamScores(votes, filteredTeams, filteredThemes);
+    },
+    [votes, teams, themes]
+  );
 
   const showToast = useCallback((message: string, type: 'success' | 'error') => {
     const id = Date.now().toString();
@@ -79,14 +100,18 @@ export function VotingProvider({ children }: { children: ReactNode }) {
         teams,
         themes,
         eventName,
+        currentEventId,
+        setCurrentEventId,
         isLoading,
         isVotesLoaded,
         favoriteTeamId,
         submitVote,
         hasVotedFor,
         getTeamById,
+        getTeamsByEventId,
         getThemeById,
         getThemeCriteria,
+        getThemesByEventId,
         getLeaderboard,
         addTeam,
         updateTeam,

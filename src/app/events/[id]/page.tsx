@@ -1,0 +1,210 @@
+'use client';
+
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft, Calendar, Users, Loader2, Plus, Clock } from 'lucide-react';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { TeamCard } from '@/components/gallery/TeamCard';
+import { useEvents } from '@/hooks/useEvents';
+import { useTeams } from '@/hooks/useTeams';
+import { useThemes } from '@/hooks/useThemes';
+
+export default function EventPage() {
+  const params = useParams();
+  const eventId = params.id as string;
+
+  const { events, isLoading: isEventsLoading, getEventById } = useEvents();
+  const { teams, isLoading: isTeamsLoading } = useTeams();
+  const { themes, isLoading: isThemesLoading } = useThemes();
+
+  const isLoading = isEventsLoading || isTeamsLoading || isThemesLoading;
+
+  const event = getEventById(eventId);
+  const eventTeams = teams.filter((team) => team.eventId === eventId);
+  const eventThemes = themes.filter((theme) => theme.eventId === eventId);
+
+  const formatEventDates = (startDate?: string, endDate?: string) => {
+    if (!startDate || !endDate) return null;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    return `${start.toLocaleDateString()} – ${end.toLocaleDateString()}`;
+  };
+
+  const canSubmit = event?.status === 'active' || event?.status === 'upcoming';
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-zinc-400" />
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center">
+        <Calendar size={48} className="text-zinc-600 mb-4" />
+        <h2 className="text-xl font-semibold text-white mb-2">Event Not Found</h2>
+        <p className="text-zinc-400 mb-6">
+          The event you&apos;re looking for doesn&apos;t exist.
+        </p>
+        <Link
+          href="/"
+          className="text-accent hover:underline flex items-center gap-2"
+        >
+          <ArrowLeft size={16} />
+          Back to Events
+        </Link>
+      </div>
+    );
+  }
+
+  const dateRange = formatEventDates(event.startDate, event.endDate);
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-zinc-400 hover:text-white transition-colors mb-4"
+        >
+          <ArrowLeft size={16} />
+          Back to Events
+        </Link>
+
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl font-bold text-white">{event.name}</h1>
+              <Badge
+                variant={
+                  event.status === 'active'
+                    ? 'success'
+                    : event.status === 'upcoming'
+                    ? 'default'
+                    : 'secondary'
+                }
+                className="capitalize"
+              >
+                {event.status}
+              </Badge>
+            </div>
+            {event.description && (
+              <p className="text-zinc-400 mb-2">{event.description}</p>
+            )}
+            <div className="text-zinc-400 flex flex-wrap items-center gap-4 text-sm">
+              {dateRange && (
+                <span className="flex items-center gap-1">
+                  <Calendar size={14} />
+                  {dateRange}
+                </span>
+              )}
+              {event.submissionDeadline && (
+                <span className="flex items-center gap-1">
+                  <Clock size={14} />
+                  Submissions due: {new Date(event.submissionDeadline).toLocaleString()}
+                </span>
+              )}
+              <span className="flex items-center gap-1">
+                <Users size={14} />
+                {eventTeams.length} {eventTeams.length === 1 ? 'project' : 'projects'}
+              </span>
+            </div>
+          </div>
+
+          {canSubmit && (
+            <Link href={`/submit?eventId=${eventId}`}>
+              <Button size="lg" className="shrink-0">
+                <Plus size={18} className="mr-2" />
+                Submit Project
+              </Button>
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {/* Themes for this event - Now with judging criteria */}
+      {eventThemes.length > 0 && (
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white">Themes</h2>
+            <span className="text-sm text-zinc-500">{eventThemes.length} themes available</span>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {eventThemes.map((theme) => (
+              <div
+                key={theme.id}
+                className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-700/50 hover:border-zinc-600 transition-colors"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">{theme.emoji}</span>
+                  <span className="font-semibold text-white">{theme.name}</span>
+                </div>
+                <p className="text-sm text-zinc-400 italic mb-3">{theme.concept}</p>
+
+                {/* Judging Criteria - Now visible */}
+                <div className="pt-3 border-t border-zinc-700/50">
+                  <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
+                    Judging Criteria
+                  </p>
+                  <ul className="space-y-1">
+                    {theme.judgingCriteria.map((criterion, index) => (
+                      <li
+                        key={index}
+                        className="text-xs text-zinc-300 flex items-start gap-1.5"
+                      >
+                        <span className="text-accent font-medium shrink-0">{index + 1}.</span>
+                        <span>{criterion}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {canSubmit && (
+                  <Link href={`/submit?eventId=${eventId}&themeId=${theme.id}`} className="block mt-3">
+                    <Button variant="secondary" size="sm" className="w-full">
+                      Submit with this theme
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Teams Grid */}
+      <div>
+        <h2 className="text-lg font-semibold text-white mb-4">
+          Submitted Projects
+        </h2>
+        {eventTeams.length === 0 ? (
+          <Card className="p-12 text-center">
+            <Users size={48} className="mx-auto text-zinc-600 mb-4" />
+            <h3 className="text-xl font-semibold text-white mb-2">No Projects Yet</h3>
+            <p className="text-zinc-400 mb-4">
+              Be the first to submit a project to this event!
+            </p>
+            {canSubmit && (
+              <Link href={`/submit?eventId=${eventId}`}>
+                <Button>
+                  <Plus size={16} className="mr-2" />
+                  Submit Your Project
+                </Button>
+              </Link>
+            )}
+          </Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {eventTeams.map((team) => (
+              <TeamCard key={team.id} team={team} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

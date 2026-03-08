@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { VotingProvider } from '@/context/VotingContext';
+import { AdminProvider } from '@/context/AdminContext';
 import { Toast } from '@/components/ui/Toast';
 import './globals.css';
 
@@ -16,12 +17,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen">
-        <VotingProvider>
-          <main className="container mx-auto px-4 py-6 max-w-5xl">
-            {children}
-          </main>
-          <Toast />
-        </VotingProvider>
+        <AdminProvider>
+          <VotingProvider>
+            <main className="container mx-auto px-4 py-6 max-w-5xl">
+              {children}
+            </main>
+            <Toast />
+          </VotingProvider>
+        </AdminProvider>
       </body>
     </html>
   );
