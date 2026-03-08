@@ -14,9 +14,6 @@ export async function POST(request: NextRequest) {
 
     const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
 
-    console.log('Hash from env:', adminPasswordHash);
-    console.log('Hash length:', adminPasswordHash?.length);
-
     if (!adminPasswordHash) {
       console.error('ADMIN_PASSWORD_HASH environment variable is not set');
       return NextResponse.json(
@@ -25,7 +22,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const isValid = await bcrypt.compare(password, adminPasswordHash);
+    // Safer logging for debugging environment issues on Vercel
+    console.log('Hash verification:', {
+      length: adminPasswordHash.length,
+      prefix: adminPasswordHash.substring(0, 10),
+      suffix: adminPasswordHash.substring(adminPasswordHash.length - 5),
+      hasSpaces: adminPasswordHash.includes(' '),
+      hasNewlines: adminPasswordHash.includes('\n') || adminPasswordHash.includes('\r'),
+    });
+
+    const isValid = await bcrypt.compare(password, adminPasswordHash.trim());
     console.log('Password valid:', isValid);
 
     if (isValid) {
