@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { VertexAI } from '@google-cloud/vertexai';
+import { VertexAI, SchemaType } from '@google-cloud/vertexai';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
@@ -72,24 +72,20 @@ export async function POST(request: NextRequest) {
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: {
-          type: 'array',
+          type: SchemaType.ARRAY,
           items: {
-            type: 'object',
+            type: SchemaType.OBJECT,
             properties: {
-              name: { type: 'string' },
-              emoji: { type: 'string' },
-              concept: { type: 'string' },
+              name: { type: SchemaType.STRING },
+              emoji: { type: SchemaType.STRING },
+              concept: { type: SchemaType.STRING },
               judgingCriteria: {
-                type: 'array',
-                items: { type: 'string' },
-                minItems: 5,
-                maxItems: 5,
+                type: SchemaType.ARRAY,
+                items: { type: SchemaType.STRING },
               },
             },
             required: ['name', 'emoji', 'concept', 'judgingCriteria'],
           },
-          minItems: 10,
-          maxItems: 10,
         },
       },
     });
