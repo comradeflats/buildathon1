@@ -15,7 +15,7 @@ export function ThemeCard({ theme }: ThemeCardProps) {
   const [showCriteria, setShowCriteria] = useState(false);
 
   return (
-    <Card className="p-6 h-full flex flex-col group hover:border-accent/40 transition-all duration-300">
+    <Card className="p-6 flex flex-col group hover:border-accent/40 transition-all duration-300">
       <div className="flex flex-col items-center text-center mb-6">
         <div className="w-16 h-16 bg-zinc-800 rounded-2xl flex items-center justify-center mb-4 text-4xl shadow-inner group-hover:scale-110 transition-transform">
           {theme.emoji}
@@ -26,10 +26,10 @@ export function ThemeCard({ theme }: ThemeCardProps) {
         </p>
       </div>
 
-      <div className="mt-auto space-y-3">
+      <div className="flex-1">
         <button 
           onClick={() => setShowCriteria(!showCriteria)}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-zinc-800 text-xs font-medium text-zinc-500 uppercase tracking-wider transition-colors"
+          className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-zinc-800 text-xs font-medium text-zinc-500 uppercase tracking-wider transition-colors mb-2"
         >
           <span className="flex items-center gap-2">
             <ShieldCheck size={14} className="text-accent" />
@@ -39,7 +39,7 @@ export function ThemeCard({ theme }: ThemeCardProps) {
         </button>
 
         {showCriteria && (
-          <ul className="px-3 pb-2 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+          <ul className="px-3 pb-4 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
             {theme.judgingCriteria.map((criterion, index) => (
               <li
                 key={index}
@@ -51,7 +51,9 @@ export function ThemeCard({ theme }: ThemeCardProps) {
             ))}
           </ul>
         )}
+      </div>
 
+      <div className="mt-4">
         <Link href={`/submit?eventId=${theme.eventId}&themeId=${theme.id}`} className="block">
           <Button variant="secondary" size="sm" className="w-full group/btn">
             Choose Theme

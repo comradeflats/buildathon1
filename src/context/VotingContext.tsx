@@ -60,6 +60,12 @@ export function VotingProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<Toast | null>(null);
   const [currentEventId, setCurrentEventId] = useState<string | null>(null);
 
+  // Filter votes to only include those for teams that exist in our state
+  const validVotes = useMemo(() => {
+    const teamIds = new Set(teams.map(t => t.id));
+    return votes.filter(v => teamIds.has(v.teamId));
+  }, [votes, teams]);
+
   const getTeamsByEventId = useCallback(
     (eventId: string): Team[] => {
       return teams.filter((team) => team.eventId === eventId);
@@ -75,9 +81,9 @@ export function VotingProvider({ children }: { children: ReactNode }) {
       const filteredThemes = eventId
         ? themes.filter((theme) => theme.eventId === eventId)
         : themes;
-      return calculateTeamScores(votes, filteredTeams, filteredThemes);
+      return calculateTeamScores(validVotes, filteredTeams, filteredThemes);
     },
-    [votes, teams, themes]
+    [validVotes, teams, themes]
   );
 
   const showToast = useCallback((message: string, type: 'success' | 'error') => {
@@ -95,7 +101,7 @@ export function VotingProvider({ children }: { children: ReactNode }) {
   return (
     <VotingContext.Provider
       value={{
-        votes,
+        votes: validVotes,
         votedTeamIds,
         teams,
         themes,
