@@ -6,12 +6,22 @@ import { v4 as uuidv4 } from 'uuid';
 
 export const runtime = 'nodejs';
 
+// Helper to parse private key
+function parsePrivateKey(key: string | undefined) {
+  if (!key) return undefined;
+  let parsedKey = key.replace(/\\n/g, '\n');
+  if (parsedKey.startsWith('"') && parsedKey.endsWith('"')) {
+    parsedKey = parsedKey.substring(1, parsedKey.length - 1);
+  }
+  return parsedKey;
+}
+
 // Initialize Firebase Admin SDK
 function getFirestoreAdmin() {
   if (getApps().length === 0) {
     const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    const privateKey = parsePrivateKey(process.env.FIREBASE_PRIVATE_KEY);
 
     if (!projectId || !clientEmail || !privateKey) {
       throw new Error('Missing Firebase Admin credentials');
@@ -56,15 +66,7 @@ export async function POST(request: NextRequest) {
 
     const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    let privateKey = process.env.FIREBASE_PRIVATE_KEY;
-
-    if (privateKey) {
-      // Handle both literal and escaped newlines
-      privateKey = privateKey.replace(/\\n/g, '\n');
-      if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
-        privateKey = privateKey.substring(1, privateKey.length - 1);
-      }
-    }
+    const privateKey = parsePrivateKey(process.env.FIREBASE_PRIVATE_KEY);
 
     console.log('Vertex AI Debug Info:', {
       projectId,
