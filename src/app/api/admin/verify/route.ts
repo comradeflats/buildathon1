@@ -14,6 +14,14 @@ export async function POST(request: NextRequest) {
 
     const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
 
+    // Log env var presence for debugging
+    console.log('Env Check:', {
+      HAS_PROJECT_ID: !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      HAS_CLIENT_EMAIL: !!process.env.FIREBASE_CLIENT_EMAIL,
+      HAS_PRIVATE_KEY: !!process.env.FIREBASE_PRIVATE_KEY,
+      HAS_ADMIN_HASH: !!process.env.ADMIN_PASSWORD_HASH,
+    });
+
     if (!adminPasswordHash) {
       console.error('ADMIN_PASSWORD_HASH environment variable is not set');
       return NextResponse.json(

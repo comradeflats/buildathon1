@@ -4,6 +4,8 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
 
+export const runtime = 'nodejs';
+
 // Initialize Firebase Admin SDK
 function getFirestoreAdmin() {
   if (getApps().length === 0) {
@@ -55,6 +57,15 @@ export async function POST(request: NextRequest) {
     const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
     const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+    console.log('Vertex AI Debug Info:', {
+      projectId,
+      hasEmail: !!clientEmail,
+      emailPrefix: clientEmail?.substring(0, 10),
+      hasKey: !!privateKey,
+      keyLength: privateKey?.length,
+      keyPrefix: privateKey?.substring(0, 30),
+    });
 
     if (!projectId) {
       return NextResponse.json(
