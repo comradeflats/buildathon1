@@ -13,7 +13,7 @@ export function useTeams() {
   useEffect(() => {
     async function loadTeams() {
       try {
-        const response = await fetch('/teams.json');
+        const response = await fetch('./teams.json');
         if (!response.ok) {
           throw new Error('Failed to fetch static teams');
         }

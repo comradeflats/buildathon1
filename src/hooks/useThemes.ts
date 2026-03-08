@@ -11,7 +11,7 @@ export function useThemes() {
   useEffect(() => {
     async function fetchThemes() {
       try {
-        const response = await fetch('/themes.json');
+        const response = await fetch('./themes.json');
         if (!response.ok) {
           throw new Error('Failed to load themes');
         }
