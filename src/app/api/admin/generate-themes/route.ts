@@ -1,41 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { VertexAI, SchemaType } from '@google-cloud/vertexai';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
+import { getFirestoreAdmin } from '@/lib/firestore-admin';
 
 export const runtime = 'nodejs';
 
-// Helper to parse private key
+// Robust private key parsing for Vertex AI as well
 function parsePrivateKey(key: string | undefined) {
   if (!key) return undefined;
   let parsedKey = key.replace(/\\n/g, '\n');
+  parsedKey = parsedKey.trim();
   if (parsedKey.startsWith('"') && parsedKey.endsWith('"')) {
-    parsedKey = parsedKey.substring(1, parsedKey.length - 1);
+    parsedKey = parsedKey.substring(1, parsedKey.length - 1).trim();
   }
   return parsedKey;
-}
-
-// Initialize Firebase Admin SDK
-function getFirestoreAdmin() {
-  if (getApps().length === 0) {
-    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    const privateKey = parsePrivateKey(process.env.FIREBASE_PRIVATE_KEY);
-
-    if (!projectId || !clientEmail || !privateKey) {
-      throw new Error('Missing Firebase Admin credentials');
-    }
-
-    initializeApp({
-      credential: cert({
-        projectId,
-        clientEmail,
-        privateKey,
-      }),
-    });
-  }
-  return getFirestore();
 }
 
 interface GeneratedTheme {
