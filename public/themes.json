@@ -1,0 +1,158 @@
+[
+  {
+    "id": "micro-helper",
+    "name": "The Micro-Helper",
+    "emoji": "🔧",
+    "concept": "Build something small but mighty",
+    "judgingCriteria": [
+      "Does it work without errors?",
+      "Is the core feature complete and polished?",
+      "Can you demo it in under 60 seconds?",
+      "Is the UI intuitive without instructions?",
+      "Would you actually use this tool?"
+    ]
+  },
+  {
+    "id": "no-javascript",
+    "name": "The No-JavaScript Challenge",
+    "emoji": "🎨",
+    "concept": "Pure HTML & CSS magic",
+    "judgingCriteria": [
+      "Is there absolutely zero JavaScript?",
+      "Does it have meaningful interactivity?",
+      "Is the CSS well-organized and modern?",
+      "Does it work across modern browsers?",
+      "Is the design visually appealing?"
+    ]
+  },
+  {
+    "id": "cli-champion",
+    "name": "The CLI Champion",
+    "emoji": "💻",
+    "concept": "Terminal-only interface",
+    "judgingCriteria": [
+      "Does it run without a GUI?",
+      "Is the terminal output clear and readable?",
+      "Does it handle errors gracefully?",
+      "Is the --help documentation useful?",
+      "Would developers actually use this?"
+    ]
+  },
+  {
+    "id": "mobile-first",
+    "name": "The Mobile-First Mandate",
+    "emoji": "📱",
+    "concept": "Phone-optimized from the start",
+    "judgingCriteria": [
+      "Does it work perfectly on mobile first?",
+      "Are all interactive elements touch-friendly?",
+      "Can you use it with one hand?",
+      "Is the content readable on small screens?",
+      "Does it enhance gracefully for larger screens?"
+    ]
+  },
+  {
+    "id": "productivity-booster",
+    "name": "The Productivity Booster",
+    "emoji": "⚡",
+    "concept": "Save time, boost efficiency",
+    "judgingCriteria": [
+      "Does it solve a real productivity problem?",
+      "Would it actually save time over manual work?",
+      "Is it fast and responsive to use?",
+      "Is the workflow intuitive?",
+      "Would you use it daily?"
+    ]
+  },
+  {
+    "id": "accessibility-hero",
+    "name": "The Accessibility Hero",
+    "emoji": "♿",
+    "concept": "Inclusive design for everyone",
+    "judgingCriteria": [
+      "Can you navigate everything with keyboard only?",
+      "Does it work with a screen reader?",
+      "Do colors meet contrast requirements?",
+      "Is the HTML semantic and properly labeled?",
+      "Would people with disabilities prefer this?"
+    ]
+  },
+  {
+    "id": "developer-tool",
+    "name": "The Developer Tool",
+    "emoji": "🛠️",
+    "concept": "Make coding easier",
+    "judgingCriteria": [
+      "Does it solve a real developer problem?",
+      "Is the output accurate and useful?",
+      "Does it handle errors well?",
+      "Would you add it to your bookmarks?",
+      "Is it better than existing alternatives?"
+    ]
+  },
+  {
+    "id": "data-visualizer",
+    "name": "The Data Visualizer",
+    "emoji": "📊",
+    "concept": "Make data beautiful and clear",
+    "judgingCriteria": [
+      "Does it accept and parse data correctly?",
+      "Is the visualization clear and readable?",
+      "Does interactivity add value?",
+      "Would this help someone understand data?",
+      "Is it visually appealing?"
+    ]
+  },
+  {
+    "id": "api-mashup",
+    "name": "The API Mashup",
+    "emoji": "🔗",
+    "concept": "Combine two or more APIs",
+    "judgingCriteria": [
+      "Does it meaningfully combine 2+ APIs?",
+      "Is the combination creative and useful?",
+      "Does it handle API failures well?",
+      "Is the data integration smooth?",
+      "Would the mashup be useful to others?"
+    ]
+  },
+  {
+    "id": "local-first",
+    "name": "The Local-First App",
+    "emoji": "💾",
+    "concept": "No backend allowed",
+    "judgingCriteria": [
+      "Does it work without a backend?",
+      "Is data persisted across sessions?",
+      "Does it work offline?",
+      "Is the data management reliable?",
+      "Would you trust it with your data?"
+    ]
+  },
+  {
+    "id": "real-time",
+    "name": "The Real-Time Experience",
+    "emoji": "🔴",
+    "concept": "Live updates and instant feedback",
+    "judgingCriteria": [
+      "Does it update in real-time?",
+      "Is the latency imperceptible?",
+      "Does it feel smooth and responsive?",
+      "Are updates handled gracefully?",
+      "Would you want to use it over static alternatives?"
+    ]
+  },
+  {
+    "id": "game-jam",
+    "name": "The Game Jam Mini",
+    "emoji": "🎮",
+    "concept": "Playable game in browser",
+    "judgingCriteria": [
+      "Is it actually playable and fun?",
+      "Are the rules clear without explanation?",
+      "Is there a clear win/lose state?",
+      "Would you play it more than once?",
+      "Is the game loop satisfying?"
+    ]
+  }
+]

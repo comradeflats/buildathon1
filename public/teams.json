@@ -1,0 +1,14 @@
+{
+  "eventName": "March Buildathon 2026",
+  "teams": [
+    {
+      "id": "placeholder-example",
+      "name": "Example Team",
+      "projectName": "Example Project",
+      "description": "This is a placeholder project to satisfy static build requirements. You can delete this once you've submitted your first real project.",
+      "members": ["Your Name"],
+      "techStack": ["Next.js", "Tailwind CSS"],
+      "themeId": "micro-helper"
+    }
+  ]
+}
