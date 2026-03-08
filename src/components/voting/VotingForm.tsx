@@ -65,9 +65,15 @@ export function VotingForm({ team }: VotingFormProps) {
     // Small delay for UX
     await new Promise((resolve) => setTimeout(resolve, 300));
 
-    submitVote(team.id, scores, isFavorite);
-    showToast(`Vote submitted for ${team.projectName}!`, 'success');
-    router.push('/');
+    try {
+      await submitVote(team.id, scores, isFavorite);
+      showToast(`Vote submitted for ${team.projectName}!`, 'success');
+      router.push('/');
+    } catch (err) {
+      showToast('Failed to submit vote. Please try again.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Check if another project is already the favorite

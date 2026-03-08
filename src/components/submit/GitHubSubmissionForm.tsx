@@ -106,15 +106,20 @@ export function GitHubSubmissionForm({ initialTeam }: GitHubSubmissionFormProps)
       deploymentUrl: deploymentUrl.trim(),
     };
 
-    if (isEditMode) {
-      updateTeam(teamData);
-      showToast(`${teamData.projectName} updated!`, 'success');
-    } else {
-      addTeam(teamData);
-      showToast(`${teamData.projectName} added to competition!`, 'success');
+    try {
+      if (isEditMode) {
+        await updateTeam(teamData);
+        showToast(`${teamData.projectName} updated!`, 'success');
+      } else {
+        await addTeam(teamData);
+        showToast(`${teamData.projectName} added to competition!`, 'success');
+      }
+      router.push('/');
+    } catch (err) {
+      showToast('Failed to save project. Please try again.', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    router.push('/');
   };
 
   const isFormValid = repoData && selectedThemeId;

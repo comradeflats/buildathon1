@@ -1,8 +1,18 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { 
+  collection, 
+  onSnapshot, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  query, 
+  orderBy 
+} from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { Team } from '@/lib/types';
-import { getStoredTeams, addTeam as storeTeam, saveTeams, removeTeam as removeStoredTeam, updateStoredTeam } from '@/lib/storage';
 import { EVENT_NAME } from '@/lib/constants';
 
 export function useTeams() {
@@ -11,36 +21,26 @@ export function useTeams() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadTeams() {
-      try {
-        // Build correct path for fetching (basePath + filename)
-        const isGithubActions = process.env.GITHUB_ACTIONS === 'true';
-        const prefix = isGithubActions ? '/buildathon1' : '';
-        const response = await fetch(`${prefix}/teams.json`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch static teams');
-        }
-        const staticData = await response.json();
-        
-        let combinedTeams = staticData.teams;
+    if (!db) return;
 
-        if (typeof window !== 'undefined') {
-          const storedTeams = getStoredTeams();
-          const allTeams = [...staticData.teams, ...storedTeams];
-          const uniqueTeams = Array.from(new Map(allTeams.map(team => [team.id, team])).values());
-          combinedTeams = uniqueTeams;
-        }
+    // Listen to teams collection in real-time
+    const q = query(collection(db, 'teams'), orderBy('projectName', 'asc'));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const teamsData = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      })) as Team[];
+      
+      setTeams(teamsData);
+      setIsLoading(false);
+    }, (err) => {
+      console.error("Error fetching teams:", err);
+      setError(err.message);
+      setIsLoading(false);
+    });
 
-        setTeams(combinedTeams);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadTeams();
+    return () => unsubscribe();
   }, []);
 
   const getTeamById = useCallback(
@@ -50,36 +50,36 @@ export function useTeams() {
     [teams]
   );
 
-  const addTeam = useCallback((team: Team): void => {
-    // Add to localStorage
-    storeTeam(team);
-    // Update local state
-    setTeams((prev) => [...prev, team]);
+  const addTeam = useCallback(async (team: Omit<Team, 'id'>): Promise<void> => {
+    try {
+      await addDoc(collection(db, 'teams'), team);
+    } catch (err) {
+      console.error("Error adding team:", err);
+      throw err;
+    }
   }, []);
 
-  const updateTeam = useCallback((updatedTeam: Team): void => {
-    // Update in localStorage
-    updateStoredTeam(updatedTeam);
-    // Update local state
-    setTeams((prev) =>
-      prev.map((t) => (t.id === updatedTeam.id ? updatedTeam : t))
-    );
+  const updateTeam = useCallback(async (updatedTeam: Team): Promise<void> => {
+    try {
+      const { id, ...data } = updatedTeam;
+      const teamRef = doc(db, 'teams', id);
+      await updateDoc(teamRef, data as any);
+    } catch (err) {
+      console.error("Error updating team:", err);
+      throw err;
+    }
   }, []);
 
-  const removeTeam = useCallback((teamId: string): void => {
-    // Remove from localStorage
-    removeStoredTeam(teamId);
-    // Update local state
-    setTeams((prev) => prev.filter((t) => t.id !== teamId));
+  const removeTeam = useCallback(async (teamId: string): Promise<void> => {
+    try {
+      await deleteDoc(doc(db, 'teams', teamId));
+    } catch (err) {
+      console.error("Error removing team:", err);
+      throw err;
+    }
   }, []);
 
-  const refreshTeams = useCallback(() => {
-    const storedTeams = getStoredTeams();
-    setTeams(storedTeams);
-  }, []);
-
-  // Event name is now a constant
   const eventName = EVENT_NAME;
 
-  return { teams, eventName, isLoading, error, getTeamById, addTeam, updateTeam, removeTeam, refreshTeams };
+  return { teams, eventName, isLoading, error, getTeamById, addTeam, updateTeam, removeTeam };
 }

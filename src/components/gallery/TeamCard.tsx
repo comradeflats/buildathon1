@@ -18,9 +18,13 @@ export function TeamCard({ team }: TeamCardProps) {
   const voted = hasVotedFor(team.id);
   const theme = getThemeById(team.themeId);
 
-  const handleDelete = () => {
-    deleteTeam(team.id);
-    showToast(`${team.projectName} has been removed`, 'success');
+  const handleDelete = async () => {
+    try {
+      await deleteTeam(team.id);
+      showToast(`${team.projectName} has been removed`, 'success');
+    } catch (err) {
+      showToast('Failed to remove project.', 'error');
+    }
   };
 
   const handleExternalLink = (e: React.MouseEvent, url: string) => {

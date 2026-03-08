@@ -3,7 +3,7 @@
 const isGithubActions = process.env.GITHUB_ACTIONS === 'true';
 
 const nextConfig = {
-  output: 'export',
+  // Remove output: 'export' to support dynamic rendering/database on Vercel
   basePath: isGithubActions ? '/buildathon1' : '',
   assetPrefix: isGithubActions ? '/buildathon1' : '',
 };
