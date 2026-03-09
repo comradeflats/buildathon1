@@ -38,34 +38,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadOwnershipToken();
   }, []);
 
-  // Handle redirect result (for mobile auth)
-  useEffect(() => {
-    if (!auth) return;
-
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result?.user) {
-          setUser(result.user);
-        }
-      })
-      .catch((error) => {
-        console.error('Redirect sign-in error:', error);
-      });
-  }, []);
-
-  // Listen for Firebase auth state changes
+  // Handle redirect result and auth state changes
+  // Combined into single useEffect to avoid race condition on mobile
   useEffect(() => {
     if (!auth) {
       setIsLoading(false);
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      setIsLoading(false);
-    });
+    let unsubscribe: (() => void) | undefined;
 
-    return () => unsubscribe();
+    async function initializeAuth() {
+      try {
+        // First, check for redirect result (for mobile auth)
+        // This must complete before we consider auth "loaded"
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          setUser(result.user);
+        }
+      } catch (error) {
+        console.error('Redirect sign-in error:', error);
+      }
+
+      // Then set up the auth state listener
+      unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        setUser(firebaseUser);
+        setIsLoading(false);
+      });
+    }
+
+    initializeAuth();
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, []);
 
   const signInWithGitHub = useCallback(async (): Promise<void> => {
