@@ -29,7 +29,14 @@ export default function EventPage() {
     if (!startDate || !endDate) return null;
     const start = new Date(startDate);
     const end = new Date(endDate);
-    return `${start.toLocaleDateString()} – ${end.toLocaleDateString()}`;
+    return `${start.toLocaleDateString('en-GB')} – ${end.toLocaleDateString('en-GB')}`;
+  };
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const dateStr = date.toLocaleDateString('en-GB');
+    const timeStr = date.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true });
+    return `${dateStr}, ${timeStr}`;
   };
 
   const canSubmit = event?.status === 'active' || event?.status === 'upcoming';
@@ -105,7 +112,7 @@ export default function EventPage() {
               {event.submissionDeadline && (
                 <span className="flex items-center gap-1">
                   <Clock size={14} />
-                  Submissions due: {new Date(event.submissionDeadline).toLocaleString()}
+                  Submissions due: {formatDateTime(event.submissionDeadline)}
                 </span>
               )}
               <span className="flex items-center gap-1">

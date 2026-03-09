@@ -104,13 +104,13 @@ export default function EventsPage() {
                       <div className="flex items-center gap-1">
                         <Calendar size={14} />
                         <span>
-                          {new Date(event.startDate).toLocaleDateString()} – {new Date(event.endDate).toLocaleDateString()}
+                          {new Date(event.startDate).toLocaleDateString('en-GB')} – {new Date(event.endDate).toLocaleDateString('en-GB')}
                         </span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-1">
                         <Calendar size={14} />
-                        <span>{new Date(event.createdAt).toLocaleDateString()}</span>
+                        <span>{new Date(event.createdAt).toLocaleDateString('en-GB')}</span>
                       </div>
                     )}
                   </div>

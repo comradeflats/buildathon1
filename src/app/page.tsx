@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Trophy, Plus, Calendar, Settings, ChevronRight, Users, Loader2, Clock, CheckCircle, Archive, Rocket } from 'lucide-react';
+import { Trophy, Plus, Calendar, Settings, ChevronRight, Users, Loader2, Clock, CheckCircle, Archive, Rocket, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -42,7 +42,7 @@ export default function HomePage() {
     if (!startDate || !endDate) return null;
     const start = new Date(startDate);
     const end = new Date(endDate);
-    return `${start.toLocaleDateString()} – ${end.toLocaleDateString()}`;
+    return `${start.toLocaleDateString('en-GB')} – ${end.toLocaleDateString('en-GB')}`;
   };
 
   return (
@@ -62,6 +62,12 @@ export default function HomePage() {
               <Button variant="secondary" className="w-full">
                 <Trophy size={18} className="mr-2" />
                 Leaderboard
+              </Button>
+            </Link>
+            <Link href="/gallery" className="flex-1 md:flex-none">
+              <Button variant="secondary" className="w-full">
+                <LayoutGrid size={18} className="mr-2" />
+                Gallery
               </Button>
             </Link>
             <Link href={isAdmin ? '/admin/dashboard' : '/admin'} className="flex-1 md:flex-none">

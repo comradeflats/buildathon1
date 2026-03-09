@@ -19,7 +19,14 @@ export function EventSelector({ events, selectedEventId, onChange }: EventSelect
     if (!startDate || !endDate) return null;
     const start = new Date(startDate);
     const end = new Date(endDate);
-    return `${start.toLocaleDateString()} – ${end.toLocaleDateString()}`;
+    return `${start.toLocaleDateString('en-GB')} – ${end.toLocaleDateString('en-GB')}`;
+  };
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const dateStr = date.toLocaleDateString('en-GB');
+    const timeStr = date.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true });
+    return `${dateStr}, ${timeStr}`;
   };
 
   if (availableEvents.length === 0) {
@@ -80,7 +87,7 @@ export function EventSelector({ events, selectedEventId, onChange }: EventSelect
                 {event.submissionDeadline && (
                   <p className="text-xs text-zinc-500 flex items-center gap-1">
                     <Clock size={12} />
-                    Due: {new Date(event.submissionDeadline).toLocaleString()}
+                    Due: {formatDateTime(event.submissionDeadline)}
                   </p>
                 )}
               </div>
