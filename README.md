@@ -1,4 +1,4 @@
-# Judge App
+# Buildathon Portal
 
 A modern hackathon judging platform built with Next.js, Firebase, and Vertex AI.
 
