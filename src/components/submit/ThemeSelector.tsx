@@ -1,7 +1,9 @@
 'use client';
 
+import { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Theme } from '@/lib/types';
+import { THEME_ICONS, ThemeIconKey } from '@/lib/themeIcons';
 
 interface ThemeSelectorProps {
   themes: Theme[];
@@ -10,7 +12,88 @@ interface ThemeSelectorProps {
 }
 
 export function ThemeSelector({ themes, selectedThemeId, onChange }: ThemeSelectorProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+
   const selectedTheme = themes.find((t) => t.id === selectedThemeId);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Reset focused index when dropdown opens
+  useEffect(() => {
+    if (isOpen) {
+      const selectedIdx = themes.findIndex((t) => t.id === selectedThemeId);
+      setFocusedIndex(selectedIdx >= 0 ? selectedIdx : 0);
+    }
+  }, [isOpen, themes, selectedThemeId]);
+
+  // Scroll focused item into view
+  useEffect(() => {
+    if (isOpen && focusedIndex >= 0 && listRef.current) {
+      const items = listRef.current.querySelectorAll('[role="option"]');
+      items[focusedIndex]?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [focusedIndex, isOpen]);
+
+  function handleKeyDown(event: React.KeyboardEvent) {
+    if (!isOpen) {
+      if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
+        event.preventDefault();
+        setIsOpen(true);
+      }
+      return;
+    }
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        setFocusedIndex((prev) => (prev < themes.length - 1 ? prev + 1 : prev));
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        setFocusedIndex((prev) => (prev > 0 ? prev - 1 : prev));
+        break;
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        if (focusedIndex >= 0 && focusedIndex < themes.length) {
+          onChange(themes[focusedIndex].id);
+          setIsOpen(false);
+          buttonRef.current?.focus();
+        }
+        break;
+      case 'Escape':
+        event.preventDefault();
+        setIsOpen(false);
+        buttonRef.current?.focus();
+        break;
+      case 'Tab':
+        setIsOpen(false);
+        break;
+    }
+  }
+
+  function getThemeIcon(theme: Theme) {
+    const iconKey = theme.iconKey as ThemeIconKey | undefined;
+    if (iconKey && THEME_ICONS[iconKey]) {
+      const Icon = THEME_ICONS[iconKey];
+      return <Icon size={18} className="text-accent flex-shrink-0" />;
+    }
+    // Fallback to emoji for themes without iconKey
+    return <span className="text-lg flex-shrink-0">{theme.emoji}</span>;
+  }
 
   return (
     <div className="space-y-3">
@@ -18,23 +101,63 @@ export function ThemeSelector({ themes, selectedThemeId, onChange }: ThemeSelect
         Theme <span className="text-red-400">*</span>
       </label>
 
-      <div className="relative">
-        <select
-          value={selectedThemeId}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent cursor-pointer"
+      <div ref={dropdownRef} className="relative">
+        <button
+          ref={buttonRef}
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          onKeyDown={handleKeyDown}
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
+          aria-labelledby="theme-selector-label"
+          className="w-full flex items-center justify-between bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-left text-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent cursor-pointer hover:border-zinc-600 transition-colors"
         >
-          <option value="">Select a theme...</option>
-          {themes.map((theme) => (
-            <option key={theme.id} value={theme.id}>
-              {theme.emoji} {theme.name}
-            </option>
-          ))}
-        </select>
-        <ChevronDown
-          size={20}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none"
-        />
+          <span className="flex items-center gap-3">
+            {selectedTheme ? (
+              <>
+                {getThemeIcon(selectedTheme)}
+                <span>{selectedTheme.name}</span>
+              </>
+            ) : (
+              <span className="text-zinc-400">Select a theme...</span>
+            )}
+          </span>
+          <ChevronDown
+            size={20}
+            className={`text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          />
+        </button>
+
+        {isOpen && (
+          <ul
+            ref={listRef}
+            role="listbox"
+            aria-activedescendant={focusedIndex >= 0 ? `theme-option-${themes[focusedIndex]?.id}` : undefined}
+            onKeyDown={handleKeyDown}
+            className="absolute z-50 w-full mt-2 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl max-h-64 overflow-auto"
+          >
+            {themes.map((theme, index) => (
+              <li
+                key={theme.id}
+                id={`theme-option-${theme.id}`}
+                role="option"
+                aria-selected={theme.id === selectedThemeId}
+                onClick={() => {
+                  onChange(theme.id);
+                  setIsOpen(false);
+                  buttonRef.current?.focus();
+                }}
+                onMouseEnter={() => setFocusedIndex(index)}
+                className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
+                  index === focusedIndex ? 'bg-zinc-700' : ''
+                } ${theme.id === selectedThemeId ? 'bg-accent/10 text-accent' : 'text-white hover:bg-zinc-700/50'}`}
+              >
+                {getThemeIcon(theme)}
+                <span className="truncate">{theme.name}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {selectedTheme && (

@@ -15,6 +15,7 @@ export interface Theme {
   id: string;
   name: string;
   emoji: string;
+  iconKey?: string;
   concept: string;
   judgingCriteria: string[];
   eventId: string;

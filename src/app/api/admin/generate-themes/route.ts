@@ -19,6 +19,7 @@ function parsePrivateKey(key: string | undefined) {
 interface GeneratedTheme {
   name: string;
   emoji: string;
+  iconKey: string;
   concept: string;
   judgingCriteria: string[];
 }
@@ -84,13 +85,14 @@ export async function POST(request: NextRequest) {
             properties: {
               name: { type: SchemaType.STRING },
               emoji: { type: SchemaType.STRING },
+              iconKey: { type: SchemaType.STRING },
               concept: { type: SchemaType.STRING },
               judgingCriteria: {
                 type: SchemaType.ARRAY,
                 items: { type: SchemaType.STRING },
               },
             },
-            required: ['name', 'emoji', 'concept', 'judgingCriteria'],
+            required: ['name', 'emoji', 'iconKey', 'concept', 'judgingCriteria'],
           },
         },
       },
@@ -103,8 +105,9 @@ IMPORTANT: The goal is "The Micro-App." Each theme should be a broad problem spa
 For each theme, provide:
 1. A memorable name (2-4 words)
 2. A single relevant emoji
-3. A "Micro-App Concept": Exactly ONE sentence. Describe a broad friction point or "Superpower" the web app provides.
-4. Exactly 5 judging criteria that reward creative execution and utility.
+3. An iconKey: Select ONE from: sparkles, zap, link, clock, palette, target, lightbulb, globe, gauge, code, wand, eye, rocket, brain, compass, layers
+4. A "Micro-App Concept": Exactly ONE sentence. Describe a broad friction point or "Superpower" the web app provides.
+5. Exactly 5 judging criteria that reward creative execution and utility.
 
 Example good "Open-Ended" themes:
 - "The Clarity Engine" ✨ - Concept: A web app that transforms complex, messy data into a single, beautiful visual summary.
@@ -157,6 +160,7 @@ Return the response as a valid JSON array of objects.`;
         id: themeId,
         name: theme.name,
         emoji: theme.emoji,
+        iconKey: theme.iconKey,
         concept: theme.concept,
         judgingCriteria: theme.judgingCriteria,
         eventId: eventId,
