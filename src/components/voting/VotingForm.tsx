@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Send, CheckCircle, ExternalLink, Heart } from 'lucide-react';
+import { ArrowLeft, Send, CheckCircle, ExternalLink, Heart, AlertTriangle, Clock, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -10,7 +10,8 @@ import { Badge } from '@/components/ui/Badge';
 import { CriteriaSlider } from './CriteriaSlider';
 import { FavoriteToggle } from './FavoriteToggle';
 import { useVoting } from '@/context/VotingContext';
-import { ensureAbsoluteUrl } from '@/lib/github';
+import { useEvents } from '@/hooks/useEvents';
+import { ensureAbsoluteUrl, fetchLatestCommitDateFromUrl } from '@/lib/github';
 import { Team, Scores } from '@/lib/types';
 
 interface VotingFormProps {
@@ -28,15 +29,48 @@ export function VotingForm({ team }: VotingFormProps) {
     isFavorite: checkIsFavorite,
     favoriteTeamId,
   } = useVoting();
+  const { getEventById } = useEvents();
 
   const alreadyVoted = hasVotedFor(team.id);
   const theme = getThemeById(team.themeId);
   const criteria = getThemeCriteria(team.themeId);
+  const event = getEventById(team.eventId);
 
   // Initialize scores based on number of criteria
   const [scores, setScores] = useState<Scores>({});
   const [isFavorite, setIsFavorite] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Commit checking state
+  const [latestCommitDate, setLatestCommitDate] = useState<string | null>(null);
+  const [isCheckingCommit, setIsCheckingCommit] = useState(false);
+  const [commitCheckError, setCommitCheckError] = useState<string | null>(null);
+
+  // Fetch latest commit date if team has GitHub URL
+  useEffect(() => {
+    async function checkCommitDate() {
+      if (!team.githubUrl) return;
+
+      setIsCheckingCommit(true);
+      setCommitCheckError(null);
+
+      try {
+        const commitDate = await fetchLatestCommitDateFromUrl(team.githubUrl);
+        setLatestCommitDate(commitDate);
+      } catch (err) {
+        setCommitCheckError('Failed to fetch commit info');
+      } finally {
+        setIsCheckingCommit(false);
+      }
+    }
+
+    checkCommitDate();
+  }, [team.githubUrl]);
+
+  // Determine if commit is late
+  const isLateCommit = latestCommitDate && event?.keyboardsDownTime
+    ? new Date(latestCommitDate) > new Date(event.keyboardsDownTime)
+    : false;
 
   // Initialize scores when criteria are loaded
   useEffect(() => {
@@ -149,6 +183,65 @@ export function VotingForm({ team }: VotingFormProps) {
             </a>
           )}
         </div>
+
+        {/* Commit Status Display */}
+        {team.githubUrl && event?.keyboardsDownTime && (
+          <div className={`p-4 rounded-lg border mb-6 ${
+            isLateCommit
+              ? 'bg-red-500/10 border-red-500/30'
+              : latestCommitDate
+                ? 'bg-emerald-500/10 border-emerald-500/30'
+                : 'bg-zinc-800/50 border-zinc-700'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {isCheckingCommit ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin text-zinc-400" />
+                    <span className="text-sm text-zinc-400">Checking commit history...</span>
+                  </>
+                ) : commitCheckError ? (
+                  <>
+                    <AlertTriangle size={16} className="text-yellow-400" />
+                    <span className="text-sm text-yellow-400">{commitCheckError}</span>
+                  </>
+                ) : latestCommitDate ? (
+                  <>
+                    <Clock size={16} className={isLateCommit ? 'text-red-400' : 'text-emerald-400'} />
+                    <span className="text-sm text-zinc-300">
+                      Last Commit: {new Date(latestCommitDate).toLocaleString()}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Clock size={16} className="text-zinc-400" />
+                    <span className="text-sm text-zinc-400">No commit data available</span>
+                  </>
+                )}
+              </div>
+
+              {isLateCommit && (
+                <Badge variant="destructive" className="bg-red-500/20 text-red-400 border-red-500/50">
+                  <AlertTriangle size={12} className="mr-1" />
+                  DISQUALIFIED - Late Commit
+                </Badge>
+              )}
+
+              {!isCheckingCommit && !commitCheckError && latestCommitDate && !isLateCommit && (
+                <Badge variant="success" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">
+                  <CheckCircle size={12} className="mr-1" />
+                  On Time
+                </Badge>
+              )}
+            </div>
+
+            {event.keyboardsDownTime && (
+              <p className="text-xs text-zinc-500 mt-2">
+                Keyboards Down: {new Date(event.keyboardsDownTime).toLocaleString()}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center gap-2 text-sm text-zinc-400 mb-8">
           <span>Team:</span>

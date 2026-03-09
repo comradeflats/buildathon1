@@ -160,3 +160,46 @@ export async function fetchGitHubRepoFromUrl(url: string): Promise<GitHubRepoDat
 export function getGitHubUrl(owner: string, repo: string): string {
   return `https://github.com/${owner}/${repo}`;
 }
+
+/**
+ * Fetch the latest commit date for a repository
+ * Returns the ISO date string of the most recent commit, or null on error
+ */
+export async function fetchLatestCommitDate(owner: string, repo: string): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/commits?per_page=1`,
+      {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const commits = await response.json();
+    if (Array.isArray(commits) && commits.length > 0) {
+      return commits[0].commit?.author?.date || null;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fetch latest commit date directly from a GitHub URL
+ */
+export async function fetchLatestCommitDateFromUrl(url: string): Promise<string | null> {
+  const parsed = parseGitHubUrl(url);
+
+  if (!parsed) {
+    return null;
+  }
+
+  return fetchLatestCommitDate(parsed.owner, parsed.repo);
+}

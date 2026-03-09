@@ -7,6 +7,7 @@ export interface Event {
   startDate: string;              // ISO date
   endDate: string;                // ISO date
   submissionDeadline?: string;    // ISO date
+  keyboardsDownTime?: string;     // ISO datetime - when coding must stop
   createdAt: string;
   themesGenerated: boolean;
 }

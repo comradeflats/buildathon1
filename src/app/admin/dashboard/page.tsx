@@ -41,6 +41,7 @@ export default function AdminDashboardPage() {
   const [newEventStartDate, setNewEventStartDate] = useState('');
   const [newEventEndDate, setNewEventEndDate] = useState('');
   const [newEventSubmissionDeadline, setNewEventSubmissionDeadline] = useState('');
+  const [newEventKeyboardsDown, setNewEventKeyboardsDown] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [generatingThemesFor, setGeneratingThemesFor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +54,7 @@ export default function AdminDashboardPage() {
   const [editEventStartDate, setEditEventStartDate] = useState('');
   const [editEventEndDate, setEditEventEndDate] = useState('');
   const [editEventSubmissionDeadline, setEditEventSubmissionDeadline] = useState('');
+  const [editEventKeyboardsDown, setEditEventKeyboardsDown] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
@@ -83,6 +85,7 @@ export default function AdminDashboardPage() {
         startDate: newEventStartDate,
         endDate: newEventEndDate,
         submissionDeadline: newEventSubmissionDeadline || undefined,
+        keyboardsDownTime: newEventKeyboardsDown || undefined,
         createdAt: new Date().toISOString(),
         themesGenerated: false,
       });
@@ -93,6 +96,7 @@ export default function AdminDashboardPage() {
       setNewEventStartDate('');
       setNewEventEndDate('');
       setNewEventSubmissionDeadline('');
+      setNewEventKeyboardsDown('');
       setShowCreateForm(false);
     } catch (err) {
       setError('Failed to create event');
@@ -169,6 +173,7 @@ export default function AdminDashboardPage() {
     setEditEventStartDate(event.startDate ? event.startDate.slice(0, 16) : '');
     setEditEventEndDate(event.endDate ? event.endDate.slice(0, 16) : '');
     setEditEventSubmissionDeadline(event.submissionDeadline ? event.submissionDeadline.slice(0, 16) : '');
+    setEditEventKeyboardsDown(event.keyboardsDownTime ? event.keyboardsDownTime.slice(0, 16) : '');
     setError(null);
   };
 
@@ -180,6 +185,7 @@ export default function AdminDashboardPage() {
     setEditEventStartDate('');
     setEditEventEndDate('');
     setEditEventSubmissionDeadline('');
+    setEditEventKeyboardsDown('');
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -202,6 +208,7 @@ export default function AdminDashboardPage() {
         startDate: editEventStartDate,
         endDate: editEventEndDate,
         submissionDeadline: editEventSubmissionDeadline || undefined,
+        keyboardsDownTime: editEventKeyboardsDown || undefined,
       });
       handleCancelEdit();
     } catch (err) {
@@ -320,6 +327,16 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-zinc-400 mb-2">Keyboards Down Time</label>
+                  <input
+                    type="datetime-local"
+                    value={newEventKeyboardsDown}
+                    onChange={(e) => setNewEventKeyboardsDown(e.target.value)}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent"
+                  />
+                  <p className="text-xs text-zinc-500 mt-1">When coding must stop - commits after this time will be flagged</p>
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-zinc-400 mb-2">Status</label>
                   <select
                     value={newEventStatus}
@@ -402,6 +419,16 @@ export default function AdminDashboardPage() {
                             onChange={(e) => setEditEventSubmissionDeadline(e.target.value)}
                             className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent"
                           />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-zinc-400 mb-2">Keyboards Down Time</label>
+                          <input
+                            type="datetime-local"
+                            value={editEventKeyboardsDown}
+                            onChange={(e) => setEditEventKeyboardsDown(e.target.value)}
+                            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent"
+                          />
+                          <p className="text-xs text-zinc-500 mt-1">When coding must stop - commits after this time will be flagged</p>
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-zinc-400 mb-2">Status</label>
