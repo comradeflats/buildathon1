@@ -75,9 +75,9 @@ export function LeaderboardRow({ teamScore, rank }: LeaderboardRowProps) {
 
           {/* Favorites */}
           {teamScore.favoriteCount > 0 && (
-            <div className="hidden sm:flex items-center gap-1 text-red-400 shrink-0" title="Favorites">
-              <Heart size={16} className="fill-current" />
-              <span className="text-sm font-medium">{teamScore.favoriteCount}</span>
+            <div className="flex items-center gap-1 text-red-400 shrink-0" title="Favorites">
+              <Heart size={14} className="fill-current sm:w-4 sm:h-4" />
+              <span className="text-xs sm:text-sm font-medium">{teamScore.favoriteCount}</span>
             </div>
           )}
 

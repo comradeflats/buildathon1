@@ -1,8 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, signInAnonymously as firebaseSignInAnonymously, signOut as firebaseSignOut } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signInAnonymously as firebaseSignInAnonymously, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth, githubProvider } from '@/lib/firebase';
+import { isMobileDevice } from '@/lib/deviceUtils';
 import { getOwnershipToken, getOrCreateOwnershipToken } from '@/lib/indexeddb';
 
 interface AuthContextType {
@@ -37,6 +38,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadOwnershipToken();
   }, []);
 
+  // Handle redirect result (for mobile auth)
+  useEffect(() => {
+    if (!auth) return;
+
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          setUser(result.user);
+        }
+      })
+      .catch((error) => {
+        console.error('Redirect sign-in error:', error);
+      });
+  }, []);
+
   // Listen for Firebase auth state changes
   useEffect(() => {
     if (!auth) {
@@ -58,7 +74,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      await signInWithPopup(auth, githubProvider);
+      // Use redirect on mobile, popup on desktop
+      if (isMobileDevice()) {
+        await signInWithRedirect(auth, githubProvider);
+      } else {
+        await signInWithPopup(auth, githubProvider);
+      }
     } catch (error) {
       console.error('GitHub sign-in error:', error);
       throw error;

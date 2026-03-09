@@ -238,7 +238,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <Link
             href="/"
@@ -251,7 +251,7 @@ export default function AdminDashboardPage() {
             <p className="text-zinc-400 text-sm">Manage events, themes, and submissions</p>
           </div>
         </div>
-        <Button variant="secondary" onClick={handleLogout}>
+        <Button variant="secondary" onClick={handleLogout} className="w-full sm:w-auto">
           <LogOut size={16} className="mr-2" />
           Logout
         </Button>
@@ -306,7 +306,7 @@ export default function AdminDashboardPage() {
                     className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-zinc-400 mb-2">Start Date *</label>
                     <input
@@ -391,7 +391,7 @@ export default function AdminDashboardPage() {
                             className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none"
                           />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
                             <label className="block text-sm font-medium text-zinc-400 mb-2">Start Date *</label>
                             <input
@@ -458,8 +458,8 @@ export default function AdminDashboardPage() {
                       </form>
                     ) : (
                       // Normal Display
-                      <div className="flex flex-wrap items-center justify-between gap-4">
-                        <div className="min-w-[200px]">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                        <div className="min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-medium text-white">{event.name}</h3>
                             <Badge variant={event.status === 'active' ? 'success' : 'default'} className="text-[10px]">

@@ -107,7 +107,7 @@ export function TeamCard({ team }: TeamCardProps) {
               {team.githubUrl && (
                 <button
                   onClick={(e) => handleExternalLink(e, team.githubUrl!)}
-                  className="p-2 md:p-1.5 rounded-md bg-zinc-800/50 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-all relative z-20"
+                  className="p-1.5 sm:p-2 rounded-md bg-zinc-800/50 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-all relative z-20"
                   title="View GitHub"
                 >
                   <Github size={16} />
@@ -116,7 +116,7 @@ export function TeamCard({ team }: TeamCardProps) {
               {team.deploymentUrl && (
                 <button
                   onClick={(e) => handleExternalLink(e, team.deploymentUrl!)}
-                  className="p-2 md:p-1.5 rounded-md bg-zinc-800/50 text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all relative z-20"
+                  className="p-1.5 sm:p-2 rounded-md bg-zinc-800/50 text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all relative z-20"
                   title="Live Demo"
                 >
                   <ExternalLink size={16} />
@@ -128,7 +128,7 @@ export function TeamCard({ team }: TeamCardProps) {
               {canEdit && (
                 <Link
                   href={`/submit?teamId=${team.id}`}
-                  className="p-2 md:p-1.5 rounded-md text-zinc-500 hover:text-accent hover:bg-accent/10 transition-all relative z-20"
+                  className="p-1.5 sm:p-2 rounded-md text-zinc-500 hover:text-accent hover:bg-accent/10 transition-all relative z-20"
                   title="Edit submission"
                   onClick={(e) => e.stopPropagation()}
                 >

@@ -57,26 +57,26 @@ export default function HomePage() {
               Join an event, pick a theme, and submit your project
             </p>
           </div>
-          <div className="flex flex-wrap gap-2 md:gap-3">
-            <Link href="/submit" className="flex-1 md:flex-none">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
+            <Link href="/submit" className="w-full sm:w-auto">
               <Button className="w-full">
                 <Plus size={18} className="mr-2" />
                 Submit Project
               </Button>
             </Link>
-            <Link href="/leaderboard" className="flex-1 md:flex-none">
+            <Link href="/leaderboard" className="w-full sm:w-auto">
               <Button variant="secondary" className="w-full">
                 <Trophy size={18} className="mr-2" />
                 Leaderboard
               </Button>
             </Link>
-            <Link href="/gallery" className="flex-1 md:flex-none">
+            <Link href="/gallery" className="w-full sm:w-auto">
               <Button variant="secondary" className="w-full">
                 <LayoutGrid size={18} className="mr-2" />
                 Gallery
               </Button>
             </Link>
-            <Link href={isAdmin ? '/admin/dashboard' : '/admin'} className="flex-1 md:flex-none">
+            <Link href={isAdmin ? '/admin/dashboard' : '/admin'} className="w-full sm:w-auto">
               <Button variant="secondary" className="w-full">
                 <Settings size={18} className="mr-2" />
                 Admin
