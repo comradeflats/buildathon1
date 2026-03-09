@@ -70,16 +70,16 @@ export function calculateTeamScores(
     };
   });
 
-  // Sort by total average DESC, then by first criterion DESC (tiebreaker), then by favorites DESC
+  // Sort by total average DESC, then by commit count ASC (fewer commits wins), then by favorites DESC
   teamScores.sort((a, b) => {
     if (b.totalAverage !== a.totalAverage) {
       return b.totalAverage - a.totalAverage;
     }
-    // First criterion tiebreaker
-    const aFirst = a.averageScores[0] ?? 0;
-    const bFirst = b.averageScores[0] ?? 0;
-    if (bFirst !== aFirst) {
-      return bFirst - aFirst;
+    // Fewer commits wins (efficiency tiebreaker)
+    const aCommits = a.team.githubData?.commitCount ?? Infinity;
+    const bCommits = b.team.githubData?.commitCount ?? Infinity;
+    if (aCommits !== bCommits) {
+      return aCommits - bCommits;
     }
     // Favorites as final tiebreaker
     return b.favoriteCount - a.favoriteCount;

@@ -69,6 +69,42 @@ export function ensureAbsoluteUrl(url: string): string {
 }
 
 /**
+ * Fetch commit count for a repository
+ * Uses per_page=1 and checks the Link header for total count
+ */
+async function fetchCommitCount(owner: string, repo: string): Promise<number> {
+  try {
+    const response = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/commits?per_page=1`,
+      {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      return 0;
+    }
+
+    // Parse the Link header to get total count
+    const linkHeader = response.headers.get('Link');
+    if (linkHeader) {
+      const lastMatch = linkHeader.match(/page=(\d+)>; rel="last"/);
+      if (lastMatch) {
+        return parseInt(lastMatch[1], 10);
+      }
+    }
+
+    // If no Link header, count the commits returned (should be 1 or 0)
+    const commits = await response.json();
+    return Array.isArray(commits) ? commits.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
  * Fetch repository data from GitHub API
  * Uses the public API (no authentication required for public repos)
  */
@@ -91,6 +127,9 @@ export async function fetchGitHubRepo(owner: string, repo: string): Promise<GitH
 
   const data = await response.json();
 
+  // Fetch commit count in parallel
+  const commitCount = await fetchCommitCount(owner, repo);
+
   return {
     fullName: data.full_name,
     description: data.description,
@@ -98,6 +137,7 @@ export async function fetchGitHubRepo(owner: string, repo: string): Promise<GitH
     stars: data.stargazers_count,
     forks: data.forks_count,
     topics: data.topics || [],
+    commitCount,
   };
 }
 

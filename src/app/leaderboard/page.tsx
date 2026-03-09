@@ -41,7 +41,7 @@ export default function LeaderboardPage() {
       <LeaderboardTable />
 
       <footer className="mt-8 text-center text-sm text-zinc-500">
-        <p>Tiebreaker: Higher Technical Complexity score wins</p>
+        <p>Tiebreaker: Fewer git commits wins</p>
       </footer>
     </div>
   );

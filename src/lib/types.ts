@@ -27,6 +27,7 @@ export interface GitHubRepoData {
   stars: number;
   forks: number;
   topics: string[];
+  commitCount?: number;
 }
 
 export interface Team {
