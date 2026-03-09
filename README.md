@@ -8,7 +8,7 @@ A modern hackathon judging platform built with Next.js, Firebase, and Vertex AI.
 
 <img src="https://unpkg.com/lucide-static@latest/icons/trophy.svg" width="20" height="20" alt="trophy"> **Live Leaderboard** - Real-time rankings with tiebreaker logic
 
-<img src="https://unpkg.com/lucide-static@latest/icons/vote.svg" width="20" height="20" alt="vote"> **Voting System** - Theme-specific judging criteria with 1-10 scoring
+<img src="https://unpkg.com/lucide-static@latest/icons/vote.svg" width="20" height="20" alt="vote"> **Voting System** - Theme-specific judging criteria with 1-5 scoring
 
 <img src="https://unpkg.com/lucide-static@latest/icons/sparkles.svg" width="20" height="20" alt="sparkles"> **AI Theme Generation** - Vertex AI generates unique hackathon themes
 
