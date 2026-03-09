@@ -17,11 +17,15 @@ export function AuthButton({ className, variant = 'primary', size = 'md', iconOn
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   const handleSignIn = async () => {
+    console.log('[AUTH] AuthButton: handleSignIn clicked');
     setIsSigningIn(true);
     try {
       await signInWithGitHub();
-    } catch (error) {
-      console.error('Sign-in failed:', error);
+      console.log('[AUTH] AuthButton: signInWithGitHub returned');
+    } catch (error: any) {
+      console.error('[AUTH] AuthButton: Sign-in failed:', error);
+      console.error('[AUTH] AuthButton: Error code:', error?.code);
+      console.error('[AUTH] AuthButton: Error message:', error?.message);
     } finally {
       setIsSigningIn(false);
     }

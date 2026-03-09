@@ -12,10 +12,12 @@ interface AuthContextType {
   isAnonymous: boolean;
   isLoading: boolean;
   ownershipToken: string | null;
+  authError: string | null;
   signInWithGitHub: () => Promise<void>;
   signInAnonymously: () => Promise<void>;
   signOut: () => Promise<void>;
   ensureOwnershipToken: () => Promise<string>;
+  clearAuthError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,6 +26,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [ownershipToken, setOwnershipToken] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const clearAuthError = useCallback(() => {
+    setAuthError(null);
+  }, []);
 
   // Load ownership token from IndexedDB on mount
   useEffect(() => {
@@ -41,7 +48,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Handle redirect result and auth state changes
   // Combined into single useEffect to avoid race condition on mobile
   useEffect(() => {
+    console.log('[AUTH] useEffect triggered, auth:', !!auth);
+
     if (!auth) {
+      console.log('[AUTH] Firebase auth not initialized');
       setIsLoading(false);
       return;
     }
@@ -49,19 +59,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let unsubscribe: (() => void) | undefined;
 
     async function initializeAuth() {
+      console.log('[AUTH] initializeAuth called');
+      console.log('[AUTH] isMobile:', isMobileDevice());
+      console.log('[AUTH] Current URL:', typeof window !== 'undefined' ? window.location.href : 'N/A');
+
       try {
         // First, check for redirect result (for mobile auth)
         // This must complete before we consider auth "loaded"
+        console.log('[AUTH] Checking redirect result...');
         const result = await getRedirectResult(auth);
+        console.log('[AUTH] Redirect result:', result ? 'User found' : 'No user');
         if (result?.user) {
+          console.log('[AUTH] Setting user from redirect result');
           setUser(result.user);
         }
-      } catch (error) {
-        console.error('Redirect sign-in error:', error);
+      } catch (error: any) {
+        console.error('[AUTH] Redirect error:', error);
+        console.error('[AUTH] Error code:', error?.code);
+        console.error('[AUTH] Error message:', error?.message);
+        setAuthError(`Redirect error: ${error?.code || error?.message || 'Unknown'}`);
       }
 
       // Then set up the auth state listener
+      console.log('[AUTH] Setting up auth state listener');
       unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        console.log('[AUTH] Auth state changed:', firebaseUser ? 'User present' : 'No user');
         setUser(firebaseUser);
         setIsLoading(false);
       });
@@ -77,19 +99,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signInWithGitHub = useCallback(async (): Promise<void> => {
+    console.log('[AUTH] signInWithGitHub called');
+    console.log('[AUTH] isMobile:', isMobileDevice());
+    setAuthError(null);
+
     if (!auth || !githubProvider) {
-      throw new Error('Firebase not initialized');
+      const err = 'Firebase not initialized';
+      console.error('[AUTH]', err);
+      setAuthError(err);
+      throw new Error(err);
     }
 
     try {
       // Use redirect on mobile, popup on desktop
       if (isMobileDevice()) {
+        console.log('[AUTH] Using signInWithRedirect...');
         await signInWithRedirect(auth, githubProvider);
+        console.log('[AUTH] Redirect initiated');
       } else {
+        console.log('[AUTH] Using signInWithPopup...');
         await signInWithPopup(auth, githubProvider);
+        console.log('[AUTH] Popup auth complete');
       }
-    } catch (error) {
-      console.error('GitHub sign-in error:', error);
+    } catch (error: any) {
+      console.error('[AUTH] Sign-in error:', error);
+      console.error('[AUTH] Error code:', error?.code);
+      console.error('[AUTH] Error message:', error?.message);
+      setAuthError(`Sign-in error: ${error?.code || error?.message || 'Unknown'}`);
       throw error;
     }
   }, []);
@@ -139,10 +175,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAnonymous,
         isLoading,
         ownershipToken,
+        authError,
         signInWithGitHub,
         signInAnonymously,
         signOut,
         ensureOwnershipToken,
+        clearAuthError,
       }}
     >
       {children}
