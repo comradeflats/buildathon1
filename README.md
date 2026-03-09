@@ -1,4 +1,4 @@
-# Submission Portal
+# Buildathon Submission Portal
 
 A modern hackathon judging platform built with Next.js, Firebase, and Vertex AI.
 
