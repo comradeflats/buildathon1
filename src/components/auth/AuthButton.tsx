@@ -9,9 +9,10 @@ interface AuthButtonProps {
   className?: string;
   variant?: 'primary' | 'secondary' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
+  iconOnly?: boolean;
 }
 
-export function AuthButton({ className, variant = 'primary', size = 'md' }: AuthButtonProps) {
+export function AuthButton({ className, variant = 'primary', size = 'md', iconOnly = false }: AuthButtonProps) {
   const { signInWithGitHub, isLoading: authLoading } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
 
@@ -37,11 +38,11 @@ export function AuthButton({ className, variant = 'primary', size = 'md' }: Auth
       className={className}
     >
       {isLoading ? (
-        <Loader2 size={18} className="animate-spin mr-2" />
+        <Loader2 size={18} className={iconOnly ? 'animate-spin' : 'animate-spin mr-2'} />
       ) : (
-        <Github size={18} className="mr-2" />
+        <Github size={18} className={iconOnly ? '' : 'mr-2'} />
       )}
-      Sign in with GitHub
+      {!iconOnly && 'Sign in with GitHub'}
     </Button>
   );
 }

@@ -9,9 +9,10 @@ interface GuestButtonProps {
   className?: string;
   variant?: 'primary' | 'secondary' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
+  iconOnly?: boolean;
 }
 
-export function GuestButton({ className, variant = 'secondary', size = 'md' }: GuestButtonProps) {
+export function GuestButton({ className, variant = 'secondary', size = 'md', iconOnly = false }: GuestButtonProps) {
   const { signInAnonymously, isLoading: authLoading } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
 
@@ -37,11 +38,11 @@ export function GuestButton({ className, variant = 'secondary', size = 'md' }: G
       className={className}
     >
       {isLoading ? (
-        <Loader2 size={18} className="animate-spin mr-2" />
+        <Loader2 size={18} className={iconOnly ? 'animate-spin' : 'animate-spin mr-2'} />
       ) : (
-        <UserCircle size={18} className="mr-2" />
+        <UserCircle size={18} className={iconOnly ? '' : 'mr-2'} />
       )}
-      Continue as Guest
+      {!iconOnly && 'Continue as Guest'}
     </Button>
   );
 }

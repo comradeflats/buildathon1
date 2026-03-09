@@ -25,10 +25,12 @@ export function UserMenu() {
 
   if (!user) {
     return (
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-        <AuthButton variant="ghost" size="sm" className="justify-start sm:justify-center" />
-        <div className="w-full sm:w-px h-px sm:h-4 bg-zinc-700" />
-        <GuestButton variant="ghost" size="sm" className="justify-start sm:justify-center" />
+      <div className="flex items-center gap-2">
+        <AuthButton variant="ghost" size="sm" iconOnly className="sm:hidden" />
+        <AuthButton variant="ghost" size="sm" className="hidden sm:flex" />
+        <div className="hidden sm:block w-px h-4 bg-zinc-700" />
+        <GuestButton variant="ghost" size="sm" iconOnly className="sm:hidden" />
+        <GuestButton variant="ghost" size="sm" className="hidden sm:flex" />
       </div>
     );
   }
