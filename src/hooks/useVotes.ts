@@ -23,7 +23,7 @@ export function useVotes() {
   const [favoriteTeamId, setFavoriteTeam] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // 1. Initialize Anonymous Auth
+  // 1. Listen for Auth State (no auto sign-in - user must explicitly sign in to vote)
   useEffect(() => {
     if (!auth) return;
 
@@ -31,7 +31,8 @@ export function useVotes() {
       if (user) {
         setJudgeId(user.uid);
       } else {
-        signInAnonymously(auth).catch(err => console.error("Auth error:", err));
+        // Don't auto sign-in - require explicit auth action for voting
+        setJudgeId(null);
       }
     });
     return () => unsubscribe();

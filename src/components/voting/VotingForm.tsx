@@ -11,6 +11,7 @@ import { CriteriaSlider } from './CriteriaSlider';
 import { FavoriteToggle } from './FavoriteToggle';
 import { useVoting } from '@/context/VotingContext';
 import { useEvents } from '@/hooks/useEvents';
+import { useAuth } from '@/context/AuthContext';
 import { ensureAbsoluteUrl, fetchLatestCommitDateFromUrl } from '@/lib/github';
 import { Team, Scores } from '@/lib/types';
 
@@ -30,6 +31,7 @@ export function VotingForm({ team }: VotingFormProps) {
     favoriteTeamId,
   } = useVoting();
   const { getEventById } = useEvents();
+  const { isAuthenticated } = useAuth();
 
   const alreadyVoted = hasVotedFor(team.id);
   const theme = getThemeById(team.themeId);
@@ -93,6 +95,11 @@ export function VotingForm({ team }: VotingFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid || isSubmitting) return;
+
+    if (!isAuthenticated) {
+      showToast('Please sign in to submit your vote', 'error');
+      return;
+    }
 
     setIsSubmitting(true);
 

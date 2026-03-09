@@ -11,7 +11,9 @@ import { ThemeSelector } from './ThemeSelector';
 import { EventSelector } from './EventSelector';
 import { useVoting } from '@/context/VotingContext';
 import { useEvents } from '@/hooks/useEvents';
+import { useAuth } from '@/context/AuthContext';
 import { parseGitHubUrl, fetchGitHubRepoFromUrl } from '@/lib/github';
+import { addTeamToOwnership } from '@/lib/indexeddb';
 import { GitHubRepoData, Team } from '@/lib/types';
 
 interface GitHubSubmissionFormProps {
@@ -24,6 +26,7 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
   const router = useRouter();
   const { themes, addTeam, updateTeam, showToast } = useVoting();
   const { events, getEventsForSubmission } = useEvents();
+  const { user, isAnonymous, ensureOwnershipToken } = useAuth();
 
   const [githubUrl, setGithubUrl] = useState(initialTeam?.githubUrl || '');
   const [isFetching, setIsFetching] = useState(false);
@@ -122,6 +125,22 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
     // Small delay for UX
     await new Promise((resolve) => setTimeout(resolve, 300));
 
+    // Determine ownership
+    let ownerId: string | null = null;
+    let ownershipToken: string | null = null;
+    let ownerDisplayName: string | null = null;
+
+    if (user && !isAnonymous) {
+      // Signed in with GitHub - use Firebase UID
+      ownerId = user.uid;
+      ownerDisplayName = user.displayName || user.email || 'GitHub User';
+    } else {
+      // Anonymous or not signed in - use IndexedDB token
+      ownershipToken = await ensureOwnershipToken();
+      ownerDisplayName = 'Anonymous';
+    }
+
+    const now = new Date().toISOString();
     const teamData: Team = {
       id: initialTeam?.id || uuidv4(),
       name: teamName || repoData.fullName.split('/')[0] || 'Team',
@@ -141,6 +160,12 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
       githubUrl: githubUrl.trim(),
       githubData: repoData,
       deploymentUrl: deploymentUrl.trim(),
+      // Preserve existing ownership for edits, or set new ownership for new submissions
+      ownerId: isEditMode ? (initialTeam?.ownerId ?? ownerId) : ownerId,
+      ownershipToken: isEditMode ? (initialTeam?.ownershipToken ?? ownershipToken) : ownershipToken,
+      ownerDisplayName: isEditMode ? (initialTeam?.ownerDisplayName ?? ownerDisplayName) : ownerDisplayName,
+      createdAt: initialTeam?.createdAt || now,
+      updatedAt: now,
     };
 
     try {
@@ -149,6 +174,10 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
         showToast(`${teamData.projectName} updated!`, 'success');
       } else {
         await addTeam(teamData);
+        // Track in IndexedDB for anonymous users
+        if (ownershipToken) {
+          await addTeamToOwnership(teamData.id);
+        }
         showToast(`${teamData.projectName} added to competition!`, 'success');
       }
       // Redirect to event gallery instead of home

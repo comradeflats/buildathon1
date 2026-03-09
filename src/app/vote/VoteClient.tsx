@@ -4,14 +4,17 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { VotingForm } from '@/components/voting/VotingForm';
+import { SignInPrompt } from '@/components/auth/SignInPrompt';
 import { useVoting } from '@/context/VotingContext';
+import { useAuth } from '@/context/AuthContext';
 
 export default function VotePage() {
   const searchParams = useSearchParams();
   const teamId = searchParams.get('teamId');
   const { getTeamById, isLoading } = useVoting();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
 
-  if (isLoading) {
+  if (isLoading || authLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="w-8 h-8 animate-spin text-accent" />
@@ -35,6 +38,25 @@ export default function VotePage() {
           <ArrowLeft size={20} />
           Back to Projects
         </Link>
+      </div>
+    );
+  }
+
+  // Show sign-in prompt if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="max-w-2xl mx-auto py-10">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-zinc-400 hover:text-white transition-colors mb-6"
+        >
+          <ArrowLeft size={20} />
+          Back to Projects
+        </Link>
+        <SignInPrompt
+          title="Sign in to Vote"
+          description={`Sign in to submit your vote for "${team.projectName}". Your vote helps decide the winners.`}
+        />
       </div>
     );
   }

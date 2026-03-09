@@ -8,6 +8,7 @@ import { DeleteButton } from '@/components/admin/DeleteButton';
 import { Team } from '@/lib/types';
 import { useVoting } from '@/context/VotingContext';
 import { useAdmin } from '@/context/AdminContext';
+import { useAuth } from '@/context/AuthContext';
 import { ensureAbsoluteUrl } from '@/lib/github';
 
 interface TeamCardProps {
@@ -17,8 +18,15 @@ interface TeamCardProps {
 export function TeamCard({ team }: TeamCardProps) {
   const { hasVotedFor, getThemeById, deleteTeam, showToast } = useVoting();
   const { isAdmin } = useAdmin();
+  const { user, isAnonymous, ownershipToken } = useAuth();
   const voted = hasVotedFor(team.id);
   const theme = getThemeById(team.themeId);
+
+  // Check if user can edit this team
+  const canEdit =
+    isAdmin ||
+    (user && !isAnonymous && team.ownerId === user.uid) ||
+    (ownershipToken && team.ownershipToken === ownershipToken);
 
   const handleDelete = async () => {
     try {
@@ -38,8 +46,22 @@ export function TeamCard({ team }: TeamCardProps) {
 
   return (
     <div className="group relative h-full">
-      <Link href={`/vote?teamId=${team.id}`} className="block h-full">
-        <Card hover className="p-5 h-full flex flex-col">
+      <Card hover className="p-5 h-full flex flex-col relative overflow-hidden">
+        {/* Main Action - Vote Link (Stretched) */}
+        <Link 
+          href={`/vote?teamId=${team.id}`} 
+          className="absolute inset-0 z-0" 
+          aria-label={`Vote for ${team.projectName}`} 
+        />
+
+        {/* Delete Button - Top Right */}
+        {isAdmin && (
+          <div className="relative z-30">
+            <DeleteButton onDelete={handleDelete} itemName={team.projectName} />
+          </div>
+        )}
+
+        <div className="relative z-10 pointer-events-none flex flex-col h-full">
           <div className="flex items-start justify-between mb-3 gap-2">
             <div className="flex-1 min-w-0">
               <h3 className="text-base md:text-lg font-semibold text-white mb-0.5 group-hover:text-accent transition-colors truncate">
@@ -80,12 +102,12 @@ export function TeamCard({ team }: TeamCardProps) {
           </div>
 
           {/* Links and Actions */}
-          <div className="flex items-center justify-between mt-auto pt-4 border-t border-zinc-800/50">
+          <div className="flex items-center justify-between mt-auto pt-4 border-t border-zinc-800/50 pointer-events-auto">
             <div className="flex items-center gap-2 md:gap-3">
               {team.githubUrl && (
                 <button
                   onClick={(e) => handleExternalLink(e, team.githubUrl!)}
-                  className="p-2 md:p-1.5 rounded-md bg-zinc-800/50 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-all"
+                  className="p-2 md:p-1.5 rounded-md bg-zinc-800/50 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-all relative z-20"
                   title="View GitHub"
                 >
                   <Github size={16} />
@@ -94,7 +116,7 @@ export function TeamCard({ team }: TeamCardProps) {
               {team.deploymentUrl && (
                 <button
                   onClick={(e) => handleExternalLink(e, team.deploymentUrl!)}
-                  className="p-2 md:p-1.5 rounded-md bg-zinc-800/50 text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
+                  className="p-2 md:p-1.5 rounded-md bg-zinc-800/50 text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all relative z-20"
                   title="Live Demo"
                 >
                   <ExternalLink size={16} />
@@ -103,21 +125,20 @@ export function TeamCard({ team }: TeamCardProps) {
             </div>
 
             <div className="flex items-center gap-1">
-              <Link
-                href={`/submit?teamId=${team.id}`}
-                className="p-2 md:p-1.5 rounded-md text-zinc-500 hover:text-accent hover:bg-accent/10 transition-all"
-                title="Edit submission"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Edit2 size={16} />
-              </Link>
-              {isAdmin && (
-                <DeleteButton onDelete={handleDelete} itemName={team.projectName} />
+              {canEdit && (
+                <Link
+                  href={`/submit?teamId=${team.id}`}
+                  className="p-2 md:p-1.5 rounded-md text-zinc-500 hover:text-accent hover:bg-accent/10 transition-all relative z-20"
+                  title="Edit submission"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Edit2 size={16} />
+                </Link>
               )}
             </div>
           </div>
-        </Card>
-      </Link>
+        </div>
+      </Card>
     </div>
   );
 }

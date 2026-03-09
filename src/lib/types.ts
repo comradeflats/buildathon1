@@ -44,6 +44,12 @@ export interface Team {
   githubUrl?: string;
   githubData?: GitHubRepoData;
   deploymentUrl?: string;
+  // Ownership fields
+  ownerId?: string | null;       // GitHub UID for signed-in users
+  ownershipToken?: string | null; // IndexedDB token for anonymous users
+  ownerDisplayName?: string | null; // GitHub username or "Anonymous"
+  createdAt?: string;            // ISO timestamp
+  updatedAt?: string;            // ISO timestamp
 }
 
 export interface TeamsData {
