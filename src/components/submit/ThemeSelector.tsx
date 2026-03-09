@@ -85,14 +85,14 @@ export function ThemeSelector({ themes, selectedThemeId, onChange }: ThemeSelect
     }
   }
 
-  function getThemeIcon(theme: Theme) {
+  function getThemeIcon(theme: Theme, size: number = 18) {
     const iconKey = theme.iconKey as ThemeIconKey | undefined;
     if (iconKey && THEME_ICONS[iconKey]) {
       const Icon = THEME_ICONS[iconKey];
-      return <Icon size={18} className="text-accent flex-shrink-0" />;
+      return <Icon size={size} className="text-accent flex-shrink-0" />;
     }
     // Fallback to emoji for themes without iconKey
-    return <span className="text-lg flex-shrink-0">{theme.emoji}</span>;
+    return <span className={`flex-shrink-0 ${size > 20 ? 'text-2xl' : 'text-lg'}`}>{theme.emoji}</span>;
   }
 
   return (
@@ -162,8 +162,8 @@ export function ThemeSelector({ themes, selectedThemeId, onChange }: ThemeSelect
 
       {selectedTheme && (
         <div className="mt-4 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-2xl">{selectedTheme.emoji}</span>
+          <div className="flex items-center gap-3 mb-2">
+            {getThemeIcon(selectedTheme, 28)}
             <span className="font-semibold text-white">{selectedTheme.name}</span>
           </div>
           <p className="text-sm text-zinc-400 mb-3 italic">{selectedTheme.concept}</p>

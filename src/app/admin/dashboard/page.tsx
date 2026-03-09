@@ -17,6 +17,7 @@ import {
   AlertCircle,
   Users,
   Trophy,
+  Edit2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -43,6 +44,16 @@ export default function AdminDashboardPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [generatingThemesFor, setGeneratingThemesFor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Edit event state
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [editEventName, setEditEventName] = useState('');
+  const [editEventDescription, setEditEventDescription] = useState('');
+  const [editEventStatus, setEditEventStatus] = useState<'upcoming' | 'active' | 'archived'>('upcoming');
+  const [editEventStartDate, setEditEventStartDate] = useState('');
+  const [editEventEndDate, setEditEventEndDate] = useState('');
+  const [editEventSubmissionDeadline, setEditEventSubmissionDeadline] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (!isAdminLoading && !isAdmin) {
@@ -146,6 +157,57 @@ export default function AdminDashboardPage() {
       await removeTeam(teamId);
     } catch (err) {
       setError('Failed to delete submission');
+    }
+  };
+
+  const handleStartEdit = (event: Event) => {
+    setEditingEventId(event.id);
+    setEditEventName(event.name);
+    setEditEventDescription(event.description || '');
+    setEditEventStatus(event.status || 'upcoming');
+    // Convert ISO date strings to datetime-local format
+    setEditEventStartDate(event.startDate ? event.startDate.slice(0, 16) : '');
+    setEditEventEndDate(event.endDate ? event.endDate.slice(0, 16) : '');
+    setEditEventSubmissionDeadline(event.submissionDeadline ? event.submissionDeadline.slice(0, 16) : '');
+    setError(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingEventId(null);
+    setEditEventName('');
+    setEditEventDescription('');
+    setEditEventStatus('upcoming');
+    setEditEventStartDate('');
+    setEditEventEndDate('');
+    setEditEventSubmissionDeadline('');
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEventId || !editEventName.trim() || !editEventStartDate || !editEventEndDate) return;
+
+    const eventToUpdate = events.find(ev => ev.id === editingEventId);
+    if (!eventToUpdate) return;
+
+    setIsUpdating(true);
+    setError(null);
+
+    try {
+      await updateEvent({
+        ...eventToUpdate,
+        name: editEventName.trim(),
+        description: editEventDescription.trim() || undefined,
+        status: editEventStatus,
+        isActive: editEventStatus === 'active',
+        startDate: editEventStartDate,
+        endDate: editEventEndDate,
+        submissionDeadline: editEventSubmissionDeadline || undefined,
+      });
+      handleCancelEdit();
+    } catch (err) {
+      setError('Failed to update event');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -285,51 +347,145 @@ export default function AdminDashboardPage() {
                 <p className="text-sm text-zinc-500 text-center py-8">No events found.</p>
               ) : (
                 events.map((event) => (
-                  <div key={event.id} className="p-4 bg-zinc-900/50 rounded-xl border border-zinc-800 flex flex-wrap items-center justify-between gap-4">
-                    <div className="min-w-[200px]">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium text-white">{event.name}</h3>
-                        <Badge variant={event.status === 'active' ? 'success' : 'default'} className="text-[10px]">
-                          {event.status}
-                        </Badge>
+                  <div key={event.id} className="p-4 bg-zinc-900/50 rounded-xl border border-zinc-800">
+                    {editingEventId === event.id ? (
+                      // Edit Form
+                      <form onSubmit={handleSaveEdit} className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-zinc-400 mb-2">
+                            Event Name <span className="text-red-400">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={editEventName}
+                            onChange={(e) => setEditEventName(e.target.value)}
+                            placeholder="e.g., April Buildathon 2026"
+                            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                            autoFocus
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-zinc-400 mb-2">Description</label>
+                          <textarea
+                            value={editEventDescription}
+                            onChange={(e) => setEditEventDescription(e.target.value)}
+                            placeholder="Brief description..."
+                            rows={2}
+                            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-zinc-400 mb-2">Start Date *</label>
+                            <input
+                              type="datetime-local"
+                              value={editEventStartDate}
+                              onChange={(e) => setEditEventStartDate(e.target.value)}
+                              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-zinc-400 mb-2">End Date *</label>
+                            <input
+                              type="datetime-local"
+                              value={editEventEndDate}
+                              onChange={(e) => setEditEventEndDate(e.target.value)}
+                              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-zinc-400 mb-2">Submission Deadline</label>
+                          <input
+                            type="datetime-local"
+                            value={editEventSubmissionDeadline}
+                            onChange={(e) => setEditEventSubmissionDeadline(e.target.value)}
+                            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-zinc-400 mb-2">Status</label>
+                          <select
+                            value={editEventStatus}
+                            onChange={(e) => setEditEventStatus(e.target.value as any)}
+                            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent"
+                          >
+                            <option value="upcoming">Upcoming</option>
+                            <option value="active">Active</option>
+                            <option value="archived">Archived</option>
+                          </select>
+                        </div>
+                        <div className="flex gap-2 pt-2">
+                          <Button
+                            type="submit"
+                            size="sm"
+                            disabled={!editEventName.trim() || !editEventStartDate || !editEventEndDate || isUpdating}
+                          >
+                            {isUpdating ? <Loader2 size={14} className="animate-spin mr-1" /> : null}
+                            Save Changes
+                          </Button>
+                          <Button type="button" variant="secondary" size="sm" onClick={handleCancelEdit}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </form>
+                    ) : (
+                      // Normal Display
+                      <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="min-w-[200px]">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-medium text-white">{event.name}</h3>
+                            <Badge variant={event.status === 'active' ? 'success' : 'default'} className="text-[10px]">
+                              {event.status}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-zinc-500">{event.id}</p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={event.status}
+                            onChange={(e) => handleToggleStatus(event, e.target.value as any)}
+                            className="text-xs bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-white focus:outline-none focus:ring-1 focus:ring-accent"
+                          >
+                            <option value="upcoming">Upcoming</option>
+                            <option value="active">Active</option>
+                            <option value="archived">Archived</option>
+                          </select>
+
+                          <Button
+                            size="sm"
+                            variant={event.themesGenerated ? 'secondary' : 'primary'}
+                            onClick={() => handleGenerateThemes(event.id)}
+                            disabled={generatingThemesFor === event.id}
+                            className="h-8 text-xs"
+                          >
+                            {generatingThemesFor === event.id ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                              <Sparkles size={14} className="mr-1" />
+                            )}
+                            {event.themesGenerated ? 'Themes' : 'Generate'}
+                          </Button>
+
+                          <button
+                            onClick={() => handleStartEdit(event)}
+                            className="p-2 text-zinc-600 hover:text-accent hover:bg-accent/10 rounded-lg transition-colors"
+                            title="Edit Event"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteEvent(event.id)}
+                            className="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                            title="Delete Event"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
-                      <p className="text-xs text-zinc-500">{event.id}</p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={event.status}
-                        onChange={(e) => handleToggleStatus(event, e.target.value as any)}
-                        className="text-xs bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-white focus:outline-none focus:ring-1 focus:ring-accent"
-                      >
-                        <option value="upcoming">Upcoming</option>
-                        <option value="active">Active</option>
-                        <option value="archived">Archived</option>
-                      </select>
-
-                      <Button
-                        size="sm"
-                        variant={event.themesGenerated ? 'secondary' : 'primary'}
-                        onClick={() => handleGenerateThemes(event.id)}
-                        disabled={generatingThemesFor === event.id}
-                        className="h-8 text-xs"
-                      >
-                        {generatingThemesFor === event.id ? (
-                          <Loader2 size={14} className="animate-spin" />
-                        ) : (
-                          <Sparkles size={14} className="mr-1" />
-                        )}
-                        {event.themesGenerated ? 'Themes' : 'Generate'}
-                      </Button>
-
-                      <button
-                        onClick={() => handleDeleteEvent(event.id)}
-                        className="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
-                        title="Delete Event"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                    )}
                   </div>
                 ))
               )}
