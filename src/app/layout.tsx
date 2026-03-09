@@ -5,8 +5,8 @@ import { Toast } from '@/components/ui/Toast';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Buildathon Leaderboard',
-  description: 'Vote on hackathon projects and see the leaderboard',
+  title: 'Buildathon Portal',
+  description: 'Join buildathon events, pick a theme, and submit your project',
 };
 
 export default function RootLayout({

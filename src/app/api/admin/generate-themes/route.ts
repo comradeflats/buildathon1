@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const prompt = `Generate 10 "Efficiency Catalyst" web app themes for a 1-HOUR "speed build".
+    const prompt = `Generate 12 "Efficiency Catalyst" web app themes for a 1-HOUR "speed build".
 
 IMPORTANT: The goal is "The Micro-App." Each theme should be a broad problem space that a web application could solve. Keep descriptions extremely concise (1 sentence) and open to interpretation. Avoid technical specifics or step-by-step instructions.
 
@@ -131,8 +131,8 @@ Return the response as a valid JSON array of objects.`;
 
     const themes: GeneratedTheme[] = JSON.parse(text);
 
-    if (!Array.isArray(themes) || themes.length !== 10) {
-      throw new Error('Expected 10 themes from AI model');
+    if (!Array.isArray(themes) || themes.length !== 12) {
+      throw new Error('Expected 12 themes from AI model');
     }
 
     // Store themes in Firestore

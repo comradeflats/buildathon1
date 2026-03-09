@@ -126,47 +126,46 @@ export default function EventPage() {
         </div>
       </div>
 
-      {/* Themes for this event - Now with judging criteria */}
+      {/* Themes for this event */}
       {eventThemes.length > 0 && (
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-white">Themes</h2>
             <span className="text-sm text-zinc-500">{eventThemes.length} themes available</span>
           </div>
+
+          {/* Shared Judging Criteria Section */}
+          {eventThemes[0]?.judgingCriteria && eventThemes[0].judgingCriteria.length > 0 && (
+            <div className="mb-6 p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/30">
+              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
+                Judging Criteria
+              </p>
+              <div className="flex flex-col gap-2">
+                {eventThemes[0].judgingCriteria.map((criterion, index) => (
+                  <span key={index} className="text-sm text-zinc-300 flex items-center gap-1.5">
+                    <span className="text-accent font-medium">{index + 1}.</span>
+                    {criterion}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Theme Cards Grid */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {eventThemes.map((theme) => (
               <div
                 key={theme.id}
-                className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-700/50 hover:border-zinc-600 transition-colors"
+                className="p-5 bg-zinc-800/50 rounded-lg border border-zinc-700/50 hover:border-zinc-600 hover:bg-zinc-800/70 transition-all text-center flex flex-col"
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-2xl">{theme.emoji}</span>
-                  <span className="font-semibold text-white">{theme.name}</span>
-                </div>
-                <p className="text-sm text-zinc-400 italic mb-3">{theme.concept}</p>
-
-                {/* Judging Criteria - Now visible */}
-                <div className="pt-3 border-t border-zinc-700/50">
-                  <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
-                    Judging Criteria
-                  </p>
-                  <ul className="space-y-1">
-                    {theme.judgingCriteria.map((criterion, index) => (
-                      <li
-                        key={index}
-                        className="text-xs text-zinc-300 flex items-start gap-1.5"
-                      >
-                        <span className="text-accent font-medium shrink-0">{index + 1}.</span>
-                        <span>{criterion}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <div className="text-4xl mb-3">{theme.emoji}</div>
+                <h3 className="font-semibold text-white mb-2">{theme.name}</h3>
+                <p className="text-sm text-zinc-400 mb-4 flex-1">{theme.concept}</p>
 
                 {canSubmit && (
-                  <Link href={`/submit?eventId=${eventId}&themeId=${theme.id}`} className="block mt-3">
+                  <Link href={`/submit?eventId=${eventId}&themeId=${theme.id}`} className="block">
                     <Button variant="secondary" size="sm" className="w-full">
-                      Submit with this theme
+                      Submit
                     </Button>
                   </Link>
                 )}

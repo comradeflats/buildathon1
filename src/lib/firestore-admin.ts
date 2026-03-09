@@ -5,6 +5,15 @@ import { getFirestore } from 'firebase-admin/firestore';
 function parsePrivateKey(key: string | undefined) {
   if (!key) return undefined;
   
+  // Log key info for debugging (safely)
+  console.log('Parsing private key:', {
+    length: key.length,
+    hasNewlineChars: key.includes('\\n'),
+    hasActualNewlines: key.includes('\n'),
+    startsWithHeader: key.trim().startsWith('-----BEGIN PRIVATE KEY-----'),
+    endsWithFooter: key.trim().endsWith('-----END PRIVATE KEY-----'),
+  });
+
   // Handle double-escaped newlines and literal newlines
   let parsedKey = key.replace(/\\n/g, '\n');
   
