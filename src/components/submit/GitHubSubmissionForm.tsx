@@ -213,6 +213,8 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
             : [])
       : [];
 
+    // Build team data object, adding optional fields only if they have values
+    // (Firebase doesn't accept undefined values)
     const teamData: Team = {
       id: initialTeam?.id || uuidv4(),
       name: teamName || defaultTeamName,
@@ -228,10 +230,6 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
       // New multi-URL fields
       primaryUrl: primaryUrl.trim(),
       urlType,
-      // Backwards compatibility: also set githubUrl for GitHub submissions
-      githubUrl: urlType === 'github' ? primaryUrl.trim() : undefined,
-      githubData: urlType === 'github' ? repoData || undefined : undefined,
-      deploymentUrl: deploymentUrl.trim() || undefined,
       // Preserve existing ownership for edits, or set new ownership for new submissions
       ownerId: isEditMode ? (initialTeam?.ownerId ?? ownerId) : ownerId,
       ownershipToken: isEditMode ? (initialTeam?.ownershipToken ?? ownershipToken) : ownershipToken,
@@ -239,6 +237,17 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
       createdAt: initialTeam?.createdAt || now,
       updatedAt: now,
     };
+
+    // Add optional fields only if they have values (Firebase doesn't accept undefined)
+    if (urlType === 'github') {
+      teamData.githubUrl = primaryUrl.trim();
+      if (repoData) {
+        teamData.githubData = repoData;
+      }
+    }
+    if (deploymentUrl.trim()) {
+      teamData.deploymentUrl = deploymentUrl.trim();
+    }
 
     try {
       if (isEditMode) {
