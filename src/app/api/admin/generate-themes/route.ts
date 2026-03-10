@@ -117,8 +117,8 @@ Example good "Open-Ended" themes:
 
 Exactly 5 judging criteria:
 - "Creative Interpretation: How unique was the approach to the theme?"
-- "Technical Execution: How robust is the web app's implementation?"
-- "UI/UX Polish: Is the interface clean, intuitive, and visually engaging?"
+- "Visual Design: Is the interface visually appealing and polished?"
+- "Usability: Is the app intuitive and easy to use?"
 - "Utility Impact: Does the app solve the core problem effectively?"
 - "The 'Ship' Factor: How complete and polished is the prototype for a 1-hour build?"
 

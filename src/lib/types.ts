@@ -89,11 +89,11 @@ export interface TeamScore {
 
 // Legacy type support for old data migration
 export interface LegacyScores {
-  technicalComplexity: number;
-  designUX: number;
-  innovation: number;
-  businessValue: number;
-  completion: number;
+  creativeInterpretation: number;
+  visualDesign: number;
+  usability: number;
+  utilityImpact: number;
+  shipFactor: number;
 }
 
 export type CriterionKey = keyof LegacyScores;

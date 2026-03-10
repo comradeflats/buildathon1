@@ -3,29 +3,29 @@ import { Criterion } from './types';
 // Legacy criteria - kept for backwards compatibility with old votes
 export const LEGACY_CRITERIA: Criterion[] = [
   {
-    key: 'technicalComplexity',
-    label: 'Technical Complexity',
-    description: 'How technically challenging is the implementation?',
+    key: 'creativeInterpretation',
+    label: 'Creative Interpretation',
+    description: 'How unique was the approach to the theme?',
   },
   {
-    key: 'designUX',
-    label: 'Design & UX',
-    description: 'How polished and user-friendly is the interface?',
+    key: 'visualDesign',
+    label: 'Visual Design',
+    description: 'Is the interface visually appealing and polished?',
   },
   {
-    key: 'innovation',
-    label: 'Innovation',
-    description: 'How creative and original is the solution?',
+    key: 'usability',
+    label: 'Usability',
+    description: 'Is the app intuitive and easy to use?',
   },
   {
-    key: 'businessValue',
-    label: 'Business Value',
-    description: 'How viable is this as a real product?',
+    key: 'utilityImpact',
+    label: 'Utility Impact',
+    description: 'Does the app solve the core problem effectively?',
   },
   {
-    key: 'completion',
-    label: 'Completion',
-    description: 'How complete and functional is the demo?',
+    key: 'shipFactor',
+    label: "The 'Ship' Factor",
+    description: 'How complete and polished is the prototype for a 1-hour build?',
   },
 ];
 

@@ -7,11 +7,11 @@
     "iconColor": "text-orange-400",
     "concept": "Build something small but mighty",
     "judgingCriteria": [
-      "Does it work without errors?",
-      "Is the core feature complete and polished?",
-      "Can you demo it in under 60 seconds?",
-      "Is the UI intuitive without instructions?",
-      "Would you actually use this tool?"
+      "Creative Interpretation: How unique was the approach to the theme?",
+      "Visual Design: Is the interface visually appealing and polished?",
+      "Usability: Is the app intuitive and easy to use?",
+      "Utility Impact: Does the app solve the core problem effectively?",
+      "The 'Ship' Factor: How complete and polished is the prototype for a 1-hour build?"
     ]
   },
   {
@@ -22,11 +22,11 @@
     "iconColor": "text-pink-400",
     "concept": "Pure HTML & CSS magic",
     "judgingCriteria": [
-      "Is there absolutely zero JavaScript?",
-      "Does it have meaningful interactivity?",
-      "Is the CSS well-organized and modern?",
-      "Does it work across modern browsers?",
-      "Is the design visually appealing?"
+      "Creative Interpretation: How unique was the approach to the theme?",
+      "Visual Design: Is the interface visually appealing and polished?",
+      "Usability: Is the app intuitive and easy to use?",
+      "Utility Impact: Does the app solve the core problem effectively?",
+      "The 'Ship' Factor: How complete and polished is the prototype for a 1-hour build?"
     ]
   },
   {
@@ -37,11 +37,11 @@
     "iconColor": "text-emerald-400",
     "concept": "Terminal-only interface",
     "judgingCriteria": [
-      "Does it run without a GUI?",
-      "Is the terminal output clear and readable?",
-      "Does it handle errors gracefully?",
-      "Is the --help documentation useful?",
-      "Would developers actually use this?"
+      "Creative Interpretation: How unique was the approach to the theme?",
+      "Visual Design: Is the interface visually appealing and polished?",
+      "Usability: Is the app intuitive and easy to use?",
+      "Utility Impact: Does the app solve the core problem effectively?",
+      "The 'Ship' Factor: How complete and polished is the prototype for a 1-hour build?"
     ]
   },
   {
@@ -52,11 +52,11 @@
     "iconColor": "text-sky-400",
     "concept": "Phone-optimized from the start",
     "judgingCriteria": [
-      "Does it work perfectly on mobile first?",
-      "Are all interactive elements touch-friendly?",
-      "Can you use it with one hand?",
-      "Is the content readable on small screens?",
-      "Does it enhance gracefully for larger screens?"
+      "Creative Interpretation: How unique was the approach to the theme?",
+      "Visual Design: Is the interface visually appealing and polished?",
+      "Usability: Is the app intuitive and easy to use?",
+      "Utility Impact: Does the app solve the core problem effectively?",
+      "The 'Ship' Factor: How complete and polished is the prototype for a 1-hour build?"
     ]
   },
   {
@@ -67,11 +67,11 @@
     "iconColor": "text-yellow-400",
     "concept": "Save time, boost efficiency",
     "judgingCriteria": [
-      "Does it solve a real productivity problem?",
-      "Would it actually save time over manual work?",
-      "Is it fast and responsive to use?",
-      "Is the workflow intuitive?",
-      "Would you use it daily?"
+      "Creative Interpretation: How unique was the approach to the theme?",
+      "Visual Design: Is the interface visually appealing and polished?",
+      "Usability: Is the app intuitive and easy to use?",
+      "Utility Impact: Does the app solve the core problem effectively?",
+      "The 'Ship' Factor: How complete and polished is the prototype for a 1-hour build?"
     ]
   },
   {
@@ -82,11 +82,11 @@
     "iconColor": "text-blue-400",
     "concept": "Inclusive design for everyone",
     "judgingCriteria": [
-      "Can you navigate everything with keyboard only?",
-      "Does it work with a screen reader?",
-      "Do colors meet contrast requirements?",
-      "Is the HTML semantic and properly labeled?",
-      "Would people with disabilities prefer this?"
+      "Creative Interpretation: How unique was the approach to the theme?",
+      "Visual Design: Is the interface visually appealing and polished?",
+      "Usability: Is the app intuitive and easy to use?",
+      "Utility Impact: Does the app solve the core problem effectively?",
+      "The 'Ship' Factor: How complete and polished is the prototype for a 1-hour build?"
     ]
   },
   {
@@ -97,11 +97,11 @@
     "iconColor": "text-violet-400",
     "concept": "Make coding easier",
     "judgingCriteria": [
-      "Does it solve a real developer problem?",
-      "Is the output accurate and useful?",
-      "Does it handle errors well?",
-      "Would you add it to your bookmarks?",
-      "Is it better than existing alternatives?"
+      "Creative Interpretation: How unique was the approach to the theme?",
+      "Visual Design: Is the interface visually appealing and polished?",
+      "Usability: Is the app intuitive and easy to use?",
+      "Utility Impact: Does the app solve the core problem effectively?",
+      "The 'Ship' Factor: How complete and polished is the prototype for a 1-hour build?"
     ]
   },
   {
@@ -112,11 +112,11 @@
     "iconColor": "text-cyan-400",
     "concept": "Make data beautiful and clear",
     "judgingCriteria": [
-      "Does it accept and parse data correctly?",
-      "Is the visualization clear and readable?",
-      "Does interactivity add value?",
-      "Would this help someone understand data?",
-      "Is it visually appealing?"
+      "Creative Interpretation: How unique was the approach to the theme?",
+      "Visual Design: Is the interface visually appealing and polished?",
+      "Usability: Is the app intuitive and easy to use?",
+      "Utility Impact: Does the app solve the core problem effectively?",
+      "The 'Ship' Factor: How complete and polished is the prototype for a 1-hour build?"
     ]
   },
   {
@@ -127,11 +127,11 @@
     "iconColor": "text-indigo-400",
     "concept": "Combine two or more APIs",
     "judgingCriteria": [
-      "Does it meaningfully combine 2+ APIs?",
-      "Is the combination creative and useful?",
-      "Does it handle API failures well?",
-      "Is the data integration smooth?",
-      "Would the mashup be useful to others?"
+      "Creative Interpretation: How unique was the approach to the theme?",
+      "Visual Design: Is the interface visually appealing and polished?",
+      "Usability: Is the app intuitive and easy to use?",
+      "Utility Impact: Does the app solve the core problem effectively?",
+      "The 'Ship' Factor: How complete and polished is the prototype for a 1-hour build?"
     ]
   },
   {
@@ -142,11 +142,11 @@
     "iconColor": "text-slate-400",
     "concept": "No backend allowed",
     "judgingCriteria": [
-      "Does it work without a backend?",
-      "Is data persisted across sessions?",
-      "Does it work offline?",
-      "Is the data management reliable?",
-      "Would you trust it with your data?"
+      "Creative Interpretation: How unique was the approach to the theme?",
+      "Visual Design: Is the interface visually appealing and polished?",
+      "Usability: Is the app intuitive and easy to use?",
+      "Utility Impact: Does the app solve the core problem effectively?",
+      "The 'Ship' Factor: How complete and polished is the prototype for a 1-hour build?"
     ]
   },
   {
@@ -157,11 +157,11 @@
     "iconColor": "text-red-400",
     "concept": "Live updates and instant feedback",
     "judgingCriteria": [
-      "Does it update in real-time?",
-      "Is the latency imperceptible?",
-      "Does it feel smooth and responsive?",
-      "Are updates handled gracefully?",
-      "Would you want to use it over static alternatives?"
+      "Creative Interpretation: How unique was the approach to the theme?",
+      "Visual Design: Is the interface visually appealing and polished?",
+      "Usability: Is the app intuitive and easy to use?",
+      "Utility Impact: Does the app solve the core problem effectively?",
+      "The 'Ship' Factor: How complete and polished is the prototype for a 1-hour build?"
     ]
   },
   {
@@ -172,11 +172,11 @@
     "iconColor": "text-fuchsia-400",
     "concept": "Playable game in browser",
     "judgingCriteria": [
-      "Is it actually playable and fun?",
-      "Are the rules clear without explanation?",
-      "Is there a clear win/lose state?",
-      "Would you play it more than once?",
-      "Is the game loop satisfying?"
+      "Creative Interpretation: How unique was the approach to the theme?",
+      "Visual Design: Is the interface visually appealing and polished?",
+      "Usability: Is the app intuitive and easy to use?",
+      "Utility Impact: Does the app solve the core problem effectively?",
+      "The 'Ship' Factor: How complete and polished is the prototype for a 1-hour build?"
     ]
   }
 ]
