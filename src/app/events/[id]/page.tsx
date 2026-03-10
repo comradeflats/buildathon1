@@ -10,7 +10,7 @@ import { TeamCard } from '@/components/gallery/TeamCard';
 import { useEvents } from '@/hooks/useEvents';
 import { useTeams } from '@/hooks/useTeams';
 import { useThemes } from '@/hooks/useThemes';
-import { getThemeIcon, getThemeIconColor } from '@/lib/themeIcons';
+import { getThemeEmoji } from '@/lib/themeIcons';
 
 export default function EventPage() {
   const params = useParams();
@@ -166,10 +166,9 @@ export default function EventPage() {
                 key={theme.id}
                 className="p-5 bg-zinc-800/50 rounded-lg border border-zinc-700/50 hover:border-zinc-600 hover:bg-zinc-800/70 transition-all text-center flex flex-col"
               >
-                {(() => {
-                  const ThemeIcon = getThemeIcon(theme);
-                  return <ThemeIcon size={40} className={`mx-auto mb-3 ${getThemeIconColor(theme)}`} />;
-                })()}
+                <div className="text-4xl mb-3">
+                  {getThemeEmoji(theme)}
+                </div>
                 <h3 className="font-semibold text-white mb-2">{theme.name}</h3>
                 <p className="text-sm text-zinc-400 mb-4 flex-1">{theme.concept}</p>
 

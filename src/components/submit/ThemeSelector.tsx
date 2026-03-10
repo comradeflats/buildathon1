@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Theme } from '@/lib/types';
-import { THEME_ICONS, ThemeIconKey } from '@/lib/themeIcons';
+import { getThemeIcon, getThemeIconColor } from '@/lib/themeIcons';
 
 interface ThemeSelectorProps {
   themes: Theme[];
@@ -85,16 +85,6 @@ export function ThemeSelector({ themes, selectedThemeId, onChange }: ThemeSelect
     }
   }
 
-  function getThemeIcon(theme: Theme, size: number = 18) {
-    const iconKey = theme.iconKey as ThemeIconKey | undefined;
-    if (iconKey && THEME_ICONS[iconKey]) {
-      const Icon = THEME_ICONS[iconKey];
-      return <Icon size={size} className="text-accent flex-shrink-0" />;
-    }
-    // Fallback to emoji for themes without iconKey
-    return <span className={`flex-shrink-0 ${size > 20 ? 'text-2xl' : 'text-lg'}`}>{theme.emoji}</span>;
-  }
-
   return (
     <div className="space-y-3">
       <label className="block text-sm font-medium text-zinc-400">
@@ -115,7 +105,10 @@ export function ThemeSelector({ themes, selectedThemeId, onChange }: ThemeSelect
           <span className="flex items-center gap-3">
             {selectedTheme ? (
               <>
-                {getThemeIcon(selectedTheme)}
+                {(() => {
+                  const ThemeIcon = getThemeIcon(selectedTheme);
+                  return <ThemeIcon size={20} className={getThemeIconColor(selectedTheme)} />;
+                })()}
                 <span>{selectedTheme.name}</span>
               </>
             ) : (
@@ -152,7 +145,10 @@ export function ThemeSelector({ themes, selectedThemeId, onChange }: ThemeSelect
                   index === focusedIndex ? 'bg-zinc-700' : ''
                 } ${theme.id === selectedThemeId ? 'bg-accent/10 text-accent' : 'text-white hover:bg-zinc-700/50'}`}
               >
-                {getThemeIcon(theme)}
+                {(() => {
+                  const ThemeIcon = getThemeIcon(theme);
+                  return <ThemeIcon size={18} className={getThemeIconColor(theme)} />;
+                })()}
                 <span className="truncate">{theme.name}</span>
               </li>
             ))}
@@ -163,7 +159,10 @@ export function ThemeSelector({ themes, selectedThemeId, onChange }: ThemeSelect
       {selectedTheme && (
         <div className="mt-4 p-4 bg-zinc-800/50 rounded-lg border border-zinc-700">
           <div className="flex items-center gap-3 mb-2">
-            {getThemeIcon(selectedTheme, 28)}
+            {(() => {
+              const ThemeIcon = getThemeIcon(selectedTheme);
+              return <ThemeIcon size={28} className={getThemeIconColor(selectedTheme)} />;
+            })()}
             <span className="font-semibold text-white">{selectedTheme.name}</span>
           </div>
           <p className="text-sm text-zinc-400 mb-3 italic">{selectedTheme.concept}</p>

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, LayoutGrid } from 'lucide-react';
 import { Theme } from '@/lib/types';
-import { THEME_ICONS, ThemeIconKey } from '@/lib/themeIcons';
+import { getThemeIcon, getThemeIconColor } from '@/lib/themeIcons';
 
 interface ThemeFilterDropdownProps {
   themes: Theme[];
@@ -96,13 +96,8 @@ export function ThemeFilterDropdown({ themes, selectedThemeId, onChange }: Theme
       return <LayoutGrid size={size} className="text-zinc-400 flex-shrink-0" />;
     }
     const theme = option as Theme;
-    const iconKey = theme.iconKey as ThemeIconKey | undefined;
-    if (iconKey && THEME_ICONS[iconKey]) {
-      const Icon = THEME_ICONS[iconKey];
-      return <Icon size={size} className="text-accent flex-shrink-0" />;
-    }
-    // Fallback to emoji for themes without iconKey
-    return <span className="flex-shrink-0 text-lg">{theme.emoji}</span>;
+    const ThemeIcon = getThemeIcon(theme);
+    return <ThemeIcon size={size} className={`${getThemeIconColor(theme)} flex-shrink-0`} />;
   }
 
   return (

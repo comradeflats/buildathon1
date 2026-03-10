@@ -58,9 +58,46 @@ export const ICON_COLORS: Record<string, string> = {
   clock: 'text-amber-400',
 };
 
+export const THEME_EMOJIS: Record<string, string> = {
+  sparkles: '✨',
+  zap: '⚡',
+  link: '🔗',
+  clock: '⌛',
+  palette: '🎨',
+  target: '🎯',
+  lightbulb: '💡',
+  globe: '🌐',
+  gauge: '⏲️',
+  code: '💻',
+  wand: '🪄',
+  eye: '👁️',
+  rocket: '🚀',
+  brain: '🧠',
+  compass: '🧭',
+  layers: '🥞',
+  wrench: '🔧',
+  terminal: '🖥️',
+  smartphone: '📱',
+  accessibility: '♿',
+  hardDrive: '💾',
+  gamepad2: '🎮',
+  activity: '📈',
+};
+
 export type ThemeIconKey = keyof typeof THEME_ICONS;
 
 export const ICON_KEYS = Object.keys(THEME_ICONS) as ThemeIconKey[];
+
+/**
+ * Get the emoji for a given theme
+ * @param theme - Theme object with emoji or iconKey property
+ * @returns The emoji string or a default
+ */
+export function getThemeEmoji(theme: { emoji?: string; iconKey?: string } | null | undefined): string {
+  if (theme?.emoji) return theme.emoji;
+  if (theme?.iconKey) return THEME_EMOJIS[theme.iconKey as keyof typeof THEME_EMOJIS] || '✨';
+  return '✨';
+}
 
 /**
  * Get the Lucide icon component for a given theme
