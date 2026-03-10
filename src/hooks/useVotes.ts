@@ -124,6 +124,36 @@ export function useVotes() {
     [userVotes]
   );
 
+  const getVoteForTeam = useCallback(
+    (teamId: string): Vote | undefined => {
+      return userVotes.find(v => v.teamId === teamId);
+    },
+    [userVotes]
+  );
+
+  const updateVote = useCallback(async (
+    voteId: string,
+    scores: Scores,
+    isFavorite: boolean
+  ): Promise<void> => {
+    if (!judgeId) throw new Error("Must be logged in to update vote");
+
+    // Handle favorite logic - remove old favorite if setting new one
+    if (isFavorite) {
+      const otherFavs = userVotes.filter(v => v.isFavorite && v.id !== voteId);
+      for (const fav of otherFavs) {
+        await setDoc(doc(db, 'votes', fav.id), { isFavorite: false }, { merge: true });
+      }
+    }
+
+    const voteRef = doc(db, 'votes', voteId);
+    await setDoc(voteRef, {
+      scores,
+      isFavorite,
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+  }, [judgeId, userVotes]);
+
   const votedTeamIds = userVotes.map(v => v.teamId);
 
   return {
@@ -135,5 +165,7 @@ export function useVotes() {
     hasVotedFor,
     toggleFavorite,
     isFavorite,
+    getVoteForTeam,
+    updateVote,
   };
 }

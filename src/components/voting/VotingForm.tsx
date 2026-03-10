@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Send, CheckCircle, ExternalLink, Heart, AlertTriangle, Clock, Loader2 } from 'lucide-react';
+import { ArrowLeft, Send, CheckCircle, ExternalLink, Heart, AlertTriangle, Clock, Loader2, Edit3 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -30,6 +30,8 @@ export function VotingForm({ team }: VotingFormProps) {
     getThemeCriteria,
     isFavorite: checkIsFavorite,
     favoriteTeamId,
+    getVoteForTeam,
+    updateVote,
   } = useVoting();
   const { getEventById } = useEvents();
   const { isAuthenticated } = useAuth();
@@ -38,11 +40,13 @@ export function VotingForm({ team }: VotingFormProps) {
   const theme = getThemeById(team.themeId);
   const criteria = getThemeCriteria(team.themeId);
   const event = getEventById(team.eventId);
+  const existingVote = getVoteForTeam(team.id);
 
   // Initialize scores based on number of criteria
   const [scores, setScores] = useState<Scores>({});
   const [isFavorite, setIsFavorite] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Commit checking state
   const [latestCommitDate, setLatestCommitDate] = useState<string | null>(null);
@@ -86,6 +90,14 @@ export function VotingForm({ team }: VotingFormProps) {
     }
   }, [criteria, scores]);
 
+  // Initialize scores from existing vote when editing
+  useEffect(() => {
+    if (isEditing && existingVote) {
+      setScores(existingVote.scores);
+      setIsFavorite(existingVote.isFavorite);
+    }
+  }, [isEditing, existingVote]);
+
   const handleScoreChange = (index: number, value: number) => {
     setScores((prev) => ({ ...prev, [index]: value }));
   };
@@ -108,9 +120,15 @@ export function VotingForm({ team }: VotingFormProps) {
     await new Promise((resolve) => setTimeout(resolve, 300));
 
     try {
-      await submitVote(team.id, scores, isFavorite);
-      showToast(`Vote submitted for ${team.projectName}!`, 'success');
-      router.push('/');
+      if (isEditing && existingVote) {
+        await updateVote(existingVote.id, scores, isFavorite);
+        showToast(`Vote updated for ${team.projectName}!`, 'success');
+        setIsEditing(false);
+      } else {
+        await submitVote(team.id, scores, isFavorite);
+        showToast(`Vote submitted for ${team.projectName}!`, 'success');
+        router.push('/');
+      }
     } catch (err) {
       showToast('Failed to submit vote. Please try again.', 'error');
     } finally {
@@ -261,7 +279,7 @@ export function VotingForm({ team }: VotingFormProps) {
           </span>
         </div>
 
-        {alreadyVoted ? (
+        {alreadyVoted && !isEditing ? (
           <div className="bg-success/10 border border-success/30 rounded-lg p-6 text-center">
             <CheckCircle className="w-12 h-12 text-success mx-auto mb-3" />
             <p className="text-success font-bold text-lg">
@@ -270,6 +288,14 @@ export function VotingForm({ team }: VotingFormProps) {
             <p className="text-sm text-zinc-400 mt-2">
               Thanks for supporting {team.projectName}.
             </p>
+            <Button
+              variant="secondary"
+              className="mt-4"
+              onClick={() => setIsEditing(true)}
+            >
+              <Edit3 size={16} className="mr-2" />
+              Edit Vote
+            </Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
@@ -324,7 +350,12 @@ export function VotingForm({ team }: VotingFormProps) {
               className="w-full py-6 text-lg font-bold shadow-lg shadow-accent/20"
             >
               {isSubmitting ? (
-                'Submitting...'
+                'Saving...'
+              ) : isEditing ? (
+                <>
+                  <Send size={18} className="mr-2" />
+                  Update Vote
+                </>
               ) : (
                 <>
                   <Send size={18} className="mr-2" />

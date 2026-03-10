@@ -26,6 +26,8 @@ interface VotingContextType {
   favoriteTeamId: string | null;
   submitVote: (teamId: string, scores: Scores, isFavorite?: boolean) => Promise<void>;
   hasVotedFor: (teamId: string) => boolean;
+  getVoteForTeam: (teamId: string) => Vote | undefined;
+  updateVote: (voteId: string, scores: Scores, isFavorite: boolean) => Promise<void>;
   getTeamById: (id: string) => Team | undefined;
   getTeamsByEventId: (eventId: string) => Team[];
   getThemeById: (id: string) => Theme | undefined;
@@ -54,6 +56,8 @@ export function VotingProvider({ children }: { children: ReactNode }) {
     hasVotedFor,
     toggleFavorite,
     isFavorite,
+    getVoteForTeam,
+    updateVote,
   } = useVotes();
   const { teams, eventName, isLoading, getTeamById, addTeam, updateTeam, removeTeam } = useTeams();
   const { themes, getThemeById, getThemeCriteria, getThemesByEventId } = useThemes();
@@ -113,6 +117,8 @@ export function VotingProvider({ children }: { children: ReactNode }) {
         favoriteTeamId,
         submitVote,
         hasVotedFor,
+        getVoteForTeam,
+        updateVote,
         getTeamById,
         getTeamsByEventId,
         getThemeById,
