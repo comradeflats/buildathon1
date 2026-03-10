@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Send, CheckCircle, ExternalLink, Heart, AlertTriangle, Clock, Loader2, Edit3 } from 'lucide-react';
+import { ArrowLeft, Send, CheckCircle, ExternalLink, Heart, AlertTriangle, Clock, Loader2, Edit3, Globe, Link as LinkIcon } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -14,6 +14,7 @@ import { useEvents } from '@/hooks/useEvents';
 import { useAuth } from '@/context/AuthContext';
 import { ensureAbsoluteUrl, fetchLatestCommitDateFromUrl } from '@/lib/github';
 import { Team, Scores } from '@/lib/types';
+import { getUrlLinkText } from '@/lib/urls';
 import { getThemeIcon, getThemeIconColor } from '@/lib/themeIcons';
 
 interface VotingFormProps {
@@ -53,16 +54,20 @@ export function VotingForm({ team }: VotingFormProps) {
   const [isCheckingCommit, setIsCheckingCommit] = useState(false);
   const [commitCheckError, setCommitCheckError] = useState<string | null>(null);
 
+  // Check if this is a GitHub submission
+  const isGitHubSubmission = team.urlType === 'github' || !!team.githubUrl;
+  const githubUrl = team.githubUrl || (team.urlType === 'github' ? team.primaryUrl : undefined);
+
   // Fetch latest commit date if team has GitHub URL
   useEffect(() => {
     async function checkCommitDate() {
-      if (!team.githubUrl) return;
+      if (!githubUrl) return;
 
       setIsCheckingCommit(true);
       setCommitCheckError(null);
 
       try {
-        const commitDate = await fetchLatestCommitDateFromUrl(team.githubUrl);
+        const commitDate = await fetchLatestCommitDateFromUrl(githubUrl);
         setLatestCommitDate(commitDate);
       } catch (err) {
         setCommitCheckError('Failed to fetch commit info');
@@ -72,7 +77,7 @@ export function VotingForm({ team }: VotingFormProps) {
     }
 
     checkCommitDate();
-  }, [team.githubUrl]);
+  }, [githubUrl]);
 
   // Determine if commit is late
   const isLateCommit = latestCommitDate && event?.keyboardsDownTime
@@ -188,9 +193,26 @@ export function VotingForm({ team }: VotingFormProps) {
         </div>
 
         <div className="flex flex-wrap gap-4 mb-6">
-          {team.githubUrl && (
+          {/* Primary URL for non-GitHub types */}
+          {team.primaryUrl && team.urlType && team.urlType !== 'github' && (
             <a
-              href={ensureAbsoluteUrl(team.githubUrl)}
+              href={ensureAbsoluteUrl(team.primaryUrl)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`inline-flex items-center gap-2 text-sm hover:underline ${
+                team.urlType === 'website' ? 'text-emerald-400' : 'text-accent'
+              }`}
+            >
+              {team.urlType === 'website' ? <Globe size={14} /> : <LinkIcon size={14} />}
+              {getUrlLinkText(team.urlType)}
+              <ExternalLink size={14} />
+            </a>
+          )}
+
+          {/* GitHub URL (either primary or legacy) */}
+          {(team.githubUrl || (team.urlType === 'github' && team.primaryUrl)) && (
+            <a
+              href={ensureAbsoluteUrl(team.githubUrl || team.primaryUrl!)}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-sm text-accent hover:underline"
@@ -200,6 +222,7 @@ export function VotingForm({ team }: VotingFormProps) {
             </a>
           )}
 
+          {/* Deployment URL (for GitHub submissions) */}
           {team.deploymentUrl && (
             <a
               href={ensureAbsoluteUrl(team.deploymentUrl)}
@@ -213,8 +236,8 @@ export function VotingForm({ team }: VotingFormProps) {
           )}
         </div>
 
-        {/* Commit Status Display */}
-        {team.githubUrl && event?.keyboardsDownTime && (
+        {/* Commit Status Display (GitHub submissions only) */}
+        {isGitHubSubmission && event?.keyboardsDownTime && (
           <div className={`p-4 rounded-lg border mb-6 ${
             isLateCommit
               ? 'bg-red-500/10 border-red-500/30'

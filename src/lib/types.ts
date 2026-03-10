@@ -33,6 +33,8 @@ export interface GitHubRepoData {
   commitCount?: number;
 }
 
+export type SubmissionUrlType = 'github' | 'website' | 'general';
+
 export interface Team {
   id: string;
   name: string;
@@ -42,6 +44,10 @@ export interface Team {
   techStack: string[];
   themeId: string;
   eventId: string;
+  // New fields for multi-URL support
+  primaryUrl?: string;
+  urlType?: SubmissionUrlType;
+  // Keep existing for backwards compatibility
   githubUrl?: string;
   githubData?: GitHubRepoData;
   deploymentUrl?: string;

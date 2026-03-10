@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Github, Loader2, Star, GitFork, ExternalLink, AlertCircle, Calendar } from 'lucide-react';
+import { Github, Loader2, Star, GitFork, ExternalLink, AlertCircle, Calendar, Globe, Link, CheckCircle, ChevronDown } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -14,7 +14,8 @@ import { useEvents } from '@/hooks/useEvents';
 import { useAuth } from '@/context/AuthContext';
 import { parseGitHubUrl, fetchGitHubRepoFromUrl, ensureAbsoluteUrl } from '@/lib/github';
 import { addTeamToOwnership } from '@/lib/indexeddb';
-import { GitHubRepoData, Team } from '@/lib/types';
+import { GitHubRepoData, Team, SubmissionUrlType } from '@/lib/types';
+import { detectUrlType, validateUrl, getUrlTypeInfo } from '@/lib/urls';
 
 interface GitHubSubmissionFormProps {
   initialTeam?: Team;
@@ -28,9 +29,15 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
   const { events, getEventsForSubmission } = useEvents();
   const { user, isAnonymous, ensureOwnershipToken } = useAuth();
 
-  const [githubUrl, setGithubUrl] = useState(initialTeam?.githubUrl || '');
+  // URL and type state
+  const [primaryUrl, setPrimaryUrl] = useState(initialTeam?.primaryUrl || initialTeam?.githubUrl || '');
+  const [urlType, setUrlType] = useState<SubmissionUrlType>(initialTeam?.urlType || (initialTeam?.githubUrl ? 'github' : 'general'));
+  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
+  const [urlValidated, setUrlValidated] = useState(!!initialTeam);
+  const [urlError, setUrlError] = useState<string | null>(null);
+
+  // GitHub-specific state
   const [isFetching, setIsFetching] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
   const [repoData, setRepoData] = useState<GitHubRepoData | null>(initialTeam?.githubData || null);
 
   const [deploymentUrl, setDeploymentUrl] = useState(initialTeam?.deploymentUrl || '');
@@ -43,6 +50,7 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isEditMode = !!initialTeam;
+  const urlTypeInfo = getUrlTypeInfo(urlType);
 
   // Get available events for submission
   const availableEvents = useMemo(() => getEventsForSubmission(), [getEventsForSubmission]);
@@ -65,48 +73,91 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
     }
   };
 
-  const handleFetchRepo = async () => {
-    if (!githubUrl.trim()) {
-      setFetchError('Please enter a GitHub URL');
-      return;
-    }
-
-    const parsed = parseGitHubUrl(githubUrl);
-    if (!parsed) {
-      setFetchError('Invalid GitHub URL format. Expected: github.com/owner/repo');
-      return;
-    }
-
-    setIsFetching(true);
-    setFetchError(null);
+  // Auto-detect URL type when URL changes
+  const handleUrlChange = (url: string) => {
+    setPrimaryUrl(url);
+    setUrlError(null);
+    setUrlValidated(false);
     setRepoData(null);
 
-    try {
-      const data = await fetchGitHubRepoFromUrl(githubUrl);
-      setRepoData(data);
-      // Pre-fill fields from repo name
-      const parts = data.fullName.split('/');
-      if (!teamName) {
-        setTeamName(parts[0] || '');
-      }
-      if (!projectName) {
-        setProjectName(parts[1] || parts[0] || '');
-      }
-      if (!description && data.description) {
-        setDescription(data.description);
-      }
-    } catch (err) {
-      setFetchError(err instanceof Error ? err.message : 'Failed to fetch repository');
-    } finally {
-      setIsFetching(false);
+    if (url.trim()) {
+      const detected = detectUrlType(url);
+      setUrlType(detected);
     }
+  };
+
+  // Validate URL (and fetch GitHub data if applicable)
+  const handleValidateUrl = async () => {
+    if (!primaryUrl.trim()) {
+      setUrlError('Please enter a URL');
+      return;
+    }
+
+    const validation = validateUrl(primaryUrl, urlType);
+    if (!validation.valid) {
+      setUrlError(validation.error || 'Invalid URL');
+      return;
+    }
+
+    // For GitHub URLs, fetch repo data
+    if (urlType === 'github') {
+      const parsed = parseGitHubUrl(primaryUrl);
+      if (!parsed) {
+        setUrlError('Invalid GitHub URL format. Expected: github.com/owner/repo');
+        return;
+      }
+
+      setIsFetching(true);
+      setUrlError(null);
+      setRepoData(null);
+
+      try {
+        const data = await fetchGitHubRepoFromUrl(primaryUrl);
+        setRepoData(data);
+        setUrlValidated(true);
+        // Pre-fill fields from repo name
+        const parts = data.fullName.split('/');
+        if (!teamName) {
+          setTeamName(parts[0] || '');
+        }
+        if (!projectName) {
+          setProjectName(parts[1] || parts[0] || '');
+        }
+        if (!description && data.description) {
+          setDescription(data.description);
+        }
+      } catch (err) {
+        setUrlError(err instanceof Error ? err.message : 'Failed to fetch repository');
+      } finally {
+        setIsFetching(false);
+      }
+    } else {
+      // For non-GitHub URLs, just validate
+      setUrlValidated(true);
+      setUrlError(null);
+    }
+  };
+
+  // Handle manual URL type change
+  const handleUrlTypeChange = (type: SubmissionUrlType) => {
+    setUrlType(type);
+    setShowTypeDropdown(false);
+    setUrlValidated(false);
+    setRepoData(null);
+    setUrlError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!repoData) {
-      showToast('Please fetch a GitHub repository first', 'error');
+    if (!urlValidated) {
+      showToast('Please validate your URL first', 'error');
+      return;
+    }
+
+    // For non-GitHub URLs, description is required
+    if (urlType !== 'github' && !description.trim()) {
+      showToast('Please provide a project description', 'error');
       return;
     }
 
@@ -141,25 +192,46 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
     }
 
     const now = new Date().toISOString();
+
+    // Determine team/project names based on URL type
+    const defaultTeamName = urlType === 'github' && repoData
+      ? repoData.fullName.split('/')[0]
+      : 'Team';
+    const defaultProjectName = urlType === 'github' && repoData
+      ? repoData.fullName.split('/')[1] || repoData.fullName
+      : projectName || 'Project';
+    const defaultDescription = urlType === 'github' && repoData?.description
+      ? repoData.description
+      : description || 'No description provided';
+
+    // Determine tech stack
+    const techStack = urlType === 'github' && repoData
+      ? (repoData.topics.length > 0
+          ? repoData.topics.slice(0, 5)
+          : repoData.language
+            ? [repoData.language]
+            : [])
+      : [];
+
     const teamData: Team = {
       id: initialTeam?.id || uuidv4(),
-      name: teamName || repoData.fullName.split('/')[0] || 'Team',
-      projectName: projectName || repoData.fullName.split('/')[1] || repoData.fullName,
-      description: description || repoData.description || 'No description provided',
+      name: teamName || defaultTeamName,
+      projectName: projectName || defaultProjectName,
+      description: description || defaultDescription,
       members: members
         .split(',')
         .map((m) => m.trim())
         .filter(Boolean),
-      techStack: repoData.topics.length > 0
-        ? repoData.topics.slice(0, 5)
-        : repoData.language
-          ? [repoData.language]
-          : [],
+      techStack,
       themeId: selectedThemeId,
       eventId: selectedEventId,
-      githubUrl: githubUrl.trim(),
-      githubData: repoData,
-      deploymentUrl: deploymentUrl.trim(),
+      // New multi-URL fields
+      primaryUrl: primaryUrl.trim(),
+      urlType,
+      // Backwards compatibility: also set githubUrl for GitHub submissions
+      githubUrl: urlType === 'github' ? primaryUrl.trim() : undefined,
+      githubData: urlType === 'github' ? repoData || undefined : undefined,
+      deploymentUrl: deploymentUrl.trim() || undefined,
       // Preserve existing ownership for edits, or set new ownership for new submissions
       ownerId: isEditMode ? (initialTeam?.ownerId ?? ownerId) : ownerId,
       ownershipToken: isEditMode ? (initialTeam?.ownershipToken ?? ownershipToken) : ownershipToken,
@@ -189,54 +261,127 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
     }
   };
 
-  const isFormValid = repoData && selectedEventId && selectedThemeId;
+  // Form is valid if URL is validated, event and theme are selected
+  // For non-GitHub, description is also required
+  const isFormValid = urlValidated && selectedEventId && selectedThemeId &&
+    (urlType === 'github' || description.trim());
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* GitHub URL Input */}
+      {/* Project URL Input */}
       <Card className="p-6">
-        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <Github size={20} />
-          GitHub Repository
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+            {urlType === 'github' ? (
+              <Github size={20} />
+            ) : urlType === 'website' ? (
+              <Globe size={20} />
+            ) : (
+              <Link size={20} />
+            )}
+            {urlTypeInfo.label}
+          </h2>
+
+          {/* URL Type Selector */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowTypeDropdown(!showTypeDropdown)}
+              className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors px-2 py-1 rounded border border-zinc-700 hover:border-zinc-600"
+            >
+              Change Type
+              <ChevronDown size={12} />
+            </button>
+
+            {showTypeDropdown && (
+              <div className="absolute right-0 top-full mt-1 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg z-10 min-w-[160px]">
+                <button
+                  type="button"
+                  onClick={() => handleUrlTypeChange('github')}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-zinc-700 transition-colors ${urlType === 'github' ? 'text-accent' : 'text-white'}`}
+                >
+                  <Github size={14} />
+                  GitHub Repo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleUrlTypeChange('website')}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-zinc-700 transition-colors ${urlType === 'website' ? 'text-accent' : 'text-white'}`}
+                >
+                  <Globe size={14} />
+                  Website / Demo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleUrlTypeChange('general')}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-zinc-700 transition-colors ${urlType === 'general' ? 'text-accent' : 'text-white'}`}
+                >
+                  <Link size={14} />
+                  General Link
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <p className="text-xs text-zinc-500 mb-4">{urlTypeInfo.description}</p>
 
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="text"
-              value={githubUrl}
-              onChange={(e) => {
-                setGithubUrl(e.target.value);
-                setFetchError(null);
-              }}
-              placeholder="https://github.com/owner/repo"
-              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-sm"
-            />
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={primaryUrl}
+                onChange={(e) => handleUrlChange(e.target.value)}
+                placeholder={urlTypeInfo.placeholder}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-sm"
+              />
+              {urlValidated && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <CheckCircle size={18} className="text-emerald-400" />
+                </div>
+              )}
+            </div>
             <Button
               type="button"
-              onClick={handleFetchRepo}
-              disabled={isFetching}
+              onClick={handleValidateUrl}
+              disabled={isFetching || !primaryUrl.trim()}
               className="shrink-0 h-12 sm:h-auto"
             >
               {isFetching ? (
                 <Loader2 size={18} className="animate-spin" />
-              ) : (
+              ) : urlType === 'github' ? (
                 'Fetch'
+              ) : (
+                'Validate'
               )}
             </Button>
           </div>
 
-          {fetchError && (
+          {/* Auto-detected type indicator */}
+          {primaryUrl && !urlValidated && (
+            <div className="flex items-center gap-2 text-xs text-zinc-500">
+              <span>Detected as:</span>
+              <Badge variant="outline" className="text-[10px] py-0">
+                {urlType === 'github' && <Github size={10} className="mr-1" />}
+                {urlType === 'website' && <Globe size={10} className="mr-1" />}
+                {urlType === 'general' && <Link size={10} className="mr-1" />}
+                {urlTypeInfo.label}
+              </Badge>
+            </div>
+          )}
+
+          {urlError && (
             <div className="flex items-start gap-2 text-red-400 text-sm">
               <AlertCircle size={16} className="mt-0.5 shrink-0" />
-              <span>{fetchError}</span>
+              <span>{urlError}</span>
             </div>
           )}
         </div>
       </Card>
 
-      {/* Repository Preview */}
-      {repoData && (
+      {/* Repository Preview (GitHub only) */}
+      {urlType === 'github' && repoData && (
         <Card className="p-6">
           <h2 className="text-lg font-semibold text-white mb-4">Repository Preview</h2>
 
@@ -249,7 +394,7 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
                 </p>
               </div>
               <a
-                href={ensureAbsoluteUrl(githubUrl)}
+                href={ensureAbsoluteUrl(primaryUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-zinc-400 hover:text-white transition-colors"
@@ -285,6 +430,29 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
         </Card>
       )}
 
+      {/* URL Validated Indicator (non-GitHub) */}
+      {urlType !== 'github' && urlValidated && (
+        <Card className="p-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-500/10 rounded-lg">
+              <CheckCircle size={24} className="text-emerald-400" />
+            </div>
+            <div>
+              <h3 className="text-white font-medium">URL Validated</h3>
+              <a
+                href={ensureAbsoluteUrl(primaryUrl)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-accent hover:underline flex items-center gap-1"
+              >
+                {primaryUrl}
+                <ExternalLink size={12} />
+              </a>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Event Selection */}
       <Card className="p-6">
         <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -316,15 +484,17 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
         </Card>
       )}
 
-      {/* Team Details (Optional Override) */}
-      {repoData && (
+      {/* Team Details */}
+      {urlValidated && (
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Team Details (Optional)</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">
+            {urlType === 'github' ? 'Team Details (Optional)' : 'Project Details'}
+          </h2>
 
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-zinc-400 mb-2">
-                Project Name
+                Project Name {urlType !== 'github' && <span className="text-red-400">*</span>}
               </label>
               <input
                 type="text"
@@ -337,15 +507,22 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
 
             <div>
               <label className="block text-sm font-medium text-zinc-400 mb-2">
-                Project Description
+                Project Description {urlType !== 'github' && <span className="text-red-400">*</span>}
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Briefly describe your project..."
                 rows={3}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none"
+                className={`w-full bg-zinc-800 border rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none ${
+                  urlType !== 'github' && !description.trim() ? 'border-zinc-600' : 'border-zinc-700'
+                }`}
               />
+              {urlType !== 'github' && (
+                <p className="text-xs text-zinc-500 mt-1">
+                  Description is required for non-GitHub submissions
+                </p>
+              )}
             </div>
 
             <div>
@@ -356,23 +533,26 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
                 type="text"
                 value={teamName}
                 onChange={(e) => setTeamName(e.target.value)}
-                placeholder={repoData.fullName.split('/')[0] || 'Team name'}
+                placeholder={urlType === 'github' && repoData ? repoData.fullName.split('/')[0] : 'Team name'}
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">
-                Deployment URL (optional)
-              </label>
-              <input
-                type="url"
-                value={deploymentUrl}
-                onChange={(e) => setDeploymentUrl(e.target.value)}
-                placeholder="https://your-project.vercel.app"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-              />
-            </div>
+            {/* Only show Deployment URL for GitHub submissions (others are already a deployment URL) */}
+            {urlType === 'github' && (
+              <div>
+                <label className="block text-sm font-medium text-zinc-400 mb-2">
+                  Deployment URL (optional)
+                </label>
+                <input
+                  type="url"
+                  value={deploymentUrl}
+                  onChange={(e) => setDeploymentUrl(e.target.value)}
+                  placeholder="https://your-project.vercel.app"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-zinc-400 mb-2">
@@ -407,11 +587,15 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
         )}
       </Button>
 
-      {!isFormValid && repoData && (
+      {!isFormValid && urlValidated && (
         <p className="text-sm text-zinc-500 text-center">
           {!selectedEventId
             ? 'Please select an event to continue'
-            : 'Please select a theme to continue'}
+            : !selectedThemeId
+              ? 'Please select a theme to continue'
+              : urlType !== 'github' && !description.trim()
+                ? 'Please provide a project description'
+                : ''}
         </p>
       )}
     </form>

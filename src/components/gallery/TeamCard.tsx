@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronRight, Users, Code, Github, ExternalLink, Edit2 } from 'lucide-react';
+import { ChevronRight, Users, Code, Github, ExternalLink, Edit2, Globe, Link as LinkIcon } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { DeleteButton } from '@/components/admin/DeleteButton';
@@ -102,15 +102,31 @@ export function TeamCard({ team }: TeamCardProps) {
           {/* Links and Actions */}
           <div className="flex items-center justify-between mt-auto pt-4 border-t border-zinc-800/50 pointer-events-auto">
             <div className="flex items-center gap-2 md:gap-3">
-              {team.githubUrl && (
+              {/* Primary URL based on type */}
+              {team.primaryUrl && team.urlType && team.urlType !== 'github' && (
                 <button
-                  onClick={(e) => handleExternalLink(e, team.githubUrl!)}
+                  onClick={(e) => handleExternalLink(e, team.primaryUrl!)}
+                  className={`p-1.5 sm:p-2 rounded-md bg-zinc-800/50 transition-all relative z-20 ${
+                    team.urlType === 'website'
+                      ? 'text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10'
+                      : 'text-zinc-400 hover:text-white hover:bg-zinc-700'
+                  }`}
+                  title={team.urlType === 'website' ? 'Visit Website' : 'View Project'}
+                >
+                  {team.urlType === 'website' ? <Globe size={16} /> : <LinkIcon size={16} />}
+                </button>
+              )}
+              {/* GitHub URL (either primary or legacy) */}
+              {(team.githubUrl || (team.urlType === 'github' && team.primaryUrl)) && (
+                <button
+                  onClick={(e) => handleExternalLink(e, team.githubUrl || team.primaryUrl!)}
                   className="p-1.5 sm:p-2 rounded-md bg-zinc-800/50 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-all relative z-20"
                   title="View GitHub"
                 >
                   <Github size={16} />
                 </button>
               )}
+              {/* Deployment URL (for GitHub submissions) */}
               {team.deploymentUrl && (
                 <button
                   onClick={(e) => handleExternalLink(e, team.deploymentUrl!)}

@@ -70,14 +70,17 @@ export function calculateTeamScores(
     };
   });
 
-  // Sort by total average DESC, then by commit count ASC (fewer commits wins), then by favorites DESC
+  // Sort by total average DESC, then by commit count ASC (fewer commits wins, GitHub only), then by favorites DESC
   teamScores.sort((a, b) => {
     if (b.totalAverage !== a.totalAverage) {
       return b.totalAverage - a.totalAverage;
     }
-    // Fewer commits wins (efficiency tiebreaker)
-    const aCommits = a.team.githubData?.commitCount ?? Infinity;
-    const bCommits = b.team.githubData?.commitCount ?? Infinity;
+    // Commit tiebreaker only applies to GitHub submissions
+    // Non-GitHub submissions get Infinity (effectively no commit-based tiebreaker)
+    const aIsGitHub = a.team.urlType === 'github' || !!a.team.githubUrl;
+    const bIsGitHub = b.team.urlType === 'github' || !!b.team.githubUrl;
+    const aCommits = aIsGitHub ? (a.team.githubData?.commitCount ?? Infinity) : Infinity;
+    const bCommits = bIsGitHub ? (b.team.githubData?.commitCount ?? Infinity) : Infinity;
     if (aCommits !== bCommits) {
       return aCommits - bCommits;
     }
