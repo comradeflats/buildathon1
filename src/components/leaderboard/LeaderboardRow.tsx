@@ -10,6 +10,7 @@ import { TeamScore } from '@/lib/types';
 import { useVoting } from '@/context/VotingContext';
 import { useAdmin } from '@/context/AdminContext';
 import { formatScore } from '@/lib/scoring';
+import { getThemeIcon, getThemeIconColor } from '@/lib/themeIcons';
 
 interface LeaderboardRowProps {
   teamScore: TeamScore;
@@ -66,7 +67,10 @@ export function LeaderboardRow({ teamScore, rank }: LeaderboardRowProps) {
               {isWinner && <Badge variant="winner" className="text-[10px] py-0 px-1">Winner</Badge>}
               {theme && (
                 <span className="text-sm" title={theme.name}>
-                  {theme.emoji}
+                  {(() => {
+                    const ThemeIcon = getThemeIcon(theme);
+                    return <ThemeIcon size={20} className={getThemeIconColor(theme)} />;
+                  })()}
                 </span>
               )}
             </div>
@@ -116,7 +120,10 @@ export function LeaderboardRow({ teamScore, rank }: LeaderboardRowProps) {
           {theme && (
             <div className="pt-4 pb-3 mb-3 border-b border-zinc-800">
               <div className="flex items-center gap-2">
-                <span className="text-xl">{theme.emoji}</span>
+                {(() => {
+                  const ThemeIcon = getThemeIcon(theme);
+                  return <ThemeIcon size={20} className={getThemeIconColor(theme)} />;
+                })()}
                 <span className="text-sm font-medium text-white">{theme.name}</span>
               </div>
               <p className="text-xs text-zinc-500 mt-1">{theme.concept}</p>

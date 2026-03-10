@@ -3,6 +3,8 @@
     "id": "micro-helper",
     "name": "The Micro-Helper",
     "emoji": "🔧",
+    "iconKey": "wrench",
+    "iconColor": "text-orange-400",
     "concept": "Build something small but mighty",
     "judgingCriteria": [
       "Does it work without errors?",
@@ -16,6 +18,8 @@
     "id": "no-javascript",
     "name": "The No-JavaScript Challenge",
     "emoji": "🎨",
+    "iconKey": "palette",
+    "iconColor": "text-pink-400",
     "concept": "Pure HTML & CSS magic",
     "judgingCriteria": [
       "Is there absolutely zero JavaScript?",
@@ -29,6 +33,8 @@
     "id": "cli-champion",
     "name": "The CLI Champion",
     "emoji": "💻",
+    "iconKey": "terminal",
+    "iconColor": "text-emerald-400",
     "concept": "Terminal-only interface",
     "judgingCriteria": [
       "Does it run without a GUI?",
@@ -42,6 +48,8 @@
     "id": "mobile-first",
     "name": "The Mobile-First Mandate",
     "emoji": "📱",
+    "iconKey": "smartphone",
+    "iconColor": "text-sky-400",
     "concept": "Phone-optimized from the start",
     "judgingCriteria": [
       "Does it work perfectly on mobile first?",
@@ -55,6 +63,8 @@
     "id": "productivity-booster",
     "name": "The Productivity Booster",
     "emoji": "⚡",
+    "iconKey": "zap",
+    "iconColor": "text-yellow-400",
     "concept": "Save time, boost efficiency",
     "judgingCriteria": [
       "Does it solve a real productivity problem?",
@@ -68,6 +78,8 @@
     "id": "accessibility-hero",
     "name": "The Accessibility Hero",
     "emoji": "♿",
+    "iconKey": "accessibility",
+    "iconColor": "text-blue-400",
     "concept": "Inclusive design for everyone",
     "judgingCriteria": [
       "Can you navigate everything with keyboard only?",
@@ -81,6 +93,8 @@
     "id": "developer-tool",
     "name": "The Developer Tool",
     "emoji": "🛠️",
+    "iconKey": "code",
+    "iconColor": "text-violet-400",
     "concept": "Make coding easier",
     "judgingCriteria": [
       "Does it solve a real developer problem?",
@@ -94,6 +108,8 @@
     "id": "data-visualizer",
     "name": "The Data Visualizer",
     "emoji": "📊",
+    "iconKey": "gauge",
+    "iconColor": "text-cyan-400",
     "concept": "Make data beautiful and clear",
     "judgingCriteria": [
       "Does it accept and parse data correctly?",
@@ -107,6 +123,8 @@
     "id": "api-mashup",
     "name": "The API Mashup",
     "emoji": "🔗",
+    "iconKey": "link",
+    "iconColor": "text-indigo-400",
     "concept": "Combine two or more APIs",
     "judgingCriteria": [
       "Does it meaningfully combine 2+ APIs?",
@@ -120,6 +138,8 @@
     "id": "local-first",
     "name": "The Local-First App",
     "emoji": "💾",
+    "iconKey": "hardDrive",
+    "iconColor": "text-slate-400",
     "concept": "No backend allowed",
     "judgingCriteria": [
       "Does it work without a backend?",
@@ -133,6 +153,8 @@
     "id": "real-time",
     "name": "The Real-Time Experience",
     "emoji": "🔴",
+    "iconKey": "activity",
+    "iconColor": "text-red-400",
     "concept": "Live updates and instant feedback",
     "judgingCriteria": [
       "Does it update in real-time?",
@@ -146,6 +168,8 @@
     "id": "game-jam",
     "name": "The Game Jam Mini",
     "emoji": "🎮",
+    "iconKey": "gamepad2",
+    "iconColor": "text-fuchsia-400",
     "concept": "Playable game in browser",
     "judgingCriteria": [
       "Is it actually playable and fun?",

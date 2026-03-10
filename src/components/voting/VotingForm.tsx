@@ -14,6 +14,7 @@ import { useEvents } from '@/hooks/useEvents';
 import { useAuth } from '@/context/AuthContext';
 import { ensureAbsoluteUrl, fetchLatestCommitDateFromUrl } from '@/lib/github';
 import { Team, Scores } from '@/lib/types';
+import { getThemeIcon, getThemeIconColor } from '@/lib/themeIcons';
 
 interface VotingFormProps {
   team: Team;
@@ -151,7 +152,10 @@ export function VotingForm({ team }: VotingFormProps) {
         {/* Theme Badge */}
         {theme && (
           <div className="flex items-center gap-2 mb-4 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700">
-            <span className="text-2xl">{theme.emoji}</span>
+            {(() => {
+              const ThemeIcon = getThemeIcon(theme);
+              return <ThemeIcon size={24} className={getThemeIconColor(theme)} />;
+            })()}
             <div>
               <p className="text-sm font-medium text-white">{theme.name}</p>
               <p className="text-xs text-zinc-400">{theme.concept}</p>

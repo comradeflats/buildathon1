@@ -12,7 +12,7 @@ import { EventSelector } from './EventSelector';
 import { useVoting } from '@/context/VotingContext';
 import { useEvents } from '@/hooks/useEvents';
 import { useAuth } from '@/context/AuthContext';
-import { parseGitHubUrl, fetchGitHubRepoFromUrl } from '@/lib/github';
+import { parseGitHubUrl, fetchGitHubRepoFromUrl, ensureAbsoluteUrl } from '@/lib/github';
 import { addTeamToOwnership } from '@/lib/indexeddb';
 import { GitHubRepoData, Team } from '@/lib/types';
 
@@ -249,7 +249,7 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
                 </p>
               </div>
               <a
-                href={githubUrl}
+                href={ensureAbsoluteUrl(githubUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-zinc-400 hover:text-white transition-colors"

@@ -10,6 +10,7 @@ import { useVoting } from '@/context/VotingContext';
 import { useAdmin } from '@/context/AdminContext';
 import { useAuth } from '@/context/AuthContext';
 import { ensureAbsoluteUrl } from '@/lib/github';
+import { getThemeIcon, getThemeIconColor } from '@/lib/themeIcons';
 
 interface TeamCardProps {
   team: Team;
@@ -54,12 +55,6 @@ export function TeamCard({ team }: TeamCardProps) {
           aria-label={`Vote for ${team.projectName}`} 
         />
 
-        {/* Delete Button - Top Right */}
-        {isAdmin && (
-          <div className="relative z-30">
-            <DeleteButton onDelete={handleDelete} itemName={team.projectName} />
-          </div>
-        )}
 
         <div className="relative z-10 pointer-events-none flex flex-col h-full">
           <div className="flex items-start justify-between mb-3 gap-2">
@@ -77,7 +72,10 @@ export function TeamCard({ team }: TeamCardProps) {
           {/* Theme Badge */}
           {theme && (
             <div className="flex items-center gap-1.5 mb-3">
-              <span className="text-base md:text-lg">{theme.emoji}</span>
+              {(() => {
+                const ThemeIcon = getThemeIcon(theme);
+                return <ThemeIcon size={18} className={`shrink-0 ${getThemeIconColor(theme)}`} />;
+              })()}
               <span className="text-[10px] md:text-xs text-zinc-400 font-medium truncate">{theme.name}</span>
             </div>
           )}
@@ -124,7 +122,10 @@ export function TeamCard({ team }: TeamCardProps) {
               )}
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex flex-col items-center gap-1">
+              {isAdmin && (
+                <DeleteButton onDelete={handleDelete} itemName={team.projectName} />
+              )}
               {canEdit && (
                 <Link
                   href={`/submit?teamId=${team.id}`}
