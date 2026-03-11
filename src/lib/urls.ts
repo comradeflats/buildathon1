@@ -122,7 +122,7 @@ export function getUrlTypeInfo(type: SubmissionUrlType): UrlTypeInfo {
       return {
         type: 'github',
         label: 'GitHub Repository',
-        description: 'Link to your source code repository',
+        description: 'Submit your source code repo. We\'ll auto-fetch project details and check commit timestamps.',
         icon: 'github',
         placeholder: 'https://github.com/owner/repo',
         requiresDescription: false,
@@ -131,7 +131,7 @@ export function getUrlTypeInfo(type: SubmissionUrlType): UrlTypeInfo {
       return {
         type: 'website',
         label: 'Website / Demo',
-        description: 'Link to your deployed application',
+        description: 'Submit a deployed app, demo, or landing page. Perfect for no-code tools or hosted projects.',
         icon: 'globe',
         placeholder: 'https://your-app.vercel.app',
         requiresDescription: true,
@@ -139,10 +139,10 @@ export function getUrlTypeInfo(type: SubmissionUrlType): UrlTypeInfo {
     case 'general':
       return {
         type: 'general',
-        label: 'Project Link',
-        description: 'Any project-related link',
+        label: 'Any Link',
+        description: 'Submit any URL: Figma prototype, Notion doc, video demo, or other project link.',
         icon: 'link',
-        placeholder: 'https://your-project-link.com',
+        placeholder: 'https://figma.com/file/... or https://notion.so/...',
         requiresDescription: true,
       };
   }

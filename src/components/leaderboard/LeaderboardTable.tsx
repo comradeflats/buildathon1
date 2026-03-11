@@ -2,12 +2,18 @@
 
 import { LeaderboardRow } from './LeaderboardRow';
 import { useVoting } from '@/context/VotingContext';
-import { Loader2 } from 'lucide-react';
+import { useEvents } from '@/hooks/useEvents';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 
-export function LeaderboardTable() {
+interface LeaderboardTableProps {
+  eventId?: string;
+}
+
+export function LeaderboardTable({ eventId }: LeaderboardTableProps) {
   const { getLeaderboard, isLoading, isVotesLoaded } = useVoting();
+  const { events, isLoading: isEventsLoading } = useEvents();
 
-  if (isLoading || !isVotesLoaded) {
+  if (isLoading || !isVotesLoaded || isEventsLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="w-8 h-8 animate-spin text-accent" />
@@ -15,7 +21,22 @@ export function LeaderboardTable() {
     );
   }
 
-  const leaderboard = getLeaderboard();
+  const leaderboard = getLeaderboard(eventId);
+
+  // Check if scores should be revealed
+  // If no eventId provided, check if ALL events have scores revealed
+  // If eventId provided, check that specific event
+  const shouldShowScores = (() => {
+    if (eventId) {
+      const event = events.find(e => e.id === eventId);
+      return event?.scoresRevealed !== false; // Default to showing if not explicitly hidden
+    }
+    // For global leaderboard, show scores only if all events have them revealed
+    // Or default to showing if no events have scoresRevealed set
+    const relevantEvents = events.filter(e => e.status === 'active' || e.status === 'archived');
+    if (relevantEvents.length === 0) return true;
+    return relevantEvents.every(e => e.scoresRevealed !== false);
+  })();
 
   if (leaderboard.length === 0) {
     return (
@@ -29,6 +50,15 @@ export function LeaderboardTable() {
 
   return (
     <div className="space-y-3">
+      {!shouldShowScores && hasVotes && (
+        <div className="flex items-center gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-400">
+          <EyeOff size={20} />
+          <div>
+            <p className="font-medium">Scores Hidden</p>
+            <p className="text-sm text-amber-400/80">Results will be revealed after voting closes</p>
+          </div>
+        </div>
+      )}
       {!hasVotes && (
         <div className="text-center py-8 text-zinc-400 bg-card rounded-lg border border-zinc-800">
           <p>No votes have been submitted yet.</p>
@@ -39,7 +69,8 @@ export function LeaderboardTable() {
         <LeaderboardRow
           key={teamScore.teamId}
           teamScore={teamScore}
-          rank={index + 1}
+          rank={shouldShowScores ? index + 1 : undefined}
+          hideScores={!shouldShowScores}
         />
       ))}
     </div>

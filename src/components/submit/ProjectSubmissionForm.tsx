@@ -17,13 +17,13 @@ import { addTeamToOwnership } from '@/lib/indexeddb';
 import { GitHubRepoData, Team, SubmissionUrlType } from '@/lib/types';
 import { detectUrlType, validateUrl, getUrlTypeInfo } from '@/lib/urls';
 
-interface GitHubSubmissionFormProps {
+interface ProjectSubmissionFormProps {
   initialTeam?: Team;
   preselectedEventId?: string;
   preselectedThemeId?: string;
 }
 
-export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselectedThemeId }: GitHubSubmissionFormProps) {
+export function ProjectSubmissionForm({ initialTeam, preselectedEventId, preselectedThemeId }: ProjectSubmissionFormProps) {
   const router = useRouter();
   const { themes, addTeam, updateTeam, showToast } = useVoting();
   const { events, getEventsForSubmission } = useEvents();
@@ -277,6 +277,58 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Submission Type Intro - Show only when URL not yet entered */}
+      {!primaryUrl.trim() && !isEditMode && (
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-white mb-2">What are you submitting?</h2>
+          <p className="text-sm text-zinc-400 mb-4">Choose how you want to share your project</p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button
+              type="button"
+              onClick={() => handleUrlTypeChange('github')}
+              className={`p-4 rounded-lg border text-left transition-all ${
+                urlType === 'github'
+                  ? 'border-accent bg-accent/10'
+                  : 'border-zinc-700 hover:border-zinc-600 hover:bg-zinc-800/50'
+              }`}
+            >
+              <Github size={24} className={urlType === 'github' ? 'text-accent' : 'text-zinc-400'} />
+              <h3 className="font-medium text-white mt-2">GitHub Repo</h3>
+              <p className="text-xs text-zinc-500 mt-1">Source code repository</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleUrlTypeChange('website')}
+              className={`p-4 rounded-lg border text-left transition-all ${
+                urlType === 'website'
+                  ? 'border-emerald-500 bg-emerald-500/10'
+                  : 'border-zinc-700 hover:border-zinc-600 hover:bg-zinc-800/50'
+              }`}
+            >
+              <Globe size={24} className={urlType === 'website' ? 'text-emerald-400' : 'text-zinc-400'} />
+              <h3 className="font-medium text-white mt-2">Website / Demo</h3>
+              <p className="text-xs text-zinc-500 mt-1">Deployed app or demo</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleUrlTypeChange('general')}
+              className={`p-4 rounded-lg border text-left transition-all ${
+                urlType === 'general'
+                  ? 'border-blue-500 bg-blue-500/10'
+                  : 'border-zinc-700 hover:border-zinc-600 hover:bg-zinc-800/50'
+              }`}
+            >
+              <Link size={24} className={urlType === 'general' ? 'text-blue-400' : 'text-zinc-400'} />
+              <h3 className="font-medium text-white mt-2">Any Link</h3>
+              <p className="text-xs text-zinc-500 mt-1">Figma, Notion, video, etc.</p>
+            </button>
+          </div>
+        </Card>
+      )}
+
       {/* Project URL Input */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
@@ -326,7 +378,7 @@ export function GitHubSubmissionForm({ initialTeam, preselectedEventId, preselec
                   className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-zinc-700 transition-colors ${urlType === 'general' ? 'text-accent' : 'text-white'}`}
                 >
                   <Link size={14} />
-                  General Link
+                  Any Link
                 </button>
               </div>
             )}

@@ -145,7 +145,7 @@ export function VotingForm({ team }: VotingFormProps) {
   const hasOtherFavorite = favoriteTeamId && favoriteTeamId !== team.id;
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl lg:max-w-4xl mx-auto">
       <Link
         href="/"
         className="inline-flex items-center gap-2 text-zinc-400 hover:text-white transition-colors mb-6"
@@ -331,7 +331,7 @@ export function VotingForm({ team }: VotingFormProps) {
                 Loading criteria...
               </div>
             ) : (
-              <div className="space-y-6 mb-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6 mb-8">
                 {criteria.map((criterion, index) => (
                   <CriteriaSlider
                     key={index}

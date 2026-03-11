@@ -6,7 +6,6 @@ import { ArrowLeft, Calendar, Users, Loader2, Plus, Clock } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { TeamCard } from '@/components/gallery/TeamCard';
 import { useEvents } from '@/hooks/useEvents';
 import { useTeams } from '@/hooks/useTeams';
 import { useThemes } from '@/hooks/useThemes';
@@ -185,35 +184,16 @@ export default function EventPage() {
         </Card>
       )}
 
-      {/* Teams Grid */}
-      <div>
-        <h2 className="text-lg font-semibold text-white mb-4">
-          Submitted Projects
-        </h2>
-        {eventTeams.length === 0 ? (
-          <Card className="p-12 text-center">
-            <Users size={48} className="mx-auto text-zinc-600 mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">No Projects Yet</h3>
-            <p className="text-zinc-400 mb-4">
-              Be the first to submit a project to this event!
-            </p>
-            {canSubmit && (
-              <Link href={`/submit?eventId=${eventId}`}>
-                <Button>
-                  <Plus size={16} className="mr-2" />
-                  Submit Your Project
-                </Button>
-              </Link>
-            )}
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {eventTeams.map((team) => (
-              <TeamCard key={team.id} team={team} />
-            ))}
-          </div>
-        )}
-      </div>
+      {/* View Submissions Link */}
+      {eventTeams.length > 0 && (
+        <div className="flex justify-center">
+          <Link href={`/gallery?eventId=${eventId}`}>
+            <Button variant="secondary" size="lg">
+              View Submissions in Gallery
+            </Button>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

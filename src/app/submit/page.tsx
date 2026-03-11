@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { GitHubSubmissionForm } from '@/components/submit/GitHubSubmissionForm';
+import { ProjectSubmissionForm } from '@/components/submit/ProjectSubmissionForm';
 import { useVoting } from '@/context/VotingContext';
 import { useEvents } from '@/hooks/useEvents';
 import { Loader2 } from 'lucide-react';
@@ -43,11 +43,11 @@ function SubmitPageContent() {
             ? `Update details for ${teamToEdit.projectName}`
             : preselectedEvent
               ? `Submitting to ${preselectedEvent.name}`
-              : 'Enter your GitHub repository to pull project details automatically.'}
+              : 'Share your project via GitHub, a live demo, or any link'}
         </p>
       </header>
 
-      <GitHubSubmissionForm
+      <ProjectSubmissionForm
         initialTeam={teamToEdit}
         preselectedEventId={eventId || undefined}
         preselectedThemeId={themeId || undefined}

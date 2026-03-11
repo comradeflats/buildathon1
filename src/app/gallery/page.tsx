@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { ChevronRight, Loader2, Search, Filter, LayoutGrid } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { TeamCard } from '@/components/gallery/TeamCard';
@@ -10,13 +11,25 @@ import { useTeams } from '@/hooks/useTeams';
 import { useEvents } from '@/hooks/useEvents';
 import { useThemes } from '@/hooks/useThemes';
 
-export default function GalleryPage() {
+function GalleryContent() {
+  const searchParams = useSearchParams();
   const { teams, isLoading: isTeamsLoading } = useTeams();
   const { events, isLoading: isEventsLoading, getEventById } = useEvents();
   const { themes, isLoading: isThemesLoading, getThemesByEventId } = useThemes();
 
-  const [selectedEventId, setSelectedEventId] = useState<string>('');
+  const [selectedEventId, setSelectedEventId] = useState<string>(() => {
+    return searchParams.get('eventId') || '';
+  });
   const [selectedThemeId, setSelectedThemeId] = useState<string>('');
+
+  // Sync with URL params when they change (e.g., browser back/forward)
+  useEffect(() => {
+    const eventIdFromUrl = searchParams.get('eventId') || '';
+    if (eventIdFromUrl !== selectedEventId) {
+      setSelectedEventId(eventIdFromUrl);
+      setSelectedThemeId('');
+    }
+  }, [searchParams]);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const isLoading = isTeamsLoading || isEventsLoading || isThemesLoading;
@@ -169,5 +182,19 @@ export default function GalleryPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function GalleryPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <Loader2 size={32} className="animate-spin text-zinc-400" />
+        </div>
+      }
+    >
+      <GalleryContent />
+    </Suspense>
   );
 }

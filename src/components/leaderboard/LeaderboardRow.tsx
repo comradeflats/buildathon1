@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Trophy, Heart, Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { ChevronDown, ChevronUp, Trophy, Heart, Trash2, Vote, Edit3 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import { StarRating } from '@/components/ui/StarRating';
 import { DeleteButton } from '@/components/admin/DeleteButton';
 import { TeamScore } from '@/lib/types';
@@ -14,17 +16,19 @@ import { getThemeIcon, getThemeIconColor } from '@/lib/themeIcons';
 
 interface LeaderboardRowProps {
   teamScore: TeamScore;
-  rank: number;
+  rank?: number;
+  hideScores?: boolean;
 }
 
-export function LeaderboardRow({ teamScore, rank }: LeaderboardRowProps) {
+export function LeaderboardRow({ teamScore, rank, hideScores = false }: LeaderboardRowProps) {
   const [expanded, setExpanded] = useState(false);
-  const { getThemeById, getThemeCriteria, deleteTeam, showToast } = useVoting();
+  const { getThemeById, getThemeCriteria, deleteTeam, showToast, hasVotedFor } = useVoting();
   const { isAdmin } = useAdmin();
 
-  const isWinner = rank === 1 && teamScore.voteCount > 0;
+  const isWinner = !hideScores && rank === 1 && teamScore.voteCount > 0;
   const theme = getThemeById(teamScore.team.themeId);
   const criteria = getThemeCriteria(teamScore.team.themeId);
+  const hasVoted = hasVotedFor(teamScore.teamId);
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -49,14 +53,16 @@ export function LeaderboardRow({ teamScore, rank }: LeaderboardRowProps) {
         >
           <div
             className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-              isWinner
+              hideScores
+                ? 'bg-zinc-700 text-zinc-500'
+                : isWinner
                 ? 'bg-winner/20 text-winner'
-                : rank <= 3
+                : rank && rank <= 3
                 ? 'bg-accent/20 text-accent'
                 : 'bg-zinc-700 text-zinc-400'
             }`}
           >
-            {isWinner ? <Trophy size={20} /> : rank}
+            {hideScores ? '?' : isWinner ? <Trophy size={20} /> : rank}
           </div>
 
           <div className="flex-1 min-w-0">
@@ -87,7 +93,13 @@ export function LeaderboardRow({ teamScore, rank }: LeaderboardRowProps) {
 
           <div className="text-right ml-auto shrink-0 pr-2">
             <div className="text-lg md:text-xl font-bold text-white leading-tight">
-              {teamScore.voteCount > 0 ? formatScore(teamScore.totalAverage) : '-'}
+              {hideScores ? (
+                <span className="text-zinc-500">---</span>
+              ) : teamScore.voteCount > 0 ? (
+                formatScore(teamScore.totalAverage)
+              ) : (
+                '-'
+              )}
             </div>
             <div className="text-[10px] md:text-xs text-zinc-500 uppercase tracking-wider font-medium">
               {teamScore.voteCount} {teamScore.voteCount === 1 ? 'vote' : 'votes'}
@@ -114,7 +126,7 @@ export function LeaderboardRow({ teamScore, rank }: LeaderboardRowProps) {
         </div>
       </div>
 
-      {expanded && teamScore.voteCount > 0 && (
+      {expanded && (
         <div className="px-4 pb-4 border-t border-zinc-800">
           {/* Theme Info */}
           {theme && (
@@ -130,32 +142,40 @@ export function LeaderboardRow({ teamScore, rank }: LeaderboardRowProps) {
             </div>
           )}
 
-          {/* Dynamic Criteria Scores */}
-          <div className="pt-2 space-y-3">
-            {criteria.map((criterion, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between"
-              >
-                <span className="text-sm text-zinc-400 flex-1 pr-4">
-                  {index + 1}. {criterion}
-                </span>
-                <div className="flex items-center gap-3">
-                  <StarRating
-                    value={Math.round(teamScore.averageScores[index] || 0)}
-                    readonly
-                    size="sm"
-                  />
-                  <span className="text-sm text-white w-8 text-right">
-                    {formatScore(teamScore.averageScores[index] || 0)}
-                  </span>
-                </div>
+          {/* Dynamic Criteria Scores - Hidden when scores not revealed or no votes */}
+          {teamScore.voteCount > 0 && (
+            hideScores ? (
+              <div className="pt-4 text-center text-zinc-500">
+                <p className="text-sm">Detailed scores will be revealed after voting closes</p>
               </div>
-            ))}
-          </div>
+            ) : (
+              <div className="pt-2 space-y-3">
+                {criteria.map((criterion, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between"
+                  >
+                    <span className="text-sm text-zinc-400 flex-1 pr-4">
+                      {index + 1}. {criterion}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <StarRating
+                        value={Math.round(teamScore.averageScores[index] || 0)}
+                        readonly
+                        size="sm"
+                      />
+                      <span className="text-sm text-white w-8 text-right">
+                        {formatScore(teamScore.averageScores[index] || 0)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
 
-          {/* Favorites Count */}
-          {teamScore.favoriteCount > 0 && (
+          {/* Favorites Count - Hidden when scores not revealed */}
+          {!hideScores && teamScore.favoriteCount > 0 && (
             <div className="mt-4 pt-3 border-t border-zinc-800 flex items-center gap-2">
               <Heart size={16} className="text-red-400 fill-current" />
               <span className="text-sm text-zinc-400">
@@ -163,6 +183,25 @@ export function LeaderboardRow({ teamScore, rank }: LeaderboardRowProps) {
               </span>
             </div>
           )}
+
+          {/* Vote Button */}
+          <div className="mt-4 pt-3 border-t border-zinc-800">
+            <Link href={`/vote?teamId=${teamScore.teamId}`}>
+              <Button variant={hasVoted ? 'secondary' : 'primary'} size="sm" className="w-full">
+                {hasVoted ? (
+                  <>
+                    <Edit3 size={16} className="mr-2" />
+                    View / Edit Vote
+                  </>
+                ) : (
+                  <>
+                    <Vote size={16} className="mr-2" />
+                    Vote on Project
+                  </>
+                )}
+              </Button>
+            </Link>
+          </div>
         </div>
       )}
     </Card>

@@ -10,6 +10,7 @@ export interface Event {
   keyboardsDownTime?: string;     // ISO datetime - when coding must stop
   createdAt: string;
   themesGenerated: boolean;
+  scoresRevealed?: boolean;       // Whether leaderboard scores are visible
 }
 
 export interface Theme {

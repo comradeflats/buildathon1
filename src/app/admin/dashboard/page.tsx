@@ -11,28 +11,23 @@ import {
   LogOut,
   ArrowLeft,
   Trash2,
-  CheckCircle,
-  Clock,
-  Archive,
   AlertCircle,
   Users,
-  Trophy,
   Edit2,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { DeleteButton } from '@/components/admin/DeleteButton';
 import { useAdmin } from '@/context/AdminContext';
 import { useEvents } from '@/hooks/useEvents';
-import { useTeams } from '@/hooks/useTeams';
-import { Event, Team } from '@/lib/types';
+import { Event } from '@/lib/types';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const { isAdmin, isLoading: isAdminLoading, logout } = useAdmin();
   const { events, isLoading: isEventsLoading, createEvent, updateEvent, deleteEvent } = useEvents();
-  const { teams, isLoading: isTeamsLoading, removeTeam } = useTeams();
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newEventName, setNewEventName] = useState('');
@@ -156,11 +151,14 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleDeleteTeam = async (teamId: string) => {
+  const handleToggleScoresRevealed = async (event: Event) => {
     try {
-      await removeTeam(teamId);
+      await updateEvent({
+        ...event,
+        scoresRevealed: !event.scoresRevealed,
+      });
     } catch (err) {
-      setError('Failed to delete submission');
+      setError('Failed to update score visibility');
     }
   };
 
@@ -223,7 +221,7 @@ export default function AdminDashboardPage() {
     router.push('/admin');
   };
 
-  if (isAdminLoading || isEventsLoading || isTeamsLoading) {
+  if (isAdminLoading || isEventsLoading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <Loader2 size={32} className="animate-spin text-zinc-400" />
@@ -264,9 +262,9 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Events */}
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 gap-8">
+        {/* Events */}
+        <div className="space-y-6">
           <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -495,6 +493,26 @@ export default function AdminDashboardPage() {
                             {event.themesGenerated ? 'Themes' : 'Generate'}
                           </Button>
 
+                          <Button
+                            size="sm"
+                            variant={event.scoresRevealed ? 'secondary' : 'primary'}
+                            onClick={() => handleToggleScoresRevealed(event)}
+                            className="h-8 text-xs"
+                            title={event.scoresRevealed ? 'Hide Scores' : 'Reveal Scores'}
+                          >
+                            {event.scoresRevealed ? (
+                              <>
+                                <EyeOff size={14} className="mr-1" />
+                                Hide
+                              </>
+                            ) : (
+                              <>
+                                <Eye size={14} className="mr-1" />
+                                Reveal
+                              </>
+                            )}
+                          </Button>
+
                           <button
                             onClick={() => handleStartEdit(event)}
                             className="p-2 text-zinc-600 hover:text-accent hover:bg-accent/10 rounded-lg transition-colors"
@@ -515,46 +533,6 @@ export default function AdminDashboardPage() {
                     )}
                   </div>
                 ))
-              )}
-            </div>
-          </Card>
-        </div>
-
-        {/* Right Column: Submissions Management */}
-        <div className="space-y-6">
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-              <Trophy size={20} className="text-winner" />
-              Submissions
-            </h2>
-
-            <div className="space-y-4">
-              {isTeamsLoading ? (
-                <div className="py-8 flex justify-center"><Loader2 className="animate-spin text-zinc-600" /></div>
-              ) : teams.length === 0 ? (
-                <p className="text-sm text-zinc-500 text-center py-4">No submissions yet.</p>
-              ) : (
-                teams.map((team) => {
-                  const event = events.find(e => e.id === team.eventId);
-                  return (
-                    <div key={team.id} className="p-3 bg-zinc-900/50 rounded-lg border border-zinc-800 space-y-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <h4 className="text-sm font-bold text-white truncate" title={team.projectName}>
-                            {team.projectName}
-                          </h4>
-                          <p className="text-[10px] text-zinc-500 truncate">{team.name}</p>
-                        </div>
-                        <DeleteButton onDelete={() => handleDeleteTeam(team.id)} itemName={team.projectName} />
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-zinc-800 text-zinc-400 border-none">
-                          {event?.name || 'Unknown Event'}
-                        </Badge>
-                      </div>
-                    </div>
-                  );
-                })
               )}
             </div>
           </Card>
