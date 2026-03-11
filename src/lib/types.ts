@@ -1,3 +1,43 @@
+// Multi-tenant types
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;              // Unique identifier for URLs
+  description?: string;
+  logoUrl?: string;
+  websiteUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;         // Firebase UID
+  memberCount: number;
+  settings: {
+    allowPublicEventDiscovery: boolean;
+  };
+}
+
+export interface OrgMember {
+  id: string;
+  organizationId: string;
+  userId: string;            // Firebase Auth UID
+  role: 'owner' | 'admin' | 'member';
+  email: string;
+  displayName?: string;
+  joinedAt: string;
+  invitedBy?: string;
+}
+
+export interface User {
+  id: string;                // Firebase Auth UID
+  email: string;
+  displayName?: string;
+  photoUrl?: string;
+  githubUsername?: string;
+  createdAt: string;
+  lastLoginAt: string;
+  isOrganizer: boolean;
+  organizationIds: string[];
+}
+
 export interface Event {
   id: string;
   name: string;
@@ -11,6 +51,12 @@ export interface Event {
   createdAt: string;
   themesGenerated: boolean;
   scoresRevealed?: boolean;       // Whether leaderboard scores are visible
+  // Multi-tenant fields
+  slug: string;                   // URL-friendly slug
+  organizationId: string;         // Owner organization
+  visibility?: 'public' | 'unlisted' | 'private';
+  createdBy?: string;             // Creator's Firebase UID
+  updatedAt?: string;             // Last update timestamp
 }
 
 export interface Theme {
@@ -22,6 +68,7 @@ export interface Theme {
   concept: string;
   judgingCriteria: string[];
   eventId: string;
+  organizationId?: string;        // Owner organization (denormalized)
 }
 
 export interface GitHubRepoData {
@@ -45,6 +92,7 @@ export interface Team {
   techStack: string[];
   themeId: string;
   eventId: string;
+  organizationId?: string;       // Owner organization (denormalized)
   // New fields for multi-URL support
   primaryUrl?: string;
   urlType?: SubmissionUrlType;
@@ -77,6 +125,8 @@ export interface Vote {
   scores: Scores;
   isFavorite: boolean;
   submittedAt: string;
+  eventId?: string;              // Denormalized for faster queries
+  organizationId?: string;       // Denormalized for org-scoped queries
 }
 
 export interface TeamScore {

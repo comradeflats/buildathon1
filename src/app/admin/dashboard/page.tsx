@@ -83,6 +83,8 @@ export default function AdminDashboardPage() {
         keyboardsDownTime: newEventKeyboardsDown || undefined,
         createdAt: new Date().toISOString(),
         themesGenerated: false,
+        slug: eventId,
+        organizationId: 'legacy',
       });
 
       setNewEventName('');

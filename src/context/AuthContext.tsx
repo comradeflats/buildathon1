@@ -2,9 +2,11 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signInAnonymously as firebaseSignInAnonymously, signOut as firebaseSignOut } from 'firebase/auth';
-import { auth, githubProvider } from '@/lib/firebase';
+import { auth, githubProvider, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { isMobileDevice } from '@/lib/deviceUtils';
 import { getOwnershipToken, getOrCreateOwnershipToken } from '@/lib/indexeddb';
+import { User as UserProfile } from '@/lib/types';
 
 interface AuthContextType {
   user: User | null;
@@ -13,11 +15,15 @@ interface AuthContextType {
   isLoading: boolean;
   ownershipToken: string | null;
   authError: string | null;
+  userProfile: UserProfile | null;
   signInWithGitHub: () => Promise<void>;
   signInAnonymously: () => Promise<void>;
   signOut: () => Promise<void>;
   ensureOwnershipToken: () => Promise<string>;
   clearAuthError: () => void;
+  getUserProfile: () => Promise<UserProfile | null>;
+  isOrganizer: () => boolean;
+  getFirebaseToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [ownershipToken, setOwnershipToken] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   const clearAuthError = useCallback(() => {
     setAuthError(null);
@@ -164,6 +171,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return token;
   }, [ownershipToken]);
 
+  // Fetch user profile from Firestore
+  const getUserProfile = useCallback(async (): Promise<UserProfile | null> => {
+    if (!user || user.isAnonymous || !db) {
+      return null;
+    }
+
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        return {
+          id: userDoc.id,
+          ...userDoc.data(),
+        } as UserProfile;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+  }, [user]);
+
+  // Check if user is an organizer (has any organization memberships)
+  const isOrganizer = useCallback((): boolean => {
+    if (!userProfile) {
+      return false;
+    }
+    return userProfile.isOrganizer || (userProfile.organizationIds?.length || 0) > 0;
+  }, [userProfile]);
+
+  // Get Firebase ID token for API calls
+  const getFirebaseToken = useCallback(async (): Promise<string | null> => {
+    if (!user || user.isAnonymous) {
+      return null;
+    }
+
+    try {
+      return await user.getIdToken();
+    } catch (error) {
+      console.error('Error getting Firebase token:', error);
+      return null;
+    }
+  }, [user]);
+
+  // Load user profile when user changes
+  useEffect(() => {
+    if (!user || user.isAnonymous) {
+      setUserProfile(null);
+      return;
+    }
+
+    getUserProfile().then((profile) => {
+      setUserProfile(profile);
+    });
+  }, [user, getUserProfile]);
+
   const isAuthenticated = !!user;
   const isAnonymous = user?.isAnonymous ?? false;
 
@@ -176,11 +241,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         ownershipToken,
         authError,
+        userProfile,
         signInWithGitHub,
         signInAnonymously,
         signOut,
         ensureOwnershipToken,
         clearAuthError,
+        getUserProfile,
+        isOrganizer,
+        getFirebaseToken,
       }}
     >
       {children}

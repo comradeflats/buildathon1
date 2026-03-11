@@ -1,38 +1,28 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Users, Loader2, Plus, Clock } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { useEvents } from '@/hooks/useEvents';
+import { useEventBySlug } from '@/hooks/useEventBySlug';
 import { useTeams } from '@/hooks/useTeams';
 import { useThemes } from '@/hooks/useThemes';
 import { getThemeEmoji } from '@/lib/themeIcons';
 
-export default function EventPage() {
+export default function EventBySlugPage() {
   const params = useParams();
-  const router = useRouter();
-  const eventId = params.id as string;
+  const slug = params.slug as string;
 
-  const { events, isLoading: isEventsLoading, getEventById } = useEvents();
+  const { event, isLoading: isEventLoading, error } = useEventBySlug(slug);
   const { teams, isLoading: isTeamsLoading } = useTeams();
   const { themes, isLoading: isThemesLoading } = useThemes();
 
-  const isLoading = isEventsLoading || isTeamsLoading || isThemesLoading;
+  const isLoading = isEventLoading || isTeamsLoading || isThemesLoading;
 
-  const event = getEventById(eventId);
-
-  // Redirect to new vanity URL if event has a slug
-  useEffect(() => {
-    if (event?.slug) {
-      router.replace(`/e/${event.slug}`);
-    }
-  }, [event, router]);
-  const eventTeams = teams.filter((team) => team.eventId === eventId);
-  const eventThemes = themes.filter((theme) => theme.eventId === eventId);
+  const eventTeams = event ? teams.filter((team) => team.eventId === event.id) : [];
+  const eventThemes = event ? themes.filter((theme) => theme.eventId === event.id) : [];
 
   const formatEventDates = (startDate?: string, endDate?: string) => {
     if (!startDate || !endDate) return null;
@@ -58,13 +48,13 @@ export default function EventPage() {
     );
   }
 
-  if (!event) {
+  if (error || !event) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center">
         <Calendar size={48} className="text-zinc-600 mb-4" />
         <h2 className="text-xl font-semibold text-white mb-2">Event Not Found</h2>
         <p className="text-zinc-400 mb-6">
-          The event you&apos;re looking for doesn&apos;t exist.
+          The event you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
         <Link
           href="/"
@@ -132,7 +122,7 @@ export default function EventPage() {
           </div>
 
           {canSubmit && (
-            <Link href={`/submit?eventId=${eventId}`}>
+            <Link href={`/e/${slug}/submit`}>
               <Button size="lg" className="shrink-0">
                 <Plus size={18} className="mr-2" />
                 Submit Project
@@ -181,7 +171,7 @@ export default function EventPage() {
                 <p className="text-sm text-zinc-400 mb-4 flex-1">{theme.concept}</p>
 
                 {canSubmit && (
-                  <Link href={`/submit?eventId=${eventId}&themeId=${theme.id}`} className="block">
+                  <Link href={`/e/${slug}/submit?themeId=${theme.id}`} className="block">
                     <Button variant="secondary" size="sm" className="w-full">
                       Submit
                     </Button>
@@ -195,10 +185,15 @@ export default function EventPage() {
 
       {/* View Submissions Link */}
       {eventTeams.length > 0 && (
-        <div className="flex justify-center">
-          <Link href={`/gallery?eventId=${eventId}`}>
+        <div className="flex justify-center gap-4">
+          <Link href={`/e/${slug}/gallery`}>
             <Button variant="secondary" size="lg">
               View Submissions in Gallery
+            </Button>
+          </Link>
+          <Link href={`/e/${slug}/leaderboard`}>
+            <Button variant="secondary" size="lg">
+              View Leaderboard
             </Button>
           </Link>
         </div>
