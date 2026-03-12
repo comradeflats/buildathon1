@@ -68,7 +68,9 @@ export async function POST(request: NextRequest) {
       keyboardsDownTime, 
       votingModel,
       visibility, 
-      slug 
+      slug,
+      maxParticipants,
+      isRegistrationOpen
     } = body;
 
     // Verify user is org admin
@@ -115,6 +117,10 @@ export async function POST(request: NextRequest) {
       createdBy: user.uid,
       updatedAt: new Date().toISOString(),
       submissionCode,
+      // Registration fields
+      maxParticipants: maxParticipants || 50,
+      currentRegistrations: 0,
+      isRegistrationOpen: isRegistrationOpen !== undefined ? isRegistrationOpen : true,
     };
 
     const eventRef = await db.collection('events').add(eventData);

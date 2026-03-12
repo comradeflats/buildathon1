@@ -69,6 +69,7 @@ export default function NewEventPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [submissionDeadline, setSubmissionDeadline] = useState('');
+  const [maxParticipants, setMaxParticipants] = useState('50');
   const [votingModel, setVotingModel] = useState<'peer' | 'expert'>('peer');
   const [visibility, setVisibility] = useState<'public' | 'unlisted' | 'private'>('public');
   const [slugTouched, setSlugTouched] = useState(false);
@@ -164,6 +165,8 @@ export default function NewEventPage() {
           startDate: new Date(startDate).toISOString(),
           endDate: new Date(endDate).toISOString(),
           submissionDeadline: submissionDeadline ? new Date(submissionDeadline).toISOString() : undefined,
+          maxParticipants: parseInt(maxParticipants) || 50,
+          isRegistrationOpen: true,
           votingModel,
           visibility,
           status: 'upcoming',
@@ -410,6 +413,29 @@ export default function NewEventPage() {
             <p className="text-xs text-zinc-500 mt-1">
               Leave empty to use end date as submission deadline
             </p>
+          </div>
+
+          {/* Max Participants */}
+          <div>
+            <label htmlFor="maxParticipants" className="block text-sm font-medium text-white mb-2">
+              Maximum Participants <span className="text-red-400">*</span>
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                id="maxParticipants"
+                type="number"
+                min="1"
+                max="1000"
+                value={maxParticipants}
+                onChange={(e) => setMaxParticipants(e.target.value)}
+                className="w-32 px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-accent transition-colors"
+                required
+                disabled={isCreating}
+              />
+              <span className="text-zinc-500 text-sm">
+                Participants can join until this cap is reached. Others go to waitlist.
+              </span>
+            </div>
           </div>
 
           {/* Voting Model */}

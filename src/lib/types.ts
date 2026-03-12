@@ -77,6 +77,29 @@ export interface Event {
   createdBy?: string;             // Creator's Firebase UID
   updatedAt?: string;             // Last update timestamp
   submissionCode: string;         // Required code for project submission
+  // Registration and Capacity
+  maxParticipants?: number;        // Capacity cap
+  currentRegistrations?: number;   // Summary count for quick UI display
+  isRegistrationOpen: boolean;     // Whether users can still join
+}
+
+export type RegistrationStatus = 'pending' | 'approved' | 'waitlisted' | 'rejected' | 'withdrawn';
+
+export interface EventRegistration {
+  id: string;
+  eventId: string;
+  userId: string;
+  email: string;
+  displayName: string;
+  status: RegistrationStatus;
+  registeredAt: string;
+  updatedAt: string;
+  organizationId: string;
+  metadata?: {
+    githubUsername?: string;
+    role?: string;
+    experience?: string;
+  };
 }
 
 export interface Theme {

@@ -93,6 +93,8 @@ export default function AdminDashboardPage() {
         slug: eventId,
         organizationId: 'legacy',
         submissionCode,
+        isRegistrationOpen: true,
+        maxParticipants: 50,
       });
 
       setNewEventName('');
@@ -220,6 +222,8 @@ export default function AdminDashboardPage() {
         submissionDeadline: editEventSubmissionDeadline || undefined,
         keyboardsDownTime: editEventKeyboardsDown || undefined,
         submissionCode: editEventSubmissionCode || eventToUpdate.submissionCode || generateSubmissionCode(),
+        isRegistrationOpen: eventToUpdate.isRegistrationOpen ?? true,
+        maxParticipants: eventToUpdate.maxParticipants ?? 50,
       });
       handleCancelEdit();
     } catch (err) {

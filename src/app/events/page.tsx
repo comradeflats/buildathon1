@@ -154,7 +154,7 @@ function EventsContent() {
               const teamCount = getTeamCountForEvent(event.id);
 
               return (
-                <Link key={event.id} href={`/events/${event.id}`}>
+                <Link key={event.id} href={event.slug ? `/e/${event.slug}` : `/events/${event.id}`}>
                   <Card hover className="p-6 h-full border-zinc-800 hover:border-emerald-500/30 transition-all group">
                     <div className="flex items-start justify-between mb-4">
                       <h2 className="text-lg font-semibold text-white group-hover:text-emerald-400 transition-colors">
@@ -183,13 +183,17 @@ function EventsContent() {
                       )}
                       <div className="flex items-center gap-1">
                         <Users size={14} />
-                        <span>{teamCount} {teamCount === 1 ? 'project' : 'projects'}</span>
+                        <span>
+                          {event.status === 'upcoming' 
+                            ? `${event.currentRegistrations || 0} registered` 
+                            : `${teamCount} ${teamCount === 1 ? 'project' : 'projects'}`}
+                        </span>
                       </div>
                       {event.startDate && event.endDate ? (
                         <div className="flex items-center gap-1">
                           <Calendar size={14} />
                           <span>
-                            {new Date(event.startDate).toLocaleDateString('en-GB')} – {new Date(event.endDate).toLocaleDateString('en-GB')}
+                            {new Date(event.startDate).toLocaleDateString('en-GB')}
                           </span>
                         </div>
                       ) : (
@@ -202,7 +206,11 @@ function EventsContent() {
 
                     <div className="mt-4 pt-4 border-t border-zinc-800">
                       <span className="text-emerald-500 text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
-                        View Projects
+                        {event.status === 'upcoming' 
+                          ? 'Register Now' 
+                          : event.status === 'active' 
+                            ? 'View Live Event' 
+                            : 'View Results'}
                         <ChevronRight size={16} />
                       </span>
                     </div>

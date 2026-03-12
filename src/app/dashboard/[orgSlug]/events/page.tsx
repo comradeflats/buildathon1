@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, Calendar, Plus, ArrowRight, Filter } from 'lucide-react';
+import { Loader2, Calendar, Plus, ArrowRight, Filter, Users } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -217,14 +217,25 @@ export default function EventsListPage() {
                 </div>
                 <div className="flex items-center gap-4">
                   {permissions.canManageEvents && (
-                    <Link
-                      href={`/dashboard/${slug}/events/${event.id}`}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Button variant="secondary" size="sm">
-                        Manage
-                      </Button>
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/dashboard/${slug}/events/${event.id}/participants`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white">
+                          <Users size={16} className="mr-2" />
+                          Participants
+                        </Button>
+                      </Link>
+                      <Link
+                        href={`/dashboard/${slug}/events/${event.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Button variant="secondary" size="sm">
+                          Manage
+                        </Button>
+                      </Link>
+                    </div>
                   )}
                   <ArrowRight size={20} className="text-zinc-600 group-hover:text-accent transition-colors" />
                 </div>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, Calendar, Users, BarChart3, Plus, ArrowRight } from 'lucide-react';
+import { Loader2, Calendar, Users, BarChart3, Plus, ArrowRight, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -56,12 +56,10 @@ export default function OrgDashboardPage() {
   }
 
   // Calculate stats
-  const activeEvents = events.filter((e) => e.status === 'active').length;
+  const activeEvent = events.find((e) => e.status === 'active');
   const hasThemes = events.some((e) => e.themesGenerated);
-  const totalSubmissions = events.reduce((acc, event) => {
-    // This would need actual submission count from teams
-    return acc;
-  }, 0);
+  const totalEvents = events.length;
+  const totalApproved = events.reduce((acc, e) => acc + (e.currentRegistrations || 0), 0);
 
   return (
     <div className="space-y-8">
@@ -105,6 +103,53 @@ export default function OrgDashboardPage() {
         hasMembers={org.memberCount > 1}
       />
 
+      {/* Live Event Activity */}
+      {activeEvent && (
+        <Card className="p-6 border-emerald-500/30 bg-emerald-500/5 backdrop-blur-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4">
+            <Badge variant="success" className="animate-pulse">Live Now</Badge>
+          </div>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-1">
+              <h2 className="text-sm font-bold text-emerald-500 uppercase tracking-widest flex items-center gap-2">
+                <Activity size={16} />
+                Active Event
+              </h2>
+              <h3 className="text-2xl font-black text-white">{activeEvent.name}</h3>
+              <p className="text-zinc-400 text-sm max-w-md">
+                Manage participants, monitor submissions, and oversee the build in real-time.
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex gap-4 pr-6 border-r border-zinc-800">
+                <div className="text-center">
+                  <p className="text-xl font-black text-white">{activeEvent.currentRegistrations || 0}</p>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Participants</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xl font-black text-white">{activeEvent.phase.replace('_', ' ')}</p>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Current Phase</p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Link href={`/dashboard/${slug}/events/${activeEvent.id}/participants`}>
+                  <Button size="sm" className="w-full">
+                    Manage Participants
+                  </Button>
+                </Link>
+                <Link href={`/e/${activeEvent.slug}`} target="_blank">
+                  <Button variant="ghost" size="sm" className="w-full text-zinc-400 hover:text-white">
+                    <ArrowRight size={14} className="mr-2" />
+                    Open Portal
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="p-6">
@@ -112,31 +157,31 @@ export default function OrgDashboardPage() {
             <span className="text-sm text-zinc-400">Total Events</span>
             <Calendar className="text-zinc-500" size={20} />
           </div>
-          <div className="text-3xl font-bold text-white">{events.length}</div>
+          <div className="text-3xl font-bold text-white">{totalEvents}</div>
           <div className="text-sm text-zinc-500 mt-1">
-            {activeEvents} active
+            Buildathon history
           </div>
         </Card>
 
         <Card className="p-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-zinc-400">Members</span>
+            <span className="text-sm text-zinc-400">Participants</span>
             <Users className="text-zinc-500" size={20} />
+          </div>
+          <div className="text-3xl font-bold text-white">{totalApproved}</div>
+          <div className="text-sm text-zinc-500 mt-1">
+            Approved across all events
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-zinc-400">Organization Members</span>
+            <BarChart3 className="text-zinc-500" size={20} />
           </div>
           <div className="text-3xl font-bold text-white">{org.memberCount}</div>
           <div className="text-sm text-zinc-500 mt-1">
-            Team members
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-zinc-400">Total Submissions</span>
-            <BarChart3 className="text-zinc-500" size={20} />
-          </div>
-          <div className="text-3xl font-bold text-white">{totalSubmissions}</div>
-          <div className="text-sm text-zinc-500 mt-1">
-            Across all events
+            Admins & Judges
           </div>
         </Card>
       </div>

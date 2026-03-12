@@ -15,7 +15,7 @@ import { getThemeEmoji } from '@/lib/themeIcons';
 export default function EventPage() {
   const params = useParams();
   const router = useRouter();
-  const eventId = params.id as string;
+  const eventId = params.eventId as string;
 
   const { events, isLoading: isEventsLoading, getEventById } = useEvents();
   const { teams, isLoading: isTeamsLoading } = useTeams();
