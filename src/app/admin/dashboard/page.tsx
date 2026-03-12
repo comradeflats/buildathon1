@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/Badge';
 import { useAdmin } from '@/context/AdminContext';
 import { useEvents } from '@/hooks/useEvents';
 import { Event } from '@/lib/types';
+import { generateSubmissionCode } from '@/lib/utils';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -50,6 +51,7 @@ export default function AdminDashboardPage() {
   const [editEventEndDate, setEditEventEndDate] = useState('');
   const [editEventSubmissionDeadline, setEditEventSubmissionDeadline] = useState('');
   const [editEventKeyboardsDown, setEditEventKeyboardsDown] = useState('');
+  const [editEventSubmissionCode, setEditEventSubmissionCode] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
@@ -70,6 +72,8 @@ export default function AdminDashboardPage() {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '');
 
+    const submissionCode = generateSubmissionCode();
+
     try {
       await createEvent({
         id: eventId,
@@ -88,6 +92,7 @@ export default function AdminDashboardPage() {
         showVotes: true,
         slug: eventId,
         organizationId: 'legacy',
+        submissionCode,
       });
 
       setNewEventName('');
@@ -177,6 +182,7 @@ export default function AdminDashboardPage() {
     setEditEventEndDate(event.endDate ? event.endDate.slice(0, 16) : '');
     setEditEventSubmissionDeadline(event.submissionDeadline ? event.submissionDeadline.slice(0, 16) : '');
     setEditEventKeyboardsDown(event.keyboardsDownTime ? event.keyboardsDownTime.slice(0, 16) : '');
+    setEditEventSubmissionCode(event.submissionCode || '');
     setError(null);
   };
 
@@ -189,6 +195,7 @@ export default function AdminDashboardPage() {
     setEditEventEndDate('');
     setEditEventSubmissionDeadline('');
     setEditEventKeyboardsDown('');
+    setEditEventSubmissionCode('');
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -212,6 +219,7 @@ export default function AdminDashboardPage() {
         endDate: editEventEndDate,
         submissionDeadline: editEventSubmissionDeadline || undefined,
         keyboardsDownTime: editEventKeyboardsDown || undefined,
+        submissionCode: editEventSubmissionCode || eventToUpdate.submissionCode || generateSubmissionCode(),
       });
       handleCancelEdit();
     } catch (err) {
@@ -445,6 +453,16 @@ export default function AdminDashboardPage() {
                             <option value="archived">Archived</option>
                           </select>
                         </div>
+                        <div>
+                          <label className="block text-sm font-medium text-zinc-400 mb-2">Submission Code (revealed at event)</label>
+                          <input
+                            type="text"
+                            value={editEventSubmissionCode}
+                            onChange={(e) => setEditEventSubmissionCode(e.target.value.toUpperCase())}
+                            placeholder="e.g. GEMINI"
+                            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent"
+                          />
+                        </div>
                         <div className="flex gap-2 pt-2">
                           <Button
                             type="submit"
@@ -468,6 +486,11 @@ export default function AdminDashboardPage() {
                             <Badge variant={event.status === 'active' ? 'success' : 'default'} className="text-[10px]">
                               {event.status}
                             </Badge>
+                            {event.submissionCode && (
+                              <Badge variant="outline" className="text-[10px] border-accent/50 text-accent">
+                                Code: {event.submissionCode}
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-xs text-zinc-500">{event.id}</p>
                         </div>

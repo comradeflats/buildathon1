@@ -76,6 +76,7 @@ export interface Event {
   visibility?: 'public' | 'unlisted' | 'private';
   createdBy?: string;             // Creator's Firebase UID
   updatedAt?: string;             // Last update timestamp
+  submissionCode: string;         // Required code for project submission
 }
 
 export interface Theme {

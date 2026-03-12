@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestoreAdmin } from '@/lib/firebase-admin';
 import { verifyFirebaseToken, requireOrgAdmin, handleAuthError } from '@/lib/auth-helpers';
 import { generateEventSlug, validateSlug } from '@/lib/slugs';
+import { generateSubmissionCode } from '@/lib/utils';
 
 /**
  * GET /api/events
@@ -86,6 +87,8 @@ export async function POST(request: NextRequest) {
 
     const db = getFirestoreAdmin();
 
+    const submissionCode = generateSubmissionCode();
+
     // Create event
     const eventData = {
       name,
@@ -111,6 +114,7 @@ export async function POST(request: NextRequest) {
       visibility: visibility || 'public',
       createdBy: user.uid,
       updatedAt: new Date().toISOString(),
+      submissionCode,
     };
 
     const eventRef = await db.collection('events').add(eventData);

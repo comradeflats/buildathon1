@@ -51,7 +51,8 @@ const REGIONAL_EVENTS = [
     isActive: false,
     startDate: '2024-01-15',
     endDate: '2024-01-15',
-    isMockData: true
+    isMockData: true,
+    submissionCode: 'DANANG'
   },
   {
     id: 'hcmc-sprint',
@@ -63,7 +64,8 @@ const REGIONAL_EVENTS = [
     isActive: true,
     startDate: '2024-03-10',
     endDate: '2024-03-12',
-    isMockData: true
+    isMockData: true,
+    submissionCode: 'SAIGON'
   },
   {
     id: 'singapore-global',
@@ -75,7 +77,8 @@ const REGIONAL_EVENTS = [
     isActive: true,
     startDate: '2024-04-20',
     endDate: '2024-04-21',
-    isMockData: true
+    isMockData: true,
+    submissionCode: 'SG2024'
   },
   {
     id: 'bangkok-node',
@@ -87,7 +90,8 @@ const REGIONAL_EVENTS = [
     isActive: true,
     startDate: '2024-05-05',
     endDate: '2024-05-05',
-    isMockData: true
+    isMockData: true,
+    submissionCode: 'BK2024'
   },
   {
     id: 'tokyo-neon',
@@ -99,7 +103,8 @@ const REGIONAL_EVENTS = [
     isActive: false,
     startDate: '2023-11-12',
     endDate: '2023-11-13',
-    isMockData: true
+    isMockData: true,
+    submissionCode: 'TOKYO'
   }
 ];
 
