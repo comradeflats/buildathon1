@@ -70,31 +70,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function initializeAuth() {
       console.log('[AUTH] initializeAuth called');
-      console.log('[AUTH] isMobile:', isMobileDevice());
-      console.log('[AUTH] Current URL:', typeof window !== 'undefined' ? window.location.href : 'N/A');
+      const isMobile = isMobileDevice();
+      console.log('[AUTH] isMobile:', isMobile);
 
       try {
         // First, check for redirect result (for mobile auth)
-        // This must complete before we consider auth "loaded"
         console.log('[AUTH] Checking redirect result...');
         const result = await getRedirectResult(auth);
-        console.log('[AUTH] Redirect result:', result ? 'User found' : 'No user');
+        
         if (result?.user) {
-          console.log('[AUTH] Setting user from redirect result');
+          console.log('[AUTH] Setting user from redirect result:', result.user.uid);
           setUser(result.user);
+          setAuthError(null);
+          // Don't setIsLoading(false) yet, let the listener handle the final state
         }
       } catch (error: any) {
         console.error('[AUTH] Redirect error:', error);
-        console.error('[AUTH] Error code:', error?.code);
-        console.error('[AUTH] Error message:', error?.message);
         setAuthError(`Redirect error: ${error?.code || error?.message || 'Unknown'}`);
       }
 
       // Then set up the auth state listener
       console.log('[AUTH] Setting up auth state listener');
-      unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-        console.log('[AUTH] Auth state changed:', firebaseUser ? 'User present' : 'No user');
-        setUser(firebaseUser);
+      unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        console.log('[AUTH] Auth state changed:', firebaseUser ? `User ${firebaseUser.uid} present` : 'No user');
+        
+        if (firebaseUser) {
+          setUser(firebaseUser);
+          setAuthError(null);
+          
+          // Pre-fetch profile to avoid layout shifts in consumers
+          try {
+            const userDocRef = doc(db, 'users', firebaseUser.uid);
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+              setUserProfile({ id: userDoc.id, ...userDoc.data() } as UserProfile);
+            }
+          } catch (e) {
+            console.error('[AUTH] Profile fetch error:', e);
+          }
+        } else {
+          setUser(null);
+          setUserProfile(null);
+        }
+        
         setIsLoading(false);
       });
     }

@@ -13,16 +13,22 @@ export default function SignupPage() {
   const { user, isLoading, userProfile, getUserProfile } = useAuth();
 
   useEffect(() => {
-    // If user is already authenticated, redirect to dashboard
-    if (user && !user.isAnonymous) {
-      router.push('/dashboard');
+    // If user is already authenticated, decide where to send them
+    if (user && !user.isAnonymous && !isLoading) {
+      if (userProfile && (userProfile.isOrganizer || (userProfile.organizationIds?.length || 0) > 0)) {
+        router.push('/dashboard');
+      } else {
+        // If they just signed in and have no org, send to onboarding
+        router.push('/onboarding');
+      }
     }
-  }, [user, router]);
+  }, [user, isLoading, userProfile, router]);
 
   if (isLoading || (user && !user.isAnonymous)) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-zinc-400" />
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+        <Loader2 size={32} className="animate-spin text-emerald-500" />
+        <p className="text-zinc-500 animate-pulse">Syncing with the arena...</p>
       </div>
     );
   }

@@ -42,7 +42,13 @@ export function SignInPrompt({
       return 'The sign-in popup was blocked. Please allow popups or try again.';
     }
     if (err.code === 'auth/unauthorized-domain') {
-      return 'This domain is not authorized for authentication. Check Firebase Authorized Domains.';
+      return (
+        <div className="space-y-2">
+          <p className="font-bold">🚨 ACTION REQUIRED:</p>
+          <p>This domain (buildathon.live) is not authorized in Firebase Console.</p>
+          <p className="text-[10px] mt-2 opacity-80">Fix: Go to Firebase Console &gt; Auth &gt; Settings &gt; Authorized Domains and add: <b>buildathon.live</b></p>
+        </div>
+      );
     }
     return err.message || 'An unexpected error occurred. Please try again.';
   };

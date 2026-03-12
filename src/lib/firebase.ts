@@ -11,6 +11,17 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
+// Debug config availability on client
+if (typeof window !== 'undefined') {
+  console.log('[FIREBASE] Config present:', {
+    apiKey: firebaseConfig.apiKey !== "placeholder-key",
+    authDomain: !!firebaseConfig.authDomain,
+    projectId: !!firebaseConfig.projectId,
+    appId: !!firebaseConfig.appId,
+    domain: firebaseConfig.authDomain
+  });
+}
+
 // Initialize Firebase only if we have a valid config or if we are in the browser
 // This prevents build-time errors when env vars are missing
 const app = (typeof window !== 'undefined' || process.env.NEXT_PUBLIC_FIREBASE_API_KEY) 

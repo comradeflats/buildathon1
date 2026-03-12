@@ -28,11 +28,22 @@ export function UserMenu() {
 
   // Debug error toast (temporary - for mobile debugging)
   const errorToast = authError && (
-    <div className="fixed bottom-4 left-4 right-4 bg-red-900 text-white p-3 rounded-lg text-xs z-50 flex items-start gap-2">
-      <div className="flex-1">
-        <strong>Auth Debug:</strong> {authError}
+    <div className="fixed top-4 left-4 right-4 bg-red-900/95 backdrop-blur-md text-white p-3 rounded-xl text-xs z-[1000] flex items-start gap-3 border border-red-500/30 shadow-2xl animate-in slide-in-from-top-4">
+      <div className="flex-1 space-y-1">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+          <strong className="uppercase tracking-wider opacity-70">Auth Debugger</strong>
+        </div>
+        <p className="font-medium text-[11px]">
+          {authError.includes('unauthorized-domain') 
+            ? '🚨 Action Required: Add "buildathon.live" to Firebase Authorized Domains' 
+            : authError}
+        </p>
       </div>
-      <button onClick={clearAuthError} className="p-1 hover:bg-red-800 rounded">
+      <button 
+        onClick={clearAuthError} 
+        className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+      >
         <X size={14} />
       </button>
     </div>
