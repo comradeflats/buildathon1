@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { TeamCard } from './TeamCard';
 import { useVoting } from '@/context/VotingContext';
+import { useTeams } from '@/context/TeamContext';
 import { Loader2, LayoutGrid } from 'lucide-react';
 
 interface TeamGalleryProps {
@@ -10,7 +11,7 @@ interface TeamGalleryProps {
 }
 
 export function TeamGallery({ eventId }: TeamGalleryProps) {
-  const { teams, isLoading } = useVoting();
+  const { teams, isLoading } = useTeams();
 
   const filteredTeams = useMemo(() => {
     if (!eventId) return teams;

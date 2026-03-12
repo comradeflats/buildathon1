@@ -2,6 +2,7 @@
 
 import { LeaderboardRow } from './LeaderboardRow';
 import { useVoting } from '@/context/VotingContext';
+import { useTeams } from '@/context/TeamContext';
 import { useEvents } from '@/hooks/useEvents';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 
@@ -10,7 +11,8 @@ interface LeaderboardTableProps {
 }
 
 export function LeaderboardTable({ eventId }: LeaderboardTableProps) {
-  const { getLeaderboard, isLoading, isVotesLoaded } = useVoting();
+  const { getLeaderboard, isVotesLoaded } = useVoting();
+  const { isLoading } = useTeams();
   const { events, isLoading: isEventsLoading } = useEvents();
 
   if (isLoading || !isVotesLoaded || isEventsLoading) {

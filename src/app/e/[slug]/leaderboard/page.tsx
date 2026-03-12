@@ -8,13 +8,15 @@ import { Button } from '@/components/ui/Button';
 import { LeaderboardTable } from '@/components/leaderboard/LeaderboardTable';
 import { useEventBySlug } from '@/hooks/useEventBySlug';
 import { useVoting } from '@/context/VotingContext';
+import { useTeams } from '@/context/TeamContext';
 
 function LeaderboardBySlugContent() {
   const params = useParams();
   const slug = params.slug as string;
 
   const { event, isLoading: isEventLoading } = useEventBySlug(slug);
-  const { votes, teams } = useVoting();
+  const { votes } = useVoting();
+  const { teams } = useTeams();
 
   const handleRefresh = () => {
     window.location.reload();

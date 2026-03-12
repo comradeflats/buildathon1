@@ -6,6 +6,7 @@ import { ArrowLeft, Loader2, AlertCircle, Send } from 'lucide-react';
 import { VotingForm } from '@/components/voting/VotingForm';
 import { SignInPrompt } from '@/components/auth/SignInPrompt';
 import { useVoting } from '@/context/VotingContext';
+import { useTeams } from '@/context/TeamContext';
 import { useAuth } from '@/context/AuthContext';
 import { useEvents } from '@/hooks/useEvents';
 import { useOrgPermissions } from '@/hooks/useOrgPermissions';
@@ -14,7 +15,7 @@ import { isTeamOwner, hasSubmittedToEvent } from '@/lib/ownership';
 export default function VotePage() {
   const searchParams = useSearchParams();
   const teamId = searchParams.get('teamId');
-  const { getTeamById, teams, isLoading } = useVoting();
+  const { getTeamById, teams, isLoading } = useTeams();
   const { user, isAuthenticated, isLoading: authLoading, ownershipToken } = useAuth();
   const { getEventById } = useEvents();
 

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Badge';
 import { DeleteButton } from '@/components/admin/DeleteButton';
 import { Team } from '@/lib/types';
 import { useVoting } from '@/context/VotingContext';
+import { useTeams } from '@/context/TeamContext';
 import { useAdmin } from '@/context/AdminContext';
 import { useAuth } from '@/context/AuthContext';
 import { ensureAbsoluteUrl } from '@/lib/github';
@@ -17,7 +18,8 @@ interface TeamCardProps {
 }
 
 export function TeamCard({ team }: TeamCardProps) {
-  const { hasVotedFor, getThemeById, deleteTeam, showToast } = useVoting();
+  const { hasVotedFor, getThemeById, showToast } = useVoting();
+  const { deleteTeam } = useTeams();
   const { isAdmin } = useAdmin();
   const { user, isAnonymous, ownershipToken } = useAuth();
   const voted = hasVotedFor(team.id);

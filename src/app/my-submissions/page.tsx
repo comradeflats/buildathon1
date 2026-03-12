@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2, AlertTriangle, Github, Plus } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useVoting } from '@/context/VotingContext';
+import { useTeams } from '@/context/TeamContext';
 import { TeamCard } from '@/components/gallery/TeamCard';
 import { AuthButton } from '@/components/auth/AuthButton';
 import { Card } from '@/components/ui/Card';
@@ -12,7 +13,7 @@ import { Button } from '@/components/ui/Button';
 
 export default function MySubmissionsPage() {
   const { user, isAuthenticated, isAnonymous, isLoading: authLoading, ownershipToken } = useAuth();
-  const { teams, isLoading: teamsLoading } = useVoting();
+  const { teams, isLoading: teamsLoading } = useTeams();
 
   const myTeams = useMemo(() => {
     if (!isAuthenticated && !ownershipToken) return [];

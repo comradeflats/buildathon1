@@ -10,6 +10,7 @@ import { StarRating } from '@/components/ui/StarRating';
 import { DeleteButton } from '@/components/admin/DeleteButton';
 import { TeamScore } from '@/lib/types';
 import { useVoting } from '@/context/VotingContext';
+import { useTeams } from '@/context/TeamContext';
 import { useAdmin } from '@/context/AdminContext';
 import { formatScore } from '@/lib/scoring';
 import { getThemeIcon, getThemeIconColor } from '@/lib/themeIcons';
@@ -22,7 +23,8 @@ interface LeaderboardRowProps {
 
 export function LeaderboardRow({ teamScore, rank, hideScores = false }: LeaderboardRowProps) {
   const [expanded, setExpanded] = useState(false);
-  const { getThemeById, getThemeCriteria, deleteTeam, showToast, hasVotedFor } = useVoting();
+  const { getThemeById, getThemeCriteria, showToast, hasVotedFor } = useVoting();
+  const { deleteTeam } = useTeams();
   const { isAdmin } = useAdmin();
 
   const isWinner = !hideScores && rank === 1 && teamScore.voteCount > 0;
