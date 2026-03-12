@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { ProjectSubmissionForm } from '@/components/submit/ProjectSubmissionForm';
-import { useVoting } from '@/context/VotingContext';
+import { useTeams } from '@/context/TeamContext';
 import { useEvents } from '@/hooks/useEvents';
 import { Loader2 } from 'lucide-react';
 
@@ -15,7 +15,7 @@ function SubmitPageContent() {
   const eventId = searchParams.get('eventId');
   const themeId = searchParams.get('themeId');
 
-  const { getTeamById } = useVoting();
+  const { getTeamById } = useTeams();
   const { getEventById } = useEvents();
 
   const teamToEdit = teamId ? getTeamById(teamId) : undefined;

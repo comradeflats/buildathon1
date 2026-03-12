@@ -114,7 +114,8 @@ export interface Team {
   techStack: string[];
   themeId: string;
   eventId: string;
-  organizationId?: string;       // Owner organization (denormalized)
+  organizationId: string;        // Owner organization (required)
+  submissionCode?: string;       // Used only for creation verification
   // New fields for multi-URL support
   primaryUrl?: string;
   urlType?: SubmissionUrlType;

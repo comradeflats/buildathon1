@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { TeamProvider } from '@/context/TeamContext';
 import { VotingProvider } from '@/context/VotingContext';
 import { AdminProvider } from '@/context/AdminContext';
 import { AuthProvider } from '@/context/AuthContext';
@@ -21,14 +22,16 @@ export default function RootLayout({
       <body className="min-h-screen bg-background text-foreground">
         <AuthProvider>
           <AdminProvider>
-            <VotingProvider>
-              <Navbar />
+            <TeamProvider>
+              <VotingProvider>
+                <Navbar />
 
-              <main className="container mx-auto px-4 py-8 max-w-5xl">
-                {children}
-              </main>
-              <Toast />
-            </VotingProvider>
+                <main className="container mx-auto px-4 py-8 max-w-5xl">
+                  {children}
+                </main>
+                <Toast />
+              </VotingProvider>
+            </TeamProvider>
           </AdminProvider>
         </AuthProvider>
       </body>

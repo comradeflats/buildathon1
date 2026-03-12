@@ -61,9 +61,11 @@ export function useTeams() {
 
   const updateTeam = useCallback(async (updatedTeam: Team): Promise<void> => {
     try {
-      const { id, ...data } = updatedTeam;
-      const teamRef = doc(db, 'teams', id);
-      await updateDoc(teamRef, data as any);
+      const { id, submissionCode, ...data } = updatedTeam; // Remove submissionCode before update
+      const teamRef = doc(db, id ? doc(db, 'teams', id) : collection(db, 'teams')); // Handle missing ID gracefully
+      if (id) {
+        await updateDoc(doc(db, 'teams', id), data as any);
+      }
     } catch (err) {
       console.error("Error updating team:", err);
       throw err;

@@ -7,6 +7,21 @@ const nextConfig = {
   basePath: isGithubActions ? '/buildathon1' : '',
   assetPrefix: isGithubActions ? '/buildathon1' : '',
 
+  async redirects() {
+    return [
+      {
+        source: '/gallery',
+        destination: '/events',
+        permanent: true,
+      },
+      {
+        source: '/leaderboard',
+        destination: '/events',
+        permanent: true,
+      }
+    ];
+  },
+
   async headers() {
     return [
       {

@@ -11,6 +11,7 @@ import { ThemeSelector } from './ThemeSelector';
 import { EventSelector } from './EventSelector';
 import { SignInModal } from '@/components/auth/SignInModal';
 import { useVoting } from '@/context/VotingContext';
+import { useTeams } from '@/context/TeamContext';
 import { useEvents } from '@/hooks/useEvents';
 import { useAuth } from '@/context/AuthContext';
 import { parseGitHubUrl, fetchGitHubRepoFromUrl, ensureAbsoluteUrl } from '@/lib/github';
@@ -27,7 +28,8 @@ interface ProjectSubmissionFormProps {
 
 export function ProjectSubmissionForm({ initialTeam, preselectedEventId, preselectedThemeId }: ProjectSubmissionFormProps) {
   const router = useRouter();
-  const { themes, addTeam, updateTeam, showToast } = useVoting();
+  const { themes, showToast } = useVoting();
+  const { addTeam, updateTeam } = useTeams();
   const { events } = useEvents();
   const { user, isAuthenticated, isAnonymous, ensureOwnershipToken } = useAuth();
 
@@ -270,6 +272,8 @@ export function ProjectSubmissionForm({ initialTeam, preselectedEventId, presele
       techStack,
       themeId: selectedThemeId,
       eventId: selectedEventId,
+      organizationId: selectedEvent?.organizationId || '',
+      submissionCode: enteredSubmissionCode.trim().toUpperCase(),
       // New multi-URL fields
       primaryUrl: primaryUrl.trim(),
       urlType,

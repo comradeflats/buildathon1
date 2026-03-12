@@ -84,10 +84,12 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && isOrgAdmin(request.resource.data.organizationId);
     }
 
-    // Teams - AUTH REQUIRED: Require sign-in for team submissions
+    // Teams - AUTH REQUIRED + SUBMISSION CODE VERIFICATION
     match /teams/{teamId} {
       allow read: if true;
-      allow create: if isAuthenticated(); 
+      allow create: if isAuthenticated() && 
+                       // Verify the code matches the event's secret code
+                       request.resource.data.submissionCode == getEventData(request.resource.data.eventId).submissionCode;
       allow update: if isAuthenticated() && (
         request.auth.uid == resource.data.ownerId ||
         isOrgAdmin(resource.data.organizationId)

@@ -2,9 +2,9 @@
 
 import React, { createContext, useContext, ReactNode, useState, useCallback, useMemo } from 'react';
 import { useVotes } from '@/hooks/useVotes';
-import { useTeams } from '@/hooks/useTeams';
 import { useThemes } from '@/hooks/useThemes';
-import { Vote, Scores, Team, TeamScore, Theme } from '@/lib/types';
+import { useTeams } from '@/context/TeamContext';
+import { Vote, Scores, TeamScore, Theme } from '@/lib/types';
 import { calculateTeamScores } from '@/lib/scoring';
 
 interface Toast {
@@ -17,27 +17,19 @@ interface Toast {
 interface VotingContextType {
   votes: Vote[];
   votedTeamIds: string[];
-  teams: Team[];
   themes: Theme[];
-  eventName: string;
   currentEventId: string | null;
   setCurrentEventId: (eventId: string | null) => void;
-  isLoading: boolean;
   isVotesLoaded: boolean;
   favoriteTeamId: string | null;
   submitVote: (teamId: string, scores: Scores, isFavorite?: boolean) => Promise<void>;
   hasVotedFor: (teamId: string) => boolean;
   getVoteForTeam: (teamId: string) => Vote | undefined;
   updateVote: (voteId: string, scores: Scores, isFavorite: boolean) => Promise<void>;
-  getTeamById: (id: string) => Team | undefined;
-  getTeamsByEventId: (eventId: string) => Team[];
   getThemeById: (id: string) => Theme | undefined;
   getThemeCriteria: (themeId: string) => string[];
   getThemesByEventId: (eventId: string) => Theme[];
   getLeaderboard: (eventId?: string) => TeamScore[];
-  addTeam: (team: Omit<Team, 'id'>) => Promise<void>;
-  updateTeam: (team: Team) => Promise<void>;
-  deleteTeam: (teamId: string) => Promise<void>;
   toggleFavorite: (teamId: string) => Promise<void>;
   isFavorite: (teamId: string) => boolean;
   toasts: Toast[];
@@ -60,7 +52,7 @@ export function VotingProvider({ children }: { children: ReactNode }) {
     getVoteForTeam,
     updateVote,
   } = useVotes();
-  const { teams, eventName, isLoading, getTeamById, addTeam, updateTeam, removeTeam } = useTeams();
+  const { teams } = useTeams();
   const { themes, getThemeById, getThemeCriteria, getThemesByEventId } = useThemes();
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [currentEventId, setCurrentEventId] = useState<string | null>(null);
@@ -70,13 +62,6 @@ export function VotingProvider({ children }: { children: ReactNode }) {
     const teamIds = new Set(teams.map(t => t.id));
     return votes.filter(v => teamIds.has(v.teamId));
   }, [votes, teams]);
-
-  const getTeamsByEventId = useCallback(
-    (eventId: string): Team[] => {
-      return teams.filter((team) => team.eventId === eventId);
-    },
-    [teams]
-  );
 
   const getLeaderboard = useCallback(
     (eventId?: string) => {
@@ -108,27 +93,19 @@ export function VotingProvider({ children }: { children: ReactNode }) {
       value={{
         votes: validVotes,
         votedTeamIds,
-        teams,
         themes,
-        eventName,
         currentEventId,
         setCurrentEventId,
-        isLoading,
         isVotesLoaded,
         favoriteTeamId,
         submitVote,
         hasVotedFor,
         getVoteForTeam,
         updateVote,
-        getTeamById,
-        getTeamsByEventId,
         getThemeById,
         getThemeCriteria,
         getThemesByEventId,
         getLeaderboard,
-        addTeam,
-        updateTeam,
-        deleteTeam: removeTeam,
         toggleFavorite,
         isFavorite,
         toasts,
