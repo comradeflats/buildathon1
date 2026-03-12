@@ -47,13 +47,6 @@ export async function POST(request: NextRequest) {
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
     const privateKey = parsePrivateKey(process.env.FIREBASE_PRIVATE_KEY);
 
-    console.log('Vertex AI Debug Info:', {
-      projectId,
-      hasEmail: !!clientEmail,
-      hasKey: !!privateKey,
-      keyLength: privateKey?.length,
-    });
-
     if (!projectId || !clientEmail || !privateKey) {
       return NextResponse.json(
         { error: 'Vertex AI credentials missing (ProjectID, Email, or Key)' },

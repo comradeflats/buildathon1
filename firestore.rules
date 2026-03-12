@@ -2,24 +2,43 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
+    // --- Helper functions ---
+    
     function isAuthenticated() {
       return request.auth != null;
     }
 
+    // Helper to get member document
+    function getOrgMemberDoc(orgId) {
+      return get(/databases/$(database)/documents/orgMembers/$(request.auth.uid + '_' + orgId));
+    }
+
+    // Check if user is a member of the organization
     function isOrgMember(orgId) {
       return exists(/databases/$(database)/documents/orgMembers/$(request.auth.uid + '_' + orgId));
     }
 
+    // Check if user is an admin or owner
     function isOrgAdmin(orgId) {
-      let member = get(/databases/$(database)/documents/orgMembers/$(request.auth.uid + '_' + orgId));
-      return member.data.role in ['owner', 'admin'];
+      return isOrgMember(orgId) && getOrgMemberDoc(orgId).data.role in ['owner', 'admin'];
     }
 
+    // Check if user is the owner
     function isOrgOwner(orgId) {
-      let member = get(/databases/$(database)/documents/orgMembers/$(request.auth.uid + '_' + orgId));
-      return member.data.role == 'owner';
+      return isOrgMember(orgId) && getOrgMemberDoc(orgId).data.role == 'owner';
     }
+
+    // Check if user has judging privileges (judge, admin, or owner)
+    function isOrgJudge(orgId) {
+      return isOrgMember(orgId) && getOrgMemberDoc(orgId).data.role in ['owner', 'admin', 'judge'];
+    }
+
+    // Helper to get event data
+    function getEventData(eventId) {
+      return get(/databases/$(database)/documents/events/$(eventId)).data;
+    }
+
+    // --- Rules ---
 
     // Organizations - readable by all, writable by authenticated users (create), admins (update/delete)
     match /organizations/{orgId} {
@@ -47,9 +66,9 @@ service cloud.firestore {
       );
     }
 
-    // Users - users can read and update their own profile
+    // Users - PRIVACY FIX: users can only read and update their OWN profile
     match /users/{userId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() && request.auth.uid == userId;
       allow create: if isAuthenticated() && request.auth.uid == userId;
       allow update: if isAuthenticated() && request.auth.uid == userId;
       allow delete: if isAuthenticated() && request.auth.uid == userId;
@@ -61,14 +80,14 @@ service cloud.firestore {
       allow create: if isAuthenticated() &&
                        isOrgAdmin(request.resource.data.organizationId) &&
                        request.resource.data.createdBy == request.auth.uid;
-      allow update: if isAuthenticated() && isOrgAdmin(resource.data.organizationId);
-      allow delete: if isAuthenticated() && isOrgAdmin(resource.data.organizationId);
+      allow update: if isAuthenticated() && isOrgAdmin(request.resource.data.organizationId);
+      allow delete: if isAuthenticated() && isOrgAdmin(request.resource.data.organizationId);
     }
 
-    // Teams - public read, authenticated users can create, owners/org admins can update/delete
+    // Teams - AUTH REQUIRED: Require sign-in for team submissions
     match /teams/{teamId} {
       allow read: if true;
-      allow create: if true; // Allow anonymous team submissions
+      allow create: if isAuthenticated(); 
       allow update: if isAuthenticated() && (
         request.auth.uid == resource.data.ownerId ||
         isOrgAdmin(resource.data.organizationId)
@@ -83,16 +102,23 @@ service cloud.firestore {
     match /themes/{themeId} {
       allow read: if true;
       allow create: if isAuthenticated() && isOrgAdmin(request.resource.data.organizationId);
-      allow update: if isAuthenticated() && isOrgAdmin(resource.data.organizationId);
-      allow delete: if isAuthenticated() && isOrgAdmin(resource.data.organizationId);
+      allow update: if isAuthenticated() && isOrgAdmin(request.resource.data.organizationId);
+      allow delete: if isAuthenticated() && isOrgAdmin(request.resource.data.organizationId);
     }
 
-    // Votes - judges can read their own votes, create/update votes
-    // Org admins can read all votes for their events
+    // Votes - AUTH REQUIRED + TOGGLE LOGIC (Peer vs Expert)
     match /votes/{voteId} {
       allow read: if true; // Public read for leaderboards
-      allow create: if true; // Allow anonymous voting
-      allow update: if resource.data.judgeId == request.auth.uid;
+      allow create: if isAuthenticated() && (
+        // Option A: Peer Voting (Anyone signed in can vote)
+        getEventData(request.resource.data.eventId).votingModel == 'peer' ||
+        // Option B: Expert Judging (Only designated org judges can vote)
+        isOrgJudge(request.resource.data.organizationId)
+      );
+      allow update: if isAuthenticated() && (
+        resource.data.judgeId == request.auth.uid ||
+        isOrgAdmin(resource.data.organizationId)
+      );
       allow delete: if isAuthenticated() && (
         resource.data.judgeId == request.auth.uid ||
         isOrgAdmin(resource.data.organizationId)
