@@ -38,11 +38,13 @@ export function VotingForm({ team }: VotingFormProps) {
   const { getEventById } = useEvents();
   const { isAuthenticated, user } = useAuth();
 
-  const alreadyVoted = hasVotedFor(team.id);
+  const existingVote = getVoteForTeam(team.id);
+  const alreadyVoted = !!existingVote;
   const theme = getThemeById(team.themeId);
   const criteria = getThemeCriteria(team.themeId);
   const event = getEventById(team.eventId);
-  const existingVote = getVoteForTeam(team.id);
+
+  const hasOtherFavorite = favoriteTeamId && favoriteTeamId !== team.id;
 
   const { isAdmin } = useOrgPermissions(event?.organizationId || null);
 

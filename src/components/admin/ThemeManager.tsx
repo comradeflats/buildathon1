@@ -259,7 +259,7 @@ export function ThemeManager({ eventId, organizationId }: ThemeManagerProps) {
 
                 <div className="flex flex-col gap-2">
                   <Button 
-                    variant={theme.isPublished ? 'outline' : 'default'} 
+                    variant={theme.isPublished ? 'secondary' : 'primary'} 
                     size="sm"
                     className={theme.isPublished ? 'border-emerald-500/50 text-emerald-500 hover:bg-emerald-500/10' : ''}
                     onClick={() => togglePublish(theme)}

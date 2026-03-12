@@ -83,7 +83,7 @@ export default function DashboardPage() {
             </Button>
           </Link>
           <Link href="/settings">
-            <Button variant="ghost" size="icon" className="rounded-full h-11 w-11">
+            <Button variant="ghost" size="md" className="rounded-full h-11 w-11 p-0">
               <Settings size={20} />
             </Button>
           </Link>
@@ -264,7 +264,7 @@ export default function DashboardPage() {
                     <p className="text-sm text-zinc-400 line-clamp-2">{team.description}</p>
                     <div className="flex items-center gap-2 pt-2">
                       <Link href={`/submit?teamId=${team.id}&eventId=${team.eventId}`} className="flex-1">
-                        <Button variant="outline" className="w-full text-xs">Edit</Button>
+                        <Button variant="secondary" className="w-full text-xs">Edit</Button>
                       </Link>
                       <Link href={`/events/${team.eventId}`} className="flex-1">
                         <Button variant="ghost" className="w-full text-xs">View in Event</Button>

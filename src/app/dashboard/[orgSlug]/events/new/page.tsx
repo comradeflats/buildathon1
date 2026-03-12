@@ -282,7 +282,7 @@ export default function NewEventPage() {
               <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">Location (Face to Face)</h3>
               <Button 
                 type="button" 
-                variant="outline" 
+                variant="secondary" 
                 size="sm" 
                 onClick={getCurrentLocation}
                 disabled={isGettingLocation || isCreating}

@@ -18,10 +18,12 @@ interface OrgContextType {
     canManageMembers: boolean;
     canManageEvents: boolean;
     canViewAnalytics: boolean;
+    isJudge: boolean;
   };
-  role: 'owner' | 'admin' | 'member' | null;
+  role: 'owner' | 'admin' | 'member' | 'judge' | null;
   isOwner: boolean;
   isAdmin: boolean;
+  isJudge: boolean;
   isMember: boolean;
 }
 
@@ -35,7 +37,7 @@ export function OrgProvider({ children }: { children: ReactNode }) {
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
   const [currentOrg, setCurrentOrg] = useState<Organization | null>(null);
 
-  const { permissions, role, isLoading: permsLoading, isOwner, isAdmin, isMember } = useOrgPermissions(currentOrgId);
+  const { permissions, role, isLoading: permsLoading, isOwner, isAdmin, isJudge, isMember } = useOrgPermissions(currentOrgId);
 
   // Load current org from localStorage on mount
   useEffect(() => {
@@ -102,6 +104,7 @@ export function OrgProvider({ children }: { children: ReactNode }) {
         role,
         isOwner,
         isAdmin,
+        isJudge,
         isMember,
       }}
     >

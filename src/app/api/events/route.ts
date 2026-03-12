@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
       endDate, 
       submissionDeadline, 
       keyboardsDownTime, 
+      votingModel,
       visibility, 
       slug 
     } = body;
@@ -95,6 +96,7 @@ export async function POST(request: NextRequest) {
       isActive: status === 'active',
       status: status || 'upcoming',
       phase: 'registration', // Default to registration phase
+      votingModel: votingModel || 'peer',
       startDate,
       endDate,
       submissionDeadline: submissionDeadline || null,

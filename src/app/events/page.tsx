@@ -9,7 +9,16 @@ import { Button } from '@/components/ui/Button';
 import { useSearchParams } from 'next/navigation';
 import { useEvents } from '@/hooks/useEvents';
 import { useTeams } from '@/hooks/useTeams';
-import RegionalMap from '@/components/events/RegionalMap';
+import dynamic from 'next/dynamic';
+
+const RegionalMap = dynamic(() => import('@/components/events/RegionalMap'), { 
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[600px] bg-zinc-900 animate-pulse rounded-2xl flex items-center justify-center">
+      <Loader2 size={32} className="animate-spin text-zinc-700" />
+    </div>
+  )
+});
 
 type ViewMode = 'grid' | 'map';
 
