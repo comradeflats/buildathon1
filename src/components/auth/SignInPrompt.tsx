@@ -31,8 +31,18 @@ export function SignInPrompt({
   const [error, setError] = useState<string | null>(null);
 
   const formatError = (err: any) => {
+    console.error('[AUTH] Formatting error:', err.code, err.message);
     if (err.code === 'auth/operation-not-allowed') {
       return 'This sign-in method is not enabled in Firebase. Please enable it in the console.';
+    }
+    if (err.code === 'auth/operation-not-supported-in-this-environment') {
+      return 'This browser is not supported for popup/redirect auth. Please try Chrome/Safari or disable private mode.';
+    }
+    if (err.code === 'auth/popup-blocked') {
+      return 'The sign-in popup was blocked. Please allow popups or try again.';
+    }
+    if (err.code === 'auth/unauthorized-domain') {
+      return 'This domain is not authorized for authentication. Check Firebase Authorized Domains.';
     }
     return err.message || 'An unexpected error occurred. Please try again.';
   };

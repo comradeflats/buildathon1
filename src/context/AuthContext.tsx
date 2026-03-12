@@ -110,7 +110,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGitHub = useCallback(async (): Promise<void> => {
     console.log('[AUTH] signInWithGitHub called');
-    console.log('[AUTH] isMobile:', isMobileDevice());
+    const isMobile = isMobileDevice();
+    console.log('[AUTH] isMobile:', isMobile);
     setAuthError(null);
 
     if (!auth || !githubProvider) {
@@ -122,19 +123,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       // Use redirect on mobile, popup on desktop
-      if (isMobileDevice()) {
+      if (isMobile) {
         console.log('[AUTH] Using signInWithRedirect...');
         await signInWithRedirect(auth, githubProvider);
         console.log('[AUTH] Redirect initiated');
       } else {
         console.log('[AUTH] Using signInWithPopup...');
-        await signInWithPopup(auth, githubProvider);
-        console.log('[AUTH] Popup auth complete');
+        try {
+          await signInWithPopup(auth, githubProvider);
+          console.log('[AUTH] Popup auth complete');
+        } catch (popupError: any) {
+          // If popup is blocked or not supported, try redirect
+          if (popupError.code === 'auth/operation-not-supported-in-this-environment' || 
+              popupError.code === 'auth/popup-blocked') {
+            console.warn('[AUTH] Popup failed, falling back to redirect');
+            await signInWithRedirect(auth, githubProvider);
+          } else {
+            throw popupError;
+          }
+        }
       }
     } catch (error: any) {
       console.error('[AUTH] Sign-in error:', error);
-      console.error('[AUTH] Error code:', error?.code);
-      console.error('[AUTH] Error message:', error?.message);
       setAuthError(`Sign-in error: ${error?.code || error?.message || 'Unknown'}`);
       throw error;
     }
@@ -142,6 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = useCallback(async (): Promise<void> => {
     console.log('[AUTH] signInWithGoogle called');
+    const isMobile = isMobileDevice();
     setAuthError(null);
 
     if (!auth || !googleProvider) {
@@ -152,10 +163,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      if (isMobileDevice()) {
+      if (isMobile) {
         await signInWithRedirect(auth, googleProvider);
       } else {
-        await signInWithPopup(auth, googleProvider);
+        try {
+          await signInWithPopup(auth, googleProvider);
+        } catch (popupError: any) {
+          if (popupError.code === 'auth/operation-not-supported-in-this-environment' || 
+              popupError.code === 'auth/popup-blocked') {
+            await signInWithRedirect(auth, googleProvider);
+          } else {
+            throw popupError;
+          }
+        }
       }
     } catch (error: any) {
       console.error('[AUTH] Google Sign-in error:', error);

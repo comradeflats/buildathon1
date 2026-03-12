@@ -30,23 +30,24 @@ function MapController({ events }: { events: Event[] }) {
   const map = useMap();
 
   useEffect(() => {
-    if (events.length === 0) {
-      // If no events, show global view but don't force it every render
-      return;
-    };
+    if (events.length === 0) return;
 
     const coords = events
       .filter(e => e.coordinates)
       .map(e => [e.coordinates!.lat, e.coordinates!.lng] as L.LatLngExpression);
 
     if (coords.length > 0) {
-      const bounds = L.latLngBounds(coords);
-      // Use a more conservative maxZoom for city searches (e.g., 10 instead of default)
-      map.fitBounds(bounds, { 
-        padding: [50, 50], 
-        maxZoom: 10, 
-        animate: true 
-      });
+      if (coords.length === 1) {
+        // If only one event, zoom in closely to it
+        map.setView(coords[0], 13, { animate: true });
+      } else {
+        const bounds = L.latLngBounds(coords);
+        map.fitBounds(bounds, { 
+          padding: [50, 50], 
+          maxZoom: 12, 
+          animate: true 
+        });
+      }
     }
   }, [events, map]);
 
@@ -71,7 +72,7 @@ export default function RegionalMap({ events }: RegionalMapProps) {
 
   const activeIcon = createCustomIcon('#10b981'); // Emerald
   const upcomingIcon = createCustomIcon('#8b5cf6'); // Violet
-  const archivedIcon = createCustomIcon('#71717a'); // Zinc
+  const archivedIcon = createCustomIcon('#64748b'); // Slate-500
 
   const toggleFilter = (status: string) => {
     setActiveFilter(prev => 
@@ -170,9 +171,9 @@ export default function RegionalMap({ events }: RegionalMapProps) {
         </button>
         <button 
           onClick={() => toggleFilter('archived')}
-          className={`flex items-center gap-3 text-[11px] font-bold transition-all w-full text-left p-1 rounded-lg hover:bg-zinc-800 ${activeFilter.includes('archived') ? 'text-zinc-300' : 'text-zinc-600 grayscale'}`}
+          className={`flex items-center gap-3 text-[11px] font-bold transition-all w-full text-left p-1 rounded-lg hover:bg-zinc-800 ${activeFilter.includes('archived') ? 'text-slate-400' : 'text-zinc-600 grayscale'}`}
         >
-          <div className="w-3 h-3 rounded-full bg-zinc-500" />
+          <div className="w-3 h-3 rounded-full bg-slate-500 shadow-[0_0_8px_rgba(100,116,139,0.5)]" />
           <span>Past Arenas</span>
         </button>
 
