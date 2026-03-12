@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Github, Loader2, Star, GitFork, ExternalLink, AlertCircle, Calendar, Globe, Link, CheckCircle, ChevronDown, Lock } from 'lucide-react';
+import { Github, Loader2, Star, GitFork, ExternalLink, AlertCircle, Calendar, Globe, Link, CheckCircle, ChevronDown, Lock, Send } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -17,6 +17,7 @@ import { parseGitHubUrl, fetchGitHubRepoFromUrl, ensureAbsoluteUrl } from '@/lib
 import { addTeamToOwnership } from '@/lib/indexeddb';
 import { GitHubRepoData, Team, SubmissionUrlType } from '@/lib/types';
 import { detectUrlType, validateUrl, getUrlTypeInfo } from '@/lib/urls';
+import { getEventStatus } from '@/lib/utils';
 
 interface ProjectSubmissionFormProps {
   initialTeam?: Team;
@@ -27,11 +28,33 @@ interface ProjectSubmissionFormProps {
 export function ProjectSubmissionForm({ initialTeam, preselectedEventId, preselectedThemeId }: ProjectSubmissionFormProps) {
   const router = useRouter();
   const { themes, addTeam, updateTeam, showToast } = useVoting();
-  const { events, getEventsForSubmission } = useEvents();
+  const { events } = useEvents();
   const { user, isAuthenticated, isAnonymous, ensureOwnershipToken } = useAuth();
 
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [enteredSubmissionCode, setEnteredSubmissionCode] = useState('');
+  const codeInputRef = useRef<HTMLInputElement>(null);
+
+  // Get only active events for new submissions
+  const activeEvents = useMemo(() => {
+    return events.filter(e => getEventStatus(e.startDate, e.endDate) === 'active');
+  }, [events]);
+
+  // Initial event validation
+  const initialEventId = useMemo(() => {
+    const id = initialTeam?.eventId || preselectedEventId || '';
+    if (!id) return '';
+    
+    // For edits, allow the original event
+    if (initialTeam) return id;
+    
+    // For new submissions, check if preselected event is active
+    const event = events.find(e => e.id === id);
+    if (event && getEventStatus(event.startDate, event.endDate) !== 'active') {
+      return ''; // Clear if not active
+    }
+    return id;
+  }, [initialTeam, preselectedEventId, events]);
 
   // URL and type state
   const [primaryUrl, setPrimaryUrl] = useState(initialTeam?.primaryUrl || initialTeam?.githubUrl || '');
@@ -49,21 +72,25 @@ export function ProjectSubmissionForm({ initialTeam, preselectedEventId, presele
   const [teamName, setTeamName] = useState(initialTeam?.name || '');
   const [projectName, setProjectName] = useState(initialTeam?.projectName || '');
   const [members, setMembers] = useState(initialTeam?.members.join(', ') || '');
-  const [selectedEventId, setSelectedEventId] = useState(initialTeam?.eventId || preselectedEventId || '');
+  const [selectedEventId, setSelectedEventId] = useState(initialEventId);
   const [selectedThemeId, setSelectedThemeId] = useState(initialTeam?.themeId || preselectedThemeId || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isEditMode = !!initialTeam;
   const urlTypeInfo = getUrlTypeInfo(urlType);
 
-  // Get available events for submission
-  const availableEvents = useMemo(() => getEventsForSubmission(), [getEventsForSubmission]);
-
   // Filter themes by selected event
   const eventThemes = useMemo(() => {
     if (!selectedEventId) return themes;
     return themes.filter((theme) => theme.eventId === selectedEventId);
   }, [themes, selectedEventId]);
+
+  // Focus code input when event is selected
+  useEffect(() => {
+    if (selectedEventId && urlValidated && codeInputRef.current) {
+      codeInputRef.current.focus();
+    }
+  }, [selectedEventId, urlValidated]);
 
   // Clear theme selection when event changes (unless it's still valid)
   const handleEventChange = (eventId: string) => {
@@ -278,7 +305,7 @@ export function ProjectSubmissionForm({ initialTeam, preselectedEventId, presele
         showToast(`${teamData.projectName} added to competition!`, 'success');
       }
       // Redirect to event gallery instead of home
-      router.push(`/events/${selectedEventId}`);
+      router.push(`/gallery/${selectedEventId}`);
     } catch (err) {
       showToast('Failed to save project. Please try again.', 'error');
     } finally {
@@ -466,138 +493,144 @@ export function ProjectSubmissionForm({ initialTeam, preselectedEventId, presele
             Select Event
           </h2>
           <EventSelector
-            events={availableEvents}
+            events={activeEvents}
             selectedEventId={selectedEventId}
             onChange={handleEventChange}
           />
+          {!selectedEventId && events.length > 0 && activeEvents.length === 0 && (
+            <p className="mt-4 text-sm text-amber-400 bg-amber-500/5 border border-amber-500/20 p-3 rounded-lg flex items-center gap-2">
+              <AlertCircle size={16} />
+              No active arenas found. Submissions are only open during live events.
+            </p>
+          )}
         </Card>
 
-        {/* Submission Code Verification */}
-        {selectedEventId && (
-          <Card className="p-6 border-accent/20">
-            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <Lock size={20} className="text-accent" />
-              Event Submission Code
-            </h2>
-            <p className="text-sm text-zinc-400 mb-4">
-              Enter the verification code revealed at the event to submit your project.
-            </p>
-            <input
-              type="text"
-              value={enteredSubmissionCode}
-              onChange={(e) => setEnteredSubmissionCode(e.target.value.toUpperCase())}
-              placeholder="Enter 6-character code"
-              className="w-full max-w-[200px] bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-center font-mono text-xl tracking-widest"
-              maxLength={10}
-            />
-          </Card>
-        )}
-
-        {/* Theme Selection */}
-        {selectedEventId && (
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Competition Theme</h2>
-            {eventThemes.length > 0 ? (
-              <ThemeSelector
-                themes={eventThemes}
-                selectedThemeId={selectedThemeId}
-                onChange={setSelectedThemeId}
-              />
-            ) : (
-              <p className="text-zinc-400 text-sm">
-                No themes available for this event yet. An admin needs to generate themes first.
+        {/* Progressive Disclosure Sections */}
+        {urlValidated && selectedEventId && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+            {/* Submission Code Verification */}
+            <Card className="p-6 border-accent/20">
+              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Lock size={20} className="text-accent" />
+                Event Submission Code
+              </h2>
+              <p className="text-sm text-zinc-400 mb-4">
+                Enter the verification code revealed at the event to submit your project.
               </p>
-            )}
-          </Card>
-        )}
+              <input
+                ref={codeInputRef}
+                type="text"
+                value={enteredSubmissionCode}
+                onChange={(e) => setEnteredSubmissionCode(e.target.value.toUpperCase())}
+                placeholder="Enter 6-character code"
+                className="w-full max-w-[200px] bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-center font-mono text-xl tracking-widest"
+                maxLength={10}
+              />
+            </Card>
 
-        {/* Team Details */}
-        {urlValidated && (
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">
-              {urlType === 'github' ? 'Team Details (Optional)' : 'Project Details'}
-            </h2>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">
-                  Project Name {urlType !== 'github' && <span className="text-red-400">*</span>}
-                </label>
-                <input
-                  type="text"
-                  value={projectName}
-                  onChange={(e) => setProjectName(e.target.value)}
-                  placeholder="Awesome Project"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+            {/* Theme Selection */}
+            <Card className="p-6">
+              <h2 className="text-lg font-semibold text-white mb-4">Competition Theme</h2>
+              {eventThemes.length > 0 ? (
+                <ThemeSelector
+                  themes={eventThemes}
+                  selectedThemeId={selectedThemeId}
+                  onChange={setSelectedThemeId}
                 />
-              </div>
+              ) : (
+                <p className="text-zinc-400 text-sm">
+                  No themes available for this event yet. An admin needs to generate themes first.
+                </p>
+              )}
+            </Card>
 
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">
-                  Project Description {urlType !== 'github' && <span className="text-red-400">*</span>}
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Briefly describe your project..."
-                  rows={3}
-                  className={`w-full bg-zinc-800 border rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none ${
-                    urlType !== 'github' && !description.trim() ? 'border-zinc-600' : 'border-zinc-700'
-                  }`}
-                />
-                {urlType !== 'github' && (
-                  <p className="text-xs text-zinc-500 mt-1">
-                    Description is required for non-GitHub submissions
-                  </p>
-                )}
-              </div>
+            {/* Team Details */}
+            <Card className="p-6">
+              <h2 className="text-lg font-semibold text-white mb-4">
+                {urlType === 'github' ? 'Team Details (Optional)' : 'Project Details'}
+              </h2>
 
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">
-                  Team Name
-                </label>
-                <input
-                  type="text"
-                  value={teamName}
-                  onChange={(e) => setTeamName(e.target.value)}
-                  placeholder={urlType === 'github' && repoData ? repoData.fullName.split('/')[0] : 'Team name'}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                />
-              </div>
-
-              {/* Only show Deployment URL for GitHub submissions (others are already a deployment URL) */}
-              {urlType === 'github' && (
+              <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-zinc-400 mb-2">
-                    Deployment URL (optional)
+                    Project Name {urlType !== 'github' && <span className="text-red-400">*</span>}
                   </label>
                   <input
-                    type="url"
-                    value={deploymentUrl}
-                    onChange={(e) => setDeploymentUrl(e.target.value)}
-                    placeholder="https://your-project.vercel.app"
+                    type="text"
+                    value={projectName}
+                    onChange={(e) => setProjectName(e.target.value)}
+                    placeholder="Awesome Project"
                     className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                   />
                 </div>
-              )}
 
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-2">
-                  Team Members (one per line)
-                </label>
-                <textarea
-                  value={members}
-                  onChange={(e) => setMembers(e.target.value)}
-                  placeholder="Alice&#10;Bob&#10;Charlie"
-                  rows={3}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none"
-                />
-                <p className="text-xs text-zinc-500 mt-1">
-                  List the names of everyone on your team.
-                </p>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-400 mb-2">
+                    Project Description {urlType !== 'github' && <span className="text-red-400">*</span>}
+                  </label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Briefly describe your project..."
+                    rows={3}
+                    className={`w-full bg-zinc-800 border rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none ${
+                      urlType !== 'github' && !description.trim() ? 'border-zinc-600' : 'border-zinc-700'
+                    }`}
+                  />
+                  {urlType !== 'github' && (
+                    <p className="text-xs text-zinc-500 mt-1">
+                      Description is required for non-GitHub submissions
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-400 mb-2">
+                    Team Name
+                  </label>
+                  <input
+                    type="text"
+                    value={teamName}
+                    onChange={(e) => setTeamName(e.target.value)}
+                    placeholder={urlType === 'github' && repoData ? repoData.fullName.split('/')[0] : 'Team name'}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                  />
+                </div>
+
+                {/* Only show Deployment URL for GitHub submissions (others are already a deployment URL) */}
+                {urlType === 'github' && (
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-400 mb-2">
+                      Deployment URL (optional)
+                    </label>
+                    <input
+                      type="url"
+                      value={deploymentUrl}
+                      onChange={(e) => setDeploymentUrl(e.target.value)}
+                      placeholder="https://your-project.vercel.app"
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-zinc-400 mb-2">
+                    Team Members (one per line)
+                  </label>
+                  <textarea
+                    value={members}
+                    onChange={(e) => setMembers(e.target.value)}
+                    placeholder="Alice&#10;Bob&#10;Charlie"
+                    rows={3}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none"
+                  />
+                  <p className="text-xs text-zinc-500 mt-1">
+                    List the names of everyone on your team.
+                  </p>
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+          </div>
         )}
 
         {/* Submit Button */}
@@ -620,7 +653,7 @@ export function ProjectSubmissionForm({ initialTeam, preselectedEventId, presele
         {!isFormValid && urlValidated && (
           <p className="text-sm text-zinc-500 text-center">
             {!selectedEventId
-              ? 'Please select an event to continue'
+              ? 'Please select an active event to continue'
               : !enteredSubmissionCode.trim()
                 ? 'Please enter the event submission code'
                 : !selectedThemeId

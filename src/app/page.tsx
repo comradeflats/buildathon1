@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ChevronRight, ArrowRight, MapPin, Users2, Sparkles, Clock, Zap, Trophy, Globe, LayoutGrid, Search, PlayCircle, Star, Beer } from 'lucide-react';
+import { ChevronRight, ArrowRight, MapPin, Users2, Sparkles, Clock, Zap, Trophy, Globe, LayoutGrid, Search, PlayCircle, Star, Beer, ChevronDown, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/context/AuthContext';
 import { SignInModal } from '@/components/auth/SignInModal';
 
@@ -20,15 +21,15 @@ export default function HomePage() {
   };
 
   return (
-    <div className="space-y-24 pb-20">
-      {/* Hero Section */}
-      <section className="relative pt-16 pb-20 overflow-hidden">
+    <div className="space-y-32 pb-20">
+      {/* Hero Section - The Pitch */}
+      <section className="relative pt-20 pb-12 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-emerald-500/10 blur-[120px] rounded-full -z-10 opacity-60" />
         
         <div className="text-center max-w-4xl mx-auto space-y-8 px-4">
           <Badge variant="outline" className="py-1.5 px-5 border-emerald-500/30 text-emerald-400 bg-emerald-500/5 animate-in fade-in slide-in-from-top-4 duration-700">
             <Sparkles size={14} className="mr-2 fill-emerald-400" />
-            The Home of Live Hackathons
+            Your Portal to Live Innovation
           </Badge>
           
           <h1 className="text-5xl md:text-7xl font-black text-white tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
@@ -36,134 +37,110 @@ export default function HomePage() {
           </h1>
           
           <p className="text-xl md:text-2xl text-zinc-300 max-w-3xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 font-medium">
-            Where strangers become co-founders in a single afternoon. Experience the electric energy of <span className="text-white underline decoration-emerald-500 underline-offset-4">Face to Face</span> innovation.
+            A dedicated portal for connecting builders to <span className="text-white underline decoration-emerald-500 underline-offset-4 font-bold">Live, In-Person</span> hackathon events.
           </p>
           
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
+          <p className="text-zinc-500 max-w-2xl mx-auto animate-in fade-in duration-1000 delay-500">
+            We provide the infrastructure for high-energy building sessions where strangers become co-founders in a single afternoon.
+          </p>
+
+          <div className="pt-8 animate-bounce">
+             <ChevronDown className="mx-auto text-zinc-700" size={32} />
+          </div>
+        </div>
+      </section>
+
+      {/* 1. The Narrative Flow: How it works */}
+      <section className="max-w-5xl mx-auto px-4">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl font-black text-white mb-4">How it works</h2>
+          <p className="text-zinc-400 max-w-xl mx-auto">Short, intense, and social. Here is the blueprint for every live buildathon.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {[
+            { step: '1. Set a Theme', desc: 'A specific challenge is revealed. Everyone starts at zero.', icon: Zap, color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+            { step: '2. Build & Ship', desc: 'The clock is ticking. Teams code, design, and pivot.', icon: Clock, color: 'text-cyan-500', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
+            { step: '3. Demo & Vote', desc: 'Present to the room. The crowd and judges vote live.', icon: PlayCircle, color: 'text-indigo-500', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' },
+            { step: '4. Win & Celebrate', desc: 'From beers to crypto—the best ideas take the prize.', icon: Trophy, color: 'text-yellow-500', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' }
+          ].map((item, i) => (
+            <div key={i} className="space-y-4 text-center group transition-transform hover:-translate-y-1">
+              <div className={`w-16 h-16 ${item.bg} rounded-2xl flex items-center justify-center mx-auto border ${item.border}`}>
+                <item.icon className={item.color} size={28} />
+              </div>
+              <h3 className="font-bold text-white">{item.step}</h3>
+              <p className="text-sm text-zinc-500 leading-relaxed">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 2. Concrete Examples: The Arena Experience */}
+      <section className="max-w-5xl mx-auto px-4 space-y-12">
+        <div className="text-center">
+          <h2 className="text-3xl font-black text-white mb-4">The Arena Experience</h2>
+          <p className="text-zinc-400">Real events, real projects, real winners.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Event Snippet */}
+          <Card className="p-6 border-zinc-800 bg-zinc-900/40 relative overflow-hidden group">
+             <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-100 transition-opacity">
+                <Calendar size={24} className="text-emerald-400" />
+             </div>
+             <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 mb-4">UPCOMING</Badge>
+             <h3 className="text-lg font-bold text-white mb-2">Da Nang Sprint #4</h3>
+             <p className="text-sm text-zinc-500">Join 40+ builders at The Workshop this Friday. Theme: "Local Commerce".</p>
+          </Card>
+
+          {/* Gallery Snippet */}
+          <Card className="p-6 border-zinc-800 bg-zinc-900/40 relative overflow-hidden group">
+             <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-100 transition-opacity">
+                <LayoutGrid size={24} className="text-cyan-400" />
+             </div>
+             <Badge className="bg-cyan-500/10 text-cyan-400 border-cyan-500/20 mb-4">FEATURED PROJECT</Badge>
+             <h3 className="text-lg font-bold text-white mb-2">AI Prep Buddy</h3>
+             <p className="text-sm text-zinc-500">A meal-prep assistant built in 4 hours using GPT-4o. 12 votes received.</p>
+          </Card>
+
+          {/* Leaderboard Snippet */}
+          <Card className="p-6 border-zinc-800 bg-zinc-900/40 relative overflow-hidden group">
+             <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-100 transition-opacity">
+                <Trophy size={24} className="text-yellow-400" />
+             </div>
+             <Badge className="bg-yellow-500/10 text-yellow-400 border-yellow-500/20 mb-4">RECENT WINNER</Badge>
+             <h3 className="text-lg font-bold text-white mb-2">Team Zenith</h3>
+             <p className="text-sm text-zinc-500">Scored 9.8/10 in UX and Innovation. Took home the $200 prize.</p>
+          </Card>
+        </div>
+      </section>
+
+      {/* 3. The Action: Ready to enter? */}
+      <section className="text-center py-24 border-t border-zinc-900 relative">
+         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-zinc-800 to-transparent" />
+         <h2 className="text-4xl font-black text-white mb-6 leading-tight">Ready to enter the arena?</h2>
+         <p className="text-zinc-400 mb-10 text-lg max-w-xl mx-auto">Sign up to discover upcoming events or get the tools to host your own live buildathon.</p>
+         
+         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/events" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full sm:px-10 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black h-14 text-lg rounded-full shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95">
-                DISCOVER EVENTS
+              <Button size="lg" className="w-full sm:px-12 rounded-full bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black h-14 text-lg shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95">
+                FIND AN EVENT
                 <ArrowRight size={20} className="ml-2" />
               </Button>
             </Link>
             <Link href="/signup" onClick={handleHostClick} className="w-full sm:w-auto">
               <Button size="lg" variant="secondary" className="w-full sm:px-10 h-14 text-lg rounded-full border-zinc-700 bg-zinc-900/50 backdrop-blur hover:bg-zinc-800 transition-all hover:scale-105 active:scale-95">
-                Host a Buildathon
+                Host Your Own
               </Button>
             </Link>
-          </div>
+         </div>
 
-          <div className="pt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-zinc-500 font-medium animate-in fade-in duration-1000 delay-500">
-             <div className="flex items-center gap-2">
-                <Users2 size={18} className="text-emerald-500/70" />
-                <span>All Skill Levels</span>
-             </div>
-             <div className="hidden sm:block w-1.5 h-1.5 bg-zinc-800 rounded-full" />
-             <div className="flex items-center gap-2">
-                <MapPin size={18} className="text-emerald-500/70" />
-                <span>Face to Face</span>
-             </div>
-             <div className="hidden sm:block w-1.5 h-1.5 bg-zinc-800 rounded-full" />
-             <div className="flex items-center gap-2">
-                <Clock size={18} className="text-emerald-500/70" />
-                <span>Real Time Action</span>
-             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* The Live Flow Section */}
-      <section className="max-w-5xl mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-black text-white mb-4">The Live Flow</h2>
-          <p className="text-zinc-400 max-w-xl mx-auto">Short, intense, and incredibly social. Here's how a typical buildathon goes down.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="space-y-4 text-center">
-            <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/20">
-              <Zap className="text-emerald-500" size={28} />
-            </div>
-            <h3 className="font-bold text-white">1. Set a Theme</h3>
-            <p className="text-sm text-zinc-500">We reveal a specific challenge. Everyone starts at zero together.</p>
-          </div>
-
-          <div className="space-y-4 text-center">
-            <div className="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center mx-auto border border-cyan-500/20">
-              <Clock className="text-cyan-500" size={28} />
-            </div>
-            <h3 className="font-bold text-white">2. Build & Ship</h3>
-            <p className="text-sm text-zinc-500">The clock is ticking. Teams code, design, and pivot in real-time.</p>
-          </div>
-
-          <div className="space-y-4 text-center">
-            <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto border border-indigo-500/20">
-              <PlayCircle className="text-indigo-500" size={28} />
-            </div>
-            <h3 className="font-bold text-white">3. Demo & Vote</h3>
-            <p className="text-sm text-zinc-500">Present your work to the room. The crowd and judges vote live.</p>
-          </div>
-
-          <div className="space-y-4 text-center">
-            <div className="w-16 h-16 bg-yellow-500/10 rounded-2xl flex items-center justify-center mx-auto border border-yellow-500/20">
-              <Trophy className="text-yellow-500" size={28} />
-            </div>
-            <h3 className="font-bold text-white">4. Win & Celebrate</h3>
-            <p className="text-sm text-zinc-500">From a free beer to USDC—the best ideas take home the prize.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Discovery Section Teaser */}
-      <section className="max-w-5xl mx-auto px-4 bg-zinc-900/30 border border-zinc-800 rounded-[3rem] p-12 overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[100px] -z-10" />
-        
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6">
-            <h2 className="text-3xl font-black text-white leading-tight">Buildathons Near You</h2>
-            <p className="text-zinc-400 text-lg">
-              It started in <span className="text-emerald-400 font-bold">Da Nang</span>. Now it's spreading. Find a live room in your city or see where the next global sprint is happening.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 pt-2">
-              <Link href="/events?view=map">
-                <Button className="w-full sm:w-auto rounded-full bg-emerald-500 hover:bg-emerald-600 text-zinc-950 border-none font-bold">
-                  <Globe className="mr-2" size={18} />
-                  View Global Map
-                </Button>
-              </Link>
-              <Link href="/events">
-                <Button variant="ghost" className="w-full sm:w-auto text-emerald-400 font-bold">
-                  Browse by Date
-                  <ChevronRight className="ml-1" size={18} />
-                </Button>
-              </Link>
-            </div>
-          </div>
-          
-          <div className="bg-zinc-950 border border-zinc-800 rounded-3xl aspect-square md:aspect-video flex items-center justify-center relative overflow-hidden group">
-            <div className="absolute inset-0 bg-emerald-500/5 opacity-50 group-hover:opacity-100 transition-opacity" />
-            <div className="text-center p-8 space-y-4 z-10">
-              <MapPin size={48} className="text-emerald-500 mx-auto animate-bounce" />
-              <p className="text-zinc-500 font-medium">Interactive Map Integration Coming Soon</p>
-              <div className="flex items-center justify-center gap-2">
-                <Badge variant="outline" className="bg-zinc-900/80 border-zinc-700">Da Nang</Badge>
-                <Badge variant="outline" className="bg-zinc-900/80 border-zinc-700 opacity-50">Ho Chi Minh</Badge>
-                <Badge variant="outline" className="bg-zinc-900/80 border-zinc-700 opacity-30">Singapore</Badge>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer CTA */}
-      <section className="text-center py-20 border-t border-zinc-900">
-         <h2 className="text-4xl font-black text-white mb-6">Inspired by the live energy?</h2>
-         <p className="text-zinc-400 mb-10 text-lg max-w-xl mx-auto">Take the Da Nang blueprint to your city. We provide the tools to run your own live arena.</p>
-         <Link href="/signup" onClick={handleHostClick}>
-            <Button size="lg" className="rounded-full px-12 bg-white text-zinc-950 font-black hover:bg-zinc-200 transition-colors">
-               START A BUILDATHON
-            </Button>
-         </Link>
+         <div className="mt-12 pt-8 border-t border-zinc-900/50 flex flex-wrap items-center justify-center gap-8 text-zinc-500 font-medium">
+            <Link href="/gallery" className="hover:text-emerald-400 transition-colors flex items-center gap-2">
+              <Globe size={18} />
+              Explore the Arenas
+            </Link>
+         </div>
       </section>
 
       <SignInModal 

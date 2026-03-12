@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Event } from '@/lib/types';
 import { Badge } from '@/components/ui/Badge';
-import { Calendar, MapPin, ArrowRight } from 'lucide-react';
+import { Calendar, MapPin, ArrowRight, X } from 'lucide-react';
 import Link from 'next/link';
+import { getEventStatus } from '@/lib/utils';
 
 // Fix for default marker icons in Leaflet with Next.js
 const fixLeafletIcons = () => {
@@ -29,7 +30,10 @@ function MapController({ events }: { events: Event[] }) {
   const map = useMap();
 
   useEffect(() => {
-    if (events.length === 0) return;
+    if (events.length === 0) {
+      // If no events, show global view but don't force it every render
+      return;
+    };
 
     const coords = events
       .filter(e => e.coordinates)
@@ -37,7 +41,12 @@ function MapController({ events }: { events: Event[] }) {
 
     if (coords.length > 0) {
       const bounds = L.latLngBounds(coords);
-      map.fitBounds(bounds, { padding: [50, 50] });
+      // Use a more conservative maxZoom for city searches (e.g., 10 instead of default)
+      map.fitBounds(bounds, { 
+        padding: [50, 50], 
+        maxZoom: 10, 
+        animate: true 
+      });
     }
   }, [events, map]);
 
@@ -45,13 +54,11 @@ function MapController({ events }: { events: Event[] }) {
 }
 
 export default function RegionalMap({ events }: RegionalMapProps) {
+  const [activeFilter, setActiveFilter] = useState<string[]>(['active', 'upcoming', 'archived']);
+
   useEffect(() => {
     fixLeafletIcons();
   }, []);
-
-  const activeEvents = events.filter(e => e.status === 'active' && e.coordinates);
-  const upcomingEvents = events.filter(e => e.status === 'upcoming' && e.coordinates);
-  const archivedEvents = events.filter(e => e.status === 'archived' && e.coordinates);
 
   const createCustomIcon = (color: string) => {
     return new L.DivIcon({
@@ -63,25 +70,49 @@ export default function RegionalMap({ events }: RegionalMapProps) {
   };
 
   const activeIcon = createCustomIcon('#10b981'); // Emerald
-  const upcomingIcon = createCustomIcon('#eab308'); // Yellow
+  const upcomingIcon = createCustomIcon('#8b5cf6'); // Violet
   const archivedIcon = createCustomIcon('#71717a'); // Zinc
 
+  const toggleFilter = (status: string) => {
+    setActiveFilter(prev => 
+      prev.includes(status) 
+        ? prev.filter(s => s !== status) 
+        : [...prev, status]
+    );
+  };
+
+  // Derive statuses for display consistency
+  const processedEvents = events.map(e => ({
+    ...e,
+    derivedStatus: getEventStatus(e.startDate, e.endDate)
+  }));
+
+  const filteredByStatus = processedEvents.filter(e => activeFilter.includes(e.derivedStatus));
+
+  const activeMarkers = filteredByStatus.filter(e => e.derivedStatus === 'active' && e.coordinates);
+  const upcomingMarkers = filteredByStatus.filter(e => e.derivedStatus === 'upcoming' && e.coordinates);
+  const archivedMarkers = filteredByStatus.filter(e => e.derivedStatus === 'archived' && e.coordinates);
+
   return (
-    <div className="relative w-full h-[600px] bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-800 z-0">
+    <div className="relative w-full h-[600px] bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-800 z-0 group/map">
       <MapContainer 
-        center={[15, 108]} 
-        zoom={4} 
+        center={[20, 0]} 
+        zoom={2} 
         style={{ height: '100%', width: '100%', background: '#09090b' }}
         zoomControl={false}
+        worldCopyJump={false}
+        maxBounds={[[-90, -180], [90, 180]]}
+        minZoom={2}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          noWrap={true}
         />
         
         <MapController events={events} />
 
-        {activeEvents.map(event => (
+        {activeMarkers.map(event => (
           <Marker 
             key={event.id} 
             position={[event.coordinates!.lat, event.coordinates!.lng]}
@@ -93,7 +124,7 @@ export default function RegionalMap({ events }: RegionalMapProps) {
           </Marker>
         ))}
 
-        {upcomingEvents.map(event => (
+        {upcomingMarkers.map(event => (
           <Marker 
             key={event.id} 
             position={[event.coordinates!.lat, event.coordinates!.lng]}
@@ -105,7 +136,7 @@ export default function RegionalMap({ events }: RegionalMapProps) {
           </Marker>
         ))}
 
-        {archivedEvents.map(event => (
+        {archivedMarkers.map(event => (
           <Marker 
             key={event.id} 
             position={[event.coordinates!.lat, event.coordinates!.lng]}
@@ -118,21 +149,41 @@ export default function RegionalMap({ events }: RegionalMapProps) {
         ))}
       </MapContainer>
 
-      {/* Overlay Legend */}
-      <div className="absolute bottom-6 left-6 z-[1000] bg-zinc-900/90 backdrop-blur-md border border-zinc-800 p-4 rounded-xl shadow-2xl space-y-3 pointer-events-none">
-        <h4 className="text-white text-xs font-bold uppercase tracking-wider mb-2">Map Legend</h4>
-        <div className="flex items-center gap-3 text-[11px] text-zinc-300">
+      {/* Interactive Legend Overlays */}
+      <div className="absolute bottom-6 left-6 z-[1000] bg-zinc-900/95 backdrop-blur-md border border-zinc-800 p-4 rounded-xl shadow-2xl space-y-3">
+        <h4 className="text-white text-[10px] font-black uppercase tracking-[0.2em] mb-2 flex items-center gap-2 text-zinc-500">
+          Arena Filters
+        </h4>
+        <button 
+          onClick={() => toggleFilter('active')}
+          className={`flex items-center gap-3 text-[11px] font-bold transition-all w-full text-left p-1 rounded-lg hover:bg-zinc-800 ${activeFilter.includes('active') ? 'text-emerald-400' : 'text-zinc-600 grayscale'}`}
+        >
           <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-          <span>Active Arena</span>
-        </div>
-        <div className="flex items-center gap-3 text-[11px] text-zinc-300">
-          <div className="w-3 h-3 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
-          <span>Coming Soon</span>
-        </div>
-        <div className="flex items-center gap-3 text-[11px] text-zinc-300">
+          <span>Active Arenas</span>
+        </button>
+        <button 
+          onClick={() => toggleFilter('upcoming')}
+          className={`flex items-center gap-3 text-[11px] font-bold transition-all w-full text-left p-1 rounded-lg hover:bg-zinc-800 ${activeFilter.includes('upcoming') ? 'text-violet-400' : 'text-zinc-600 grayscale'}`}
+        >
+          <div className="w-3 h-3 rounded-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.5)]" />
+          <span>Upcoming Sprints</span>
+        </button>
+        <button 
+          onClick={() => toggleFilter('archived')}
+          className={`flex items-center gap-3 text-[11px] font-bold transition-all w-full text-left p-1 rounded-lg hover:bg-zinc-800 ${activeFilter.includes('archived') ? 'text-zinc-300' : 'text-zinc-600 grayscale'}`}
+        >
           <div className="w-3 h-3 rounded-full bg-zinc-500" />
-          <span>Past Sprints</span>
-        </div>
+          <span>Past Arenas</span>
+        </button>
+
+        {activeFilter.length < 3 && (
+           <button 
+             onClick={() => setActiveFilter(['active', 'upcoming', 'archived'])}
+             className="text-[10px] text-zinc-500 hover:text-white mt-2 flex items-center gap-1 mx-auto pt-2 border-t border-zinc-800 w-full justify-center"
+           >
+             <X size={10} /> Reset Filters
+           </button>
+        )}
       </div>
 
       {/* Global CSS for Leaflet Popups */}
@@ -157,15 +208,17 @@ export default function RegionalMap({ events }: RegionalMapProps) {
   );
 }
 
-function EventPopup({ event }: { event: Event }) {
+function EventPopup({ event }: { event: any }) {
+  const status = getEventStatus(event.startDate, event.endDate);
+  
   return (
     <div className="p-4 space-y-3">
       <div className="flex items-center justify-between">
         <Badge 
-          variant={event.status === 'active' ? 'success' : event.status === 'upcoming' ? 'default' : 'secondary'}
-          className="text-[10px] px-2 py-0"
+          variant={status === 'active' ? 'success' : status === 'upcoming' ? 'default' : 'secondary'}
+          className={`text-[10px] px-2 py-0 ${status === 'upcoming' ? 'bg-violet-500/20 text-violet-400 border-violet-500/30' : ''}`}
         >
-          {event.status}
+          {status}
         </Badge>
         <div className="flex items-center text-zinc-400 text-[10px]">
           <MapPin size={10} className="mr-1" />
@@ -184,10 +237,10 @@ function EventPopup({ event }: { event: Event }) {
       </div>
 
       <Link 
-        href={`/events/${event.id}`}
-        className="flex items-center justify-between w-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[11px] font-bold py-2 px-3 rounded-lg transition-colors group"
+        href={`/gallery/${event.id}`}
+        className="flex items-center justify-between w-full bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 text-[11px] font-bold py-2 px-3 rounded-lg transition-colors group"
       >
-        VIEW PROJECTS
+        EXPLORE ARENA
         <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
       </Link>
     </div>
