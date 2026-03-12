@@ -15,11 +15,20 @@ const firebaseConfig = {
 if (typeof window !== 'undefined') {
   console.log('[FIREBASE] Config present:', {
     apiKey: firebaseConfig.apiKey !== "placeholder-key",
-    authDomain: !!firebaseConfig.authDomain,
-    projectId: !!firebaseConfig.projectId,
-    appId: !!firebaseConfig.appId,
-    domain: firebaseConfig.authDomain
+    authDomain: firebaseConfig.authDomain,
+    projectId: firebaseConfig.projectId,
+    appId: firebaseConfig.appId,
+    currentHost: window.location.hostname
   });
+  
+  // Warning for common mobile auth failure cause
+  if (firebaseConfig.authDomain && !window.location.hostname.includes(firebaseConfig.authDomain.split('.')[0])) {
+    if (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
+      console.warn('[FIREBASE] AUTH DOMAIN MISMATCH: Your authDomain does not match your current host. ' +
+        'Mobile redirects will likely fail due to browser security policies (ITP). ' +
+        'Fix: Use a custom auth domain (e.g., auth.buildathon.live) in Firebase Console.');
+    }
+  }
 }
 
 // Initialize Firebase only if we have a valid config or if we are in the browser

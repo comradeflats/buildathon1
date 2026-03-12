@@ -36,7 +36,7 @@ export function SignInPrompt({
       return 'This sign-in method is not enabled in Firebase. Please enable it in the console.';
     }
     if (err.code === 'auth/operation-not-supported-in-this-environment') {
-      return 'This browser is not supported for popup/redirect auth. Please try Chrome/Safari or disable private mode.';
+      return 'This browser is not supported for popup auth. Mobile browsers require redirect mode (which should be automatic).';
     }
     if (err.code === 'auth/popup-blocked') {
       return 'The sign-in popup was blocked. Please allow popups or try again.';
@@ -47,6 +47,15 @@ export function SignInPrompt({
           <p className="font-bold">🚨 ACTION REQUIRED:</p>
           <p>This domain (buildathon.live) is not authorized in Firebase Console.</p>
           <p className="text-[10px] mt-2 opacity-80">Fix: Go to Firebase Console &gt; Auth &gt; Settings &gt; Authorized Domains and add: <b>buildathon.live</b></p>
+        </div>
+      );
+    }
+    if (err.code === 'auth/internal-error' || err.message?.includes('network')) {
+      return (
+        <div className="space-y-2">
+          <p className="font-bold">📱 MOBILE AUTH TIP:</p>
+          <p>If you see a loop, ensure you aren't in "Private/Incognito" mode, or try a different browser.</p>
+          <p className="text-[10px] mt-2 opacity-80 italic">Developers: Check for Auth Domain Mismatch in console logs.</p>
         </div>
       );
     }

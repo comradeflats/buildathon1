@@ -66,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    let isMounted = true;
     let unsubscribe: (() => void) | undefined;
 
     async function initializeAuth() {
@@ -75,23 +76,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       try {
         // First, check for redirect result (for mobile auth)
+        // CRITICAL: We MUST wait for this before setting isLoading to false
         console.log('[AUTH] Checking redirect result...');
         const result = await getRedirectResult(auth);
         
-        if (result?.user) {
+        if (result?.user && isMounted) {
           console.log('[AUTH] Setting user from redirect result:', result.user.uid);
           setUser(result.user);
           setAuthError(null);
-          // Don't setIsLoading(false) yet, let the listener handle the final state
+        } else if (result === null) {
+          console.log('[AUTH] No redirect result found');
         }
       } catch (error: any) {
         console.error('[AUTH] Redirect error:', error);
-        setAuthError(`Redirect error: ${error?.code || error?.message || 'Unknown'}`);
+        if (isMounted) {
+          setAuthError(`Redirect error: ${error?.code || error?.message || 'Unknown'}`);
+        }
       }
 
       // Then set up the auth state listener
       console.log('[AUTH] Setting up auth state listener');
       unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        if (!isMounted) return;
+        
         console.log('[AUTH] Auth state changed:', firebaseUser ? `User ${firebaseUser.uid} present` : 'No user');
         
         if (firebaseUser) {
@@ -102,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             const userDocRef = doc(db, 'users', firebaseUser.uid);
             const userDoc = await getDoc(userDocRef);
-            if (userDoc.exists()) {
+            if (userDoc.exists() && isMounted) {
               setUserProfile({ id: userDoc.id, ...userDoc.data() } as UserProfile);
             }
           } catch (e) {
@@ -120,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initializeAuth();
 
     return () => {
+      isMounted = false;
       if (unsubscribe) {
         unsubscribe();
       }
