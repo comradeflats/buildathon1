@@ -15,12 +15,14 @@ export function useOrgPermissions(orgId: string | null) {
     canManageMembers: false,
     canManageEvents: false,
     canViewAnalytics: false,
+    isJudge: false,
   });
   const [role, setRole] = useState<OrgRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!user || !orgId) {
+    // If we don't have a user, we'll never have permissions
+    if (!user) {
       setIsLoading(false);
       setPermissions({
         canEdit: false,
@@ -28,12 +30,20 @@ export function useOrgPermissions(orgId: string | null) {
         canManageMembers: false,
         canManageEvents: false,
         canViewAnalytics: false,
+        isJudge: false,
       });
       setRole(null);
       return;
     }
 
+    // If we have a user but no orgId yet, we are still 'loading' our target
+    if (!orgId) {
+      setIsLoading(true);
+      return;
+    }
+
     const fetchPermissions = async () => {
+      setIsLoading(true);
       try {
         const [perms, userRole] = await Promise.all([
           getOrgPermissions(user.uid, orgId),
@@ -42,9 +52,9 @@ export function useOrgPermissions(orgId: string | null) {
 
         setPermissions(perms);
         setRole(userRole);
-        setIsLoading(false);
       } catch (error) {
         console.error('Error fetching permissions:', error);
+      } finally {
         setIsLoading(false);
       }
     };
@@ -58,7 +68,9 @@ export function useOrgPermissions(orgId: string | null) {
     isLoading,
     isOwner: role === 'owner',
     isAdmin: role === 'admin' || role === 'owner',
+    isJudge: permissions.isJudge,
     isMember: role !== null,
+    orgId, // Return current orgId to verify context
   };
 }
 

@@ -2,295 +2,177 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Trophy, Plus, Calendar, Settings, ChevronRight, Users, Loader2, Clock, CheckCircle, Archive, Rocket, LayoutGrid, Search, Building2 } from 'lucide-react';
+import { ChevronRight, ArrowRight, MapPin, Users2, Sparkles, Clock, Zap, Trophy, Globe, LayoutGrid, Search, PlayCircle, Star, Beer } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { useAdmin } from '@/context/AdminContext';
-import { useEvents } from '@/hooks/useEvents';
-import { useTeams } from '@/hooks/useTeams';
-import { usePublicOrganizations } from '@/hooks/useOrganizations';
+import { useAuth } from '@/context/AuthContext';
+import { SignInModal } from '@/components/auth/SignInModal';
 
 export default function HomePage() {
-  const { isAdmin } = useAdmin();
-  const { events, isLoading: isEventsLoading } = useEvents();
-  const { teams, isLoading: isTeamsLoading } = useTeams();
-  const { organizations, isLoading: isOrgsLoading } = usePublicOrganizations();
+  const { user } = useAuth();
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'upcoming' | 'archived'>('all');
-
-  const isLoading = isEventsLoading || isTeamsLoading || isOrgsLoading;
-
-  const getTeamCountForEvent = (eventId: string) => {
-    return teams.filter((team) => team.eventId === eventId).length;
-  };
-
-  const getOrg = (orgId: string) => {
-    return organizations.find(o => o.id === orgId);
-  };
-
-  const statusIcon = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <CheckCircle size={14} className="text-emerald-500" />;
-      case 'upcoming':
-        return <Clock size={14} className="text-yellow-500" />;
-      case 'archived':
-        return <Archive size={14} className="text-zinc-500" />;
-      default:
-        return null;
+  const handleHostClick = (e: React.MouseEvent) => {
+    if (!user) {
+      e.preventDefault();
+      setIsSignInModalOpen(true);
     }
-  };
-
-  const formatEventDates = (startDate?: string, endDate?: string) => {
-    if (!startDate || !endDate) return null;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    return `${start.toLocaleDateString('en-GB')} – ${end.toLocaleDateString('en-GB')}`;
-  };
-
-  // Filter events based on search and status
-  const filteredEvents = events.filter((event) => {
-    // Status filter
-    if (statusFilter !== 'all' && event.status !== statusFilter) return false;
-
-    // Visibility filter (only show public events)
-    if (event.visibility && event.visibility !== 'public') return false;
-
-    // Search query filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const org = getOrg(event.organizationId || '');
-      const orgName = org?.name?.toLowerCase() || '';
-      
-      return (
-        event.name.toLowerCase().includes(query) ||
-        (event.description && event.description.toLowerCase().includes(query)) ||
-        orgName.includes(query)
-      );
-    }
-
-    return true;
-  });
-
-  const activeEvents = filteredEvents.filter((e) => e.status === 'active');
-  const upcomingEvents = filteredEvents.filter((e) => e.status === 'upcoming');
-  const archivedEvents = filteredEvents.filter((e) => e.status === 'archived');
-
-  const renderEventCard = (event: any, isProminent: boolean = false) => {
-    const teamCount = getTeamCountForEvent(event.id);
-    const dateRange = formatEventDates(event.startDate, event.endDate);
-    const org = getOrg(event.organizationId || '');
-    const eventUrl = event.slug ? `/e/${event.slug}` : `/events/${event.id}`;
-
-    return (
-      <Link key={event.id} href={eventUrl}>
-        <Card hover className={`p-6 h-full ${isProminent ? 'border-emerald-500/30 bg-emerald-500/5' : ''}`}>
-          <div className="flex items-start justify-between mb-3">
-            <div>
-              <h3 className={`font-bold text-white ${isProminent ? 'text-xl' : 'text-lg'}`}>
-                {event.name}
-              </h3>
-              {org && (
-                <div className="flex items-center gap-1.5 mt-1 text-sm text-zinc-400">
-                  <Building2 size={14} />
-                  <span>By <Link href={`/org/${org.slug}`} className="hover:text-accent hover:underline" onClick={(e) => e.stopPropagation()}>{org.name}</Link></span>
-                </div>
-              )}
-            </div>
-            {event.status === 'active' ? (
-              <Badge variant="success" className="shrink-0">
-                {statusIcon(event.status)}
-                <span className="ml-1">Live</span>
-              </Badge>
-            ) : event.status === 'upcoming' ? (
-              <Badge variant="default" className="shrink-0">
-                <Clock size={12} className="mr-1" />
-                Soon
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="shrink-0">
-                Archived
-              </Badge>
-            )}
-          </div>
-
-          {event.description && (
-            <p className={`text-zinc-400 mb-4 line-clamp-2 ${isProminent ? 'text-sm' : 'text-xs'}`}>{event.description}</p>
-          )}
-
-          <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-400 mb-4 mt-auto pt-2 border-t border-zinc-800">
-            <div className="flex items-center gap-1">
-              <Users size={14} />
-              <span>{teamCount} {teamCount === 1 ? 'project' : 'projects'}</span>
-            </div>
-            {dateRange && (
-              <div className="flex items-center gap-1">
-                <Calendar size={14} />
-                <span>{dateRange}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3">
-            <span className={`${isProminent ? 'text-emerald-400' : 'text-accent'} text-sm font-medium flex items-center gap-1`}>
-              {event.status === 'active' ? 'Browse & Submit' : 'View Details'}
-              <ChevronRight size={16} />
-            </span>
-          </div>
-        </Card>
-      </Link>
-    );
   };
 
   return (
-    <div>
-      <header className="mb-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2 flex items-center gap-2">
-              <Rocket className="text-accent" size={28} />
-              Buildathon Discovery
-            </h1>
-            <p className="text-zinc-400 text-sm md:text-base">
-              Find, join, and explore amazing buildathons
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
-            <Link href="/dashboard" className="w-full sm:w-auto">
-              <Button className="w-full bg-indigo-600 hover:bg-indigo-700">
-                <Plus size={18} className="mr-2" />
-                Host Event
+    <div className="space-y-24 pb-20">
+      {/* Hero Section */}
+      <section className="relative pt-16 pb-20 overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-emerald-500/10 blur-[120px] rounded-full -z-10 opacity-60" />
+        
+        <div className="text-center max-w-4xl mx-auto space-y-8 px-4">
+          <Badge variant="outline" className="py-1.5 px-5 border-emerald-500/30 text-emerald-400 bg-emerald-500/5 animate-in fade-in slide-in-from-top-4 duration-700">
+            <Sparkles size={14} className="mr-2 fill-emerald-400" />
+            The Home of Live Hackathons
+          </Badge>
+          
+          <h1 className="text-5xl md:text-7xl font-black text-white tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+            buildathon.<span className="text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text">live</span>
+          </h1>
+          
+          <p className="text-xl md:text-2xl text-zinc-300 max-w-3xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 font-medium">
+            Where strangers become co-founders in a single afternoon. Experience the electric energy of <span className="text-white underline decoration-emerald-500 underline-offset-4">Face to Face</span> innovation.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
+            <Link href="/events" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full sm:px-10 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black h-14 text-lg rounded-full shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95">
+                DISCOVER EVENTS
+                <ArrowRight size={20} className="ml-2" />
               </Button>
             </Link>
-            {isAdmin && (
-              <Link href="/admin/dashboard" className="w-full sm:w-auto">
-                <Button variant="secondary" className="w-full">
-                  <Settings size={18} className="mr-2" />
-                  Admin
+            <Link href="/signup" onClick={handleHostClick} className="w-full sm:w-auto">
+              <Button size="lg" variant="secondary" className="w-full sm:px-10 h-14 text-lg rounded-full border-zinc-700 bg-zinc-900/50 backdrop-blur hover:bg-zinc-800 transition-all hover:scale-105 active:scale-95">
+                Host a Buildathon
+              </Button>
+            </Link>
+          </div>
+
+          <div className="pt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-zinc-500 font-medium animate-in fade-in duration-1000 delay-500">
+             <div className="flex items-center gap-2">
+                <Users2 size={18} className="text-emerald-500/70" />
+                <span>All Skill Levels</span>
+             </div>
+             <div className="hidden sm:block w-1.5 h-1.5 bg-zinc-800 rounded-full" />
+             <div className="flex items-center gap-2">
+                <MapPin size={18} className="text-emerald-500/70" />
+                <span>Face to Face</span>
+             </div>
+             <div className="hidden sm:block w-1.5 h-1.5 bg-zinc-800 rounded-full" />
+             <div className="flex items-center gap-2">
+                <Clock size={18} className="text-emerald-500/70" />
+                <span>Real Time Action</span>
+             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* The Live Flow Section */}
+      <section className="max-w-5xl mx-auto px-4">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl font-black text-white mb-4">The Live Flow</h2>
+          <p className="text-zinc-400 max-w-xl mx-auto">Short, intense, and incredibly social. Here's how a typical buildathon goes down.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="space-y-4 text-center">
+            <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/20">
+              <Zap className="text-emerald-500" size={28} />
+            </div>
+            <h3 className="font-bold text-white">1. Set a Theme</h3>
+            <p className="text-sm text-zinc-500">We reveal a specific challenge. Everyone starts at zero together.</p>
+          </div>
+
+          <div className="space-y-4 text-center">
+            <div className="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center mx-auto border border-cyan-500/20">
+              <Clock className="text-cyan-500" size={28} />
+            </div>
+            <h3 className="font-bold text-white">2. Build & Ship</h3>
+            <p className="text-sm text-zinc-500">The clock is ticking. Teams code, design, and pivot in real-time.</p>
+          </div>
+
+          <div className="space-y-4 text-center">
+            <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto border border-indigo-500/20">
+              <PlayCircle className="text-indigo-500" size={28} />
+            </div>
+            <h3 className="font-bold text-white">3. Demo & Vote</h3>
+            <p className="text-sm text-zinc-500">Present your work to the room. The crowd and judges vote live.</p>
+          </div>
+
+          <div className="space-y-4 text-center">
+            <div className="w-16 h-16 bg-yellow-500/10 rounded-2xl flex items-center justify-center mx-auto border border-yellow-500/20">
+              <Trophy className="text-yellow-500" size={28} />
+            </div>
+            <h3 className="font-bold text-white">4. Win & Celebrate</h3>
+            <p className="text-sm text-zinc-500">From a free beer to USDC—the best ideas take home the prize.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Discovery Section Teaser */}
+      <section className="max-w-5xl mx-auto px-4 bg-zinc-900/30 border border-zinc-800 rounded-[3rem] p-12 overflow-hidden relative">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[100px] -z-10" />
+        
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="space-y-6">
+            <h2 className="text-3xl font-black text-white leading-tight">Buildathons Near You</h2>
+            <p className="text-zinc-400 text-lg">
+              It started in <span className="text-emerald-400 font-bold">Da Nang</span>. Now it's spreading. Find a live room in your city or see where the next global sprint is happening.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 pt-2">
+              <Link href="/events?view=map">
+                <Button className="w-full sm:w-auto rounded-full bg-emerald-500 hover:bg-emerald-600 text-zinc-950 border-none font-bold">
+                  <Globe className="mr-2" size={18} />
+                  View Global Map
                 </Button>
               </Link>
-            )}
-          </div>
-        </div>
-
-        {/* Discovery Filters */}
-        <Card className="p-4 bg-zinc-900 border-zinc-800">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
-              <input
-                type="text"
-                placeholder="Search events or organizations..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-zinc-950 border border-zinc-800 rounded-md text-white focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
-              />
-            </div>
-            <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
-              <Button 
-                variant={statusFilter === 'all' ? 'primary' : 'ghost'} 
-                onClick={() => setStatusFilter('all')}
-                className="whitespace-nowrap"
-              >
-                All Events
-              </Button>
-              <Button 
-                variant={statusFilter === 'active' ? 'primary' : 'ghost'} 
-                onClick={() => setStatusFilter('active')}
-                className="whitespace-nowrap"
-              >
-                Active
-              </Button>
-              <Button 
-                variant={statusFilter === 'upcoming' ? 'primary' : 'ghost'} 
-                onClick={() => setStatusFilter('upcoming')}
-                className="whitespace-nowrap"
-              >
-                Upcoming
-              </Button>
-              <Button 
-                variant={statusFilter === 'archived' ? 'primary' : 'ghost'} 
-                onClick={() => setStatusFilter('archived')}
-                className="whitespace-nowrap"
-              >
-                Archived
-              </Button>
+              <Link href="/events">
+                <Button variant="ghost" className="w-full sm:w-auto text-emerald-400 font-bold">
+                  Browse by Date
+                  <ChevronRight className="ml-1" size={18} />
+                </Button>
+              </Link>
             </div>
           </div>
-        </Card>
-      </header>
-
-      {isLoading ? (
-        <div className="min-h-[40vh] flex items-center justify-center">
-          <Loader2 size={32} className="animate-spin text-zinc-400" />
+          
+          <div className="bg-zinc-950 border border-zinc-800 rounded-3xl aspect-square md:aspect-video flex items-center justify-center relative overflow-hidden group">
+            <div className="absolute inset-0 bg-emerald-500/5 opacity-50 group-hover:opacity-100 transition-opacity" />
+            <div className="text-center p-8 space-y-4 z-10">
+              <MapPin size={48} className="text-emerald-500 mx-auto animate-bounce" />
+              <p className="text-zinc-500 font-medium">Interactive Map Integration Coming Soon</p>
+              <div className="flex items-center justify-center gap-2">
+                <Badge variant="outline" className="bg-zinc-900/80 border-zinc-700">Da Nang</Badge>
+                <Badge variant="outline" className="bg-zinc-900/80 border-zinc-700 opacity-50">Ho Chi Minh</Badge>
+                <Badge variant="outline" className="bg-zinc-900/80 border-zinc-700 opacity-30">Singapore</Badge>
+              </div>
+            </div>
+          </div>
         </div>
-      ) : filteredEvents.length === 0 ? (
-        <Card className="p-12 text-center">
-          <Search size={48} className="mx-auto text-zinc-600 mb-4" />
-          <h2 className="text-xl font-semibold text-white mb-2">No events found</h2>
-          <p className="text-zinc-400 mb-4">
-            {searchQuery 
-              ? "We couldn't find any events matching your search." 
-              : "There are no events in this category right now."}
-          </p>
-          {(searchQuery || statusFilter !== 'all') && (
-            <Button 
-              variant="secondary" 
-              onClick={() => {
-                setSearchQuery('');
-                setStatusFilter('all');
-              }}
-            >
-              Clear Filters
+      </section>
+
+      {/* Footer CTA */}
+      <section className="text-center py-20 border-t border-zinc-900">
+         <h2 className="text-4xl font-black text-white mb-6">Inspired by the live energy?</h2>
+         <p className="text-zinc-400 mb-10 text-lg max-w-xl mx-auto">Take the Da Nang blueprint to your city. We provide the tools to run your own live arena.</p>
+         <Link href="/signup" onClick={handleHostClick}>
+            <Button size="lg" className="rounded-full px-12 bg-white text-zinc-950 font-black hover:bg-zinc-200 transition-colors">
+               START A BUILDATHON
             </Button>
-          )}
-        </Card>
-      ) : (
-        <div className="space-y-8">
-          {/* Active Events - Prominent */}
-          {activeEvents.length > 0 && (
-            <section>
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Rocket size={20} className="text-emerald-500" />
-                Active Buildathons
-              </h2>
-              <div className="grid gap-4 md:grid-cols-2">
-                {activeEvents.map((event) => renderEventCard(event, true))}
-              </div>
-            </section>
-          )}
+         </Link>
+      </section>
 
-          {/* Upcoming Events */}
-          {upcomingEvents.length > 0 && (
-            <section>
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Clock size={20} className="text-yellow-500" />
-                Upcoming Buildathons
-              </h2>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {upcomingEvents.map((event) => renderEventCard(event, false))}
-              </div>
-            </section>
-          )}
-
-          {/* Past Events */}
-          {archivedEvents.length > 0 && (
-            <section>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <Archive size={20} className="text-zinc-500" />
-                  Past Buildathons
-                </h2>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {archivedEvents.map((event) => renderEventCard(event, false))}
-              </div>
-            </section>
-          )}
-        </div>
-      )}
+      <SignInModal 
+        isOpen={isSignInModalOpen} 
+        onClose={() => setIsSignInModalOpen(false)}
+        title="Host a Buildathon"
+        description="Sign in to your account to start creating and managing live events in your city."
+        hideGuest={true}
+      />
     </div>
   );
 }

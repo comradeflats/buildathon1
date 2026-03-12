@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Github, UserCircle, Loader2, Vote } from 'lucide-react';
+import { Github, UserCircle, Loader2, Vote, Mail, Chrome } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/context/AuthContext';
@@ -10,17 +10,32 @@ interface SignInPromptProps {
   title?: string;
   description?: string;
   onComplete?: () => void;
+  hideGuest?: boolean;
 }
 
 export function SignInPrompt({
   title = 'Sign in to Vote',
   description = 'You need to sign in to submit votes. Choose how you want to continue:',
   onComplete,
+  hideGuest = false,
 }: SignInPromptProps) {
-  const { signInWithGitHub, signInAnonymously } = useAuth();
+  const { signInWithGitHub, signInWithGoogle, signInWithEmail, signUpWithEmail, signInAnonymously } = useAuth();
   const [isSigningInGitHub, setIsSigningInGitHub] = useState(false);
+  const [isSigningInGoogle, setIsSigningInGoogle] = useState(false);
   const [isSigningInAnon, setIsSigningInAnon] = useState(false);
+  const [isSigningInEmail, setIsSigningInEmail] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const formatError = (err: any) => {
+    if (err.code === 'auth/operation-not-allowed') {
+      return 'This sign-in method is not enabled in Firebase. Please enable it in the console.';
+    }
+    return err.message || 'An unexpected error occurred. Please try again.';
+  };
 
   const handleGitHubSignIn = async () => {
     setIsSigningInGitHub(true);
@@ -28,10 +43,41 @@ export function SignInPrompt({
     try {
       await signInWithGitHub();
       onComplete?.();
-    } catch (err) {
-      setError('Failed to sign in with GitHub. Please try again.');
+    } catch (err: any) {
+      setError(formatError(err));
     } finally {
       setIsSigningInGitHub(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsSigningInGoogle(true);
+    setError(null);
+    try {
+      await signInWithGoogle();
+      onComplete?.();
+    } catch (err: any) {
+      setError(formatError(err));
+    } finally {
+      setIsSigningInGoogle(false);
+    }
+  };
+
+  const handleEmailSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSigningInEmail(true);
+    setError(null);
+    try {
+      if (isSignUp) {
+        await signUpWithEmail(email, password);
+      } else {
+        await signInWithEmail(email, password);
+      }
+      onComplete?.();
+    } catch (err: any) {
+      setError(formatError(err));
+    } finally {
+      setIsSigningInEmail(false);
     }
   };
 
@@ -41,14 +87,14 @@ export function SignInPrompt({
     try {
       await signInAnonymously();
       onComplete?.();
-    } catch (err) {
-      setError('Failed to sign in. Please try again.');
+    } catch (err: any) {
+      setError(formatError(err));
     } finally {
       setIsSigningInAnon(false);
     }
   };
 
-  const isLoading = isSigningInGitHub || isSigningInAnon;
+  const isLoading = isSigningInGitHub || isSigningInGoogle || isSigningInAnon || isSigningInEmail;
 
   return (
     <Card className="p-8 max-w-md mx-auto">
@@ -66,48 +112,133 @@ export function SignInPrompt({
         </div>
       )}
 
-      <div className="space-y-3">
-        <Button
-          onClick={handleGitHubSignIn}
-          disabled={isLoading}
-          className="w-full"
-          size="lg"
-        >
-          {isSigningInGitHub ? (
-            <Loader2 size={18} className="animate-spin mr-2" />
-          ) : (
-            <Github size={18} className="mr-2" />
-          )}
-          Sign in with GitHub
-        </Button>
+      {showEmailForm ? (
+        <form onSubmit={handleEmailSignIn} className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Email Address</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-4 py-2 bg-zinc-950 border border-zinc-800 rounded-md text-white focus:outline-none focus:border-accent transition-colors"
+              placeholder="you@example.com"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full px-4 py-2 bg-zinc-950 border border-zinc-800 rounded-md text-white focus:outline-none focus:border-accent transition-colors"
+              placeholder="••••••••"
+            />
+          </div>
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full"
+            size="lg"
+          >
+            {isSigningInEmail ? (
+              <Loader2 size={18} className="animate-spin mr-2" />
+            ) : (
+              <Mail size={18} className="mr-2" />
+            )}
+            {isSignUp ? 'Create Account' : 'Sign In'}
+          </Button>
+          <div className="flex justify-between items-center text-xs">
+            <button
+              type="button"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-accent hover:underline"
+            >
+              {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowEmailForm(false)}
+              className="text-zinc-400 hover:text-white"
+            >
+              Back to options
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div className="space-y-3">
+          <Button
+            onClick={handleGitHubSignIn}
+            disabled={isLoading}
+            className="w-full !bg-[#24292F] hover:!bg-[#24292F]/90 text-white border-none"
+            size="lg"
+          >
+            {isSigningInGitHub ? (
+              <Loader2 size={18} className="animate-spin mr-2" />
+            ) : (
+              <Github size={18} className="mr-2" />
+            )}
+            Sign in with GitHub
+          </Button>
 
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-zinc-700" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-zinc-900 px-2 text-zinc-500">or</span>
-          </div>
+          <Button
+            onClick={handleGoogleSignIn}
+            disabled={isLoading}
+            className="w-full bg-white hover:bg-zinc-100 text-zinc-900 border-none"
+            size="lg"
+          >
+            {isSigningInGoogle ? (
+              <Loader2 size={18} className="animate-spin mr-2" />
+            ) : (
+              <Chrome size={18} className="mr-2" />
+            )}
+            Sign in with Google
+          </Button>
+
+          <Button
+            onClick={() => setShowEmailForm(true)}
+            disabled={isLoading}
+            variant="secondary"
+            className="w-full"
+            size="lg"
+          >
+            <Mail size={18} className="mr-2" />
+            Continue with Email
+          </Button>
+
+          {!hideGuest && (
+            <>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-zinc-700" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-zinc-900 px-2 text-zinc-500">or</span>
+                </div>
+              </div>
+
+              <Button
+                onClick={handleAnonymousSignIn}
+                disabled={isLoading}
+                variant="ghost"
+                className="w-full"
+                size="lg"
+              >
+                {isSigningInAnon ? (
+                  <Loader2 size={18} className="animate-spin mr-2" />
+                ) : (
+                  <UserCircle size={18} className="mr-2" />
+                )}
+                Continue as Guest
+              </Button>
+            </>
+          )}
         </div>
+      )}
 
-        <Button
-          onClick={handleAnonymousSignIn}
-          disabled={isLoading}
-          variant="secondary"
-          className="w-full"
-          size="lg"
-        >
-          {isSigningInAnon ? (
-            <Loader2 size={18} className="animate-spin mr-2" />
-          ) : (
-            <UserCircle size={18} className="mr-2" />
-          )}
-          Continue as Guest
-        </Button>
-      </div>
-
-      <p className="text-xs text-zinc-500 text-center mt-4">
-        Guest votes are tracked by browser. Sign in with GitHub to vote from any device.
+      <p className="text-xs text-zinc-500 text-center mt-6">
+        {showEmailForm ? 'Secure authentication powered by Firebase.' : hideGuest ? 'Full account required for hosting.' : 'Guest sessions are local to this browser.'}
       </p>
     </Card>
   );

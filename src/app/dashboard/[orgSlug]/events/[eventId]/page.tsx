@@ -13,6 +13,7 @@ import { useEvents } from '@/hooks/useEvents';
 import { useOrgPermissions } from '@/hooks/useOrgPermissions';
 import { useTeams } from '@/hooks/useTeams';
 import { useThemes } from '@/hooks/useThemes';
+import { ThemeManager } from '@/components/admin/ThemeManager';
 
 export default function ManageEventPage() {
   const params = useParams();
@@ -22,7 +23,7 @@ export default function ManageEventPage() {
 
   const { user, isLoading: authLoading } = useAuth();
   const { organizations, isLoading: orgsLoading } = useOrganizations();
-  const { getEventById } = useEvents();
+  const { getEventById, isLoading: isEventsLoading } = useEvents();
   const { teams } = useTeams();
   const { themes, getThemesByEventId } = useThemes();
 
@@ -43,7 +44,7 @@ export default function ManageEventPage() {
 
   // Get event
   useEffect(() => {
-    if (eventId) {
+    if (!isEventsLoading && eventId) {
       const foundEvent = getEventById(eventId);
       if (foundEvent) {
         // Verify event belongs to org
@@ -54,11 +55,11 @@ export default function ManageEventPage() {
         }
       }
     }
-  }, [eventId, getEventById, org, orgSlug, router]);
+  }, [eventId, getEventById, org, orgSlug, router, isEventsLoading]);
 
-  const { permissions } = useOrgPermissions(org?.id);
+  const { permissions, isLoading: permsLoading, orgId: fetchedOrgId } = useOrgPermissions(org?.id);
 
-  const isLoading = authLoading || orgsLoading || !org || !event;
+  const isLoading = authLoading || orgsLoading || permsLoading || isEventsLoading || !org || !event;
 
   // Redirect if not authenticated or no permissions
   useEffect(() => {
@@ -68,10 +69,10 @@ export default function ManageEventPage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (org && !permissions.canManageEvents) {
+    if (org && !permsLoading && fetchedOrgId === org.id && !permissions.canManageEvents) {
       router.push(`/dashboard/${orgSlug}`);
     }
-  }, [permissions, org, orgSlug, router]);
+  }, [permissions, permsLoading, org, orgSlug, router, fetchedOrgId]);
 
   if (isLoading) {
     return (
@@ -235,8 +236,11 @@ export default function ManageEventPage() {
         </Link>
       </div>
 
+      {/* Theme Management */}
+      <ThemeManager eventId={eventId} organizationId={org.id} />
+
       {/* Note */}
-      <div className="text-center text-sm text-zinc-500">
+      <div className="text-center text-sm text-zinc-500 pb-12">
         <p>Full event editing capabilities coming soon</p>
       </div>
     </div>

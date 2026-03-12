@@ -2,7 +2,7 @@ import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firesto
 import { db } from '@/lib/firebase';
 import { OrgMember } from '@/lib/types';
 
-export type OrgRole = 'owner' | 'admin' | 'member';
+export type OrgRole = 'owner' | 'admin' | 'member' | 'judge';
 
 export interface OrgPermissions {
   canEdit: boolean;
@@ -10,6 +10,7 @@ export interface OrgPermissions {
   canManageMembers: boolean;
   canManageEvents: boolean;
   canViewAnalytics: boolean;
+  isJudge: boolean;
 }
 
 /**
@@ -100,6 +101,7 @@ export async function getOrgPermissions(
       canManageMembers: false,
       canManageEvents: false,
       canViewAnalytics: false,
+      isJudge: false,
     };
   }
 
@@ -111,6 +113,7 @@ export async function getOrgPermissions(
         canManageMembers: true,
         canManageEvents: true,
         canViewAnalytics: true,
+        isJudge: true,
       };
     case 'admin':
       return {
@@ -119,6 +122,16 @@ export async function getOrgPermissions(
         canManageMembers: true,
         canManageEvents: true,
         canViewAnalytics: true,
+        isJudge: true,
+      };
+    case 'judge':
+      return {
+        canEdit: false,
+        canDelete: false,
+        canManageMembers: false,
+        canManageEvents: false,
+        canViewAnalytics: true,
+        isJudge: true,
       };
     case 'member':
       return {
@@ -127,6 +140,7 @@ export async function getOrgPermissions(
         canManageMembers: false,
         canManageEvents: false,
         canViewAnalytics: true,
+        isJudge: false,
       };
   }
 }

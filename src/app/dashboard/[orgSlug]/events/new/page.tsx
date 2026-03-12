@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, Calendar, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Loader2, Calendar, ArrowLeft, ArrowRight, MapPin, Users, Star } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/context/AuthContext';
@@ -32,21 +32,50 @@ export default function NewEventPage() {
     }
   }, [organizations, orgsLoading, slug, router]);
 
-  const { permissions } = useOrgPermissions(org?.id);
+  const { permissions, isLoading: permsLoading, orgId: fetchedOrgId } = useOrgPermissions(org?.id);
+
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setError('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setIsGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLat(position.coords.latitude.toString());
+        setLng(position.coords.longitude.toString());
+        setIsGettingLocation(false);
+        // We could also reverse geocode here if we had an API key
+      },
+      (err) => {
+        console.error('Error getting location:', err);
+        setError('Failed to get your current location');
+        setIsGettingLocation(false);
+      }
+    );
+  };
 
   // Form state
   const [eventName, setEventName] = useState('');
   const [eventSlug, setEventSlug] = useState('');
   const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
+  const [address, setAddress] = useState('');
+  const [lat, setLat] = useState('');
+  const [lng, setLng] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [submissionDeadline, setSubmissionDeadline] = useState('');
+  const [votingModel, setVotingModel] = useState<'peer' | 'expert'>('peer');
   const [visibility, setVisibility] = useState<'public' | 'unlisted' | 'private'>('public');
   const [slugTouched, setSlugTouched] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isLoading = authLoading || orgsLoading || !org;
+  const isLoading = authLoading || orgsLoading || permsLoading || !org;
 
   // Auto-generate slug from event name
   useEffect(() => {
@@ -63,10 +92,15 @@ export default function NewEventPage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (org && !permissions.canManageEvents) {
+    // Only redirect if:
+    // 1. We have an organization
+    // 2. The permissions have finished loading
+    // 3. The permissions we have match the organization ID we are currently looking at
+    // 4. And after all that, we don't have manage permissions
+    if (org && !permsLoading && fetchedOrgId === org.id && !permissions.canManageEvents) {
       router.push(`/dashboard/${slug}`);
     }
-  }, [permissions, org, slug, router]);
+  }, [permissions, permsLoading, org, slug, router, fetchedOrgId]);
 
   const handleSlugChange = (value: string) => {
     setSlugTouched(true);
@@ -123,10 +157,14 @@ export default function NewEventPage() {
           name: eventName.trim(),
           slug: eventSlug.trim(),
           description: description.trim() || undefined,
+          location: location.trim() || undefined,
+          address: address.trim() || undefined,
+          coordinates: lat && lng ? { lat: parseFloat(lat), lng: parseFloat(lng) } : undefined,
           organizationId: org.id,
           startDate: new Date(startDate).toISOString(),
           endDate: new Date(endDate).toISOString(),
           submissionDeadline: submissionDeadline ? new Date(submissionDeadline).toISOString() : undefined,
+          votingModel,
           visibility,
           status: 'upcoming',
         }),
@@ -238,6 +276,92 @@ export default function NewEventPage() {
             />
           </div>
 
+          {/* Location Info */}
+          <div className="space-y-4 p-4 bg-zinc-900/50 rounded-xl border border-zinc-800">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">Location (Face to Face)</h3>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={getCurrentLocation}
+                disabled={isGettingLocation || isCreating}
+                className="text-xs h-8 border-emerald-500/30 hover:border-emerald-500 hover:bg-emerald-500/10 text-emerald-400"
+              >
+                {isGettingLocation ? (
+                  <Loader2 size={12} className="mr-2 animate-spin" />
+                ) : (
+                  <MapPin size={12} className="mr-2" />
+                )}
+                Use My Location
+              </Button>
+            </div>
+            
+            <div>
+              <label htmlFor="location" className="block text-sm font-medium text-zinc-300 mb-2">
+                City / Venue Name
+              </label>
+              <input
+                id="location"
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g. Da Nang, Enouvo Space"
+                className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:border-accent transition-colors"
+                disabled={isCreating}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="address" className="block text-sm font-medium text-zinc-300 mb-2">
+                Full Physical Address
+              </label>
+              <input
+                id="address"
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="123 Example St, Da Nang, Vietnam"
+                className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:border-accent transition-colors"
+                disabled={isCreating}
+              />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="lat" className="block text-sm font-medium text-zinc-300 mb-2">
+                  Latitude (Optional)
+                </label>
+                <input
+                  id="lat"
+                  type="number"
+                  step="any"
+                  value={lat}
+                  onChange={(e) => setLat(e.target.value)}
+                  placeholder="16.0471"
+                  className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:border-accent transition-colors"
+                  disabled={isCreating}
+                />
+              </div>
+              <div>
+                <label htmlFor="lng" className="block text-sm font-medium text-zinc-300 mb-2">
+                  Longitude (Optional)
+                </label>
+                <input
+                  id="lng"
+                  type="number"
+                  step="any"
+                  value={lng}
+                  onChange={(e) => setLng(e.target.value)}
+                  placeholder="108.2068"
+                  className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:border-accent transition-colors"
+                  disabled={isCreating}
+                />
+              </div>
+            </div>
+            <p className="text-[10px] text-zinc-500">Coordinates are used to place your event on the global discovery map.</p>
+          </div>
+
           {/* Dates */}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
@@ -286,6 +410,49 @@ export default function NewEventPage() {
             <p className="text-xs text-zinc-500 mt-1">
               Leave empty to use end date as submission deadline
             </p>
+          </div>
+
+          {/* Voting Model */}
+          <div className="p-6 bg-zinc-900/50 rounded-xl border border-zinc-800 space-y-4">
+            <h3 className="text-sm font-bold text-accent uppercase tracking-wider">Judging & Voting</h3>
+            
+            <div className="grid sm:grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => setVotingModel('peer')}
+                className={`p-4 rounded-lg border text-left transition-all ${
+                  votingModel === 'peer'
+                    ? 'border-accent bg-accent/10'
+                    : 'border-zinc-700 hover:border-zinc-600 hover:bg-zinc-800/50'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Users size={18} className={votingModel === 'peer' ? 'text-accent' : 'text-zinc-400'} />
+                  <h4 className="font-semibold text-white">Peer Voting</h4>
+                </div>
+                <p className="text-xs text-zinc-500">
+                  Participants vote on each other's projects. Requires submitting a project to vote.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setVotingModel('expert')}
+                className={`p-4 rounded-lg border text-left transition-all ${
+                  votingModel === 'expert'
+                    ? 'border-accent bg-accent/10'
+                    : 'border-zinc-700 hover:border-zinc-600 hover:bg-zinc-800/50'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Star size={18} className={votingModel === 'expert' ? 'text-accent' : 'text-zinc-400'} />
+                  <h4 className="font-semibold text-white">Expert Judging</h4>
+                </div>
+                <p className="text-xs text-zinc-500">
+                  Designate specific "Judge" roles within your organization to score projects.
+                </p>
+              </button>
+            </div>
           </div>
 
           {/* Visibility */}

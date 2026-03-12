@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signInAnonymously as firebaseSignInAnonymously, signOut as firebaseSignOut } from 'firebase/auth';
-import { auth, githubProvider, db } from '@/lib/firebase';
+import { User, onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signInAnonymously as firebaseSignInAnonymously, signOut as firebaseSignOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth, githubProvider, googleProvider, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { isMobileDevice } from '@/lib/deviceUtils';
 import { getOwnershipToken, getOrCreateOwnershipToken } from '@/lib/indexeddb';
@@ -17,6 +17,9 @@ interface AuthContextType {
   authError: string | null;
   userProfile: UserProfile | null;
   signInWithGitHub: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<void>;
   signInAnonymously: () => Promise<void>;
   signOut: () => Promise<void>;
   ensureOwnershipToken: () => Promise<string>;
@@ -137,6 +140,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const signInWithGoogle = useCallback(async (): Promise<void> => {
+    console.log('[AUTH] signInWithGoogle called');
+    setAuthError(null);
+
+    if (!auth || !googleProvider) {
+      const err = 'Firebase not initialized';
+      console.error('[AUTH]', err);
+      setAuthError(err);
+      throw new Error(err);
+    }
+
+    try {
+      if (isMobileDevice()) {
+        await signInWithRedirect(auth, googleProvider);
+      } else {
+        await signInWithPopup(auth, googleProvider);
+      }
+    } catch (error: any) {
+      console.error('[AUTH] Google Sign-in error:', error);
+      setAuthError(`Google Sign-in error: ${error?.code || error?.message || 'Unknown'}`);
+      throw error;
+    }
+  }, []);
+
+  const signInWithEmail = useCallback(async (email: string, password: string): Promise<void> => {
+    console.log('[AUTH] signInWithEmail called');
+    setAuthError(null);
+
+    if (!auth) {
+      const err = 'Firebase not initialized';
+      console.error('[AUTH]', err);
+      setAuthError(err);
+      throw new Error(err);
+    }
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error: any) {
+      console.error('[AUTH] Email Sign-in error:', error);
+      setAuthError(`Email Sign-in error: ${error?.code || error?.message || 'Unknown'}`);
+      throw error;
+    }
+  }, []);
+
+  const signUpWithEmail = useCallback(async (email: string, password: string): Promise<void> => {
+    console.log('[AUTH] signUpWithEmail called');
+    setAuthError(null);
+
+    if (!auth) {
+      const err = 'Firebase not initialized';
+      console.error('[AUTH]', err);
+      setAuthError(err);
+      throw new Error(err);
+    }
+
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (error: any) {
+      console.error('[AUTH] Email Sign-up error:', error);
+      setAuthError(`Email Sign-up error: ${error?.code || error?.message || 'Unknown'}`);
+      throw error;
+    }
+  }, []);
+
   const signInAnonymously = useCallback(async (): Promise<void> => {
     if (!auth) {
       throw new Error('Firebase not initialized');
@@ -243,6 +310,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         authError,
         userProfile,
         signInWithGitHub,
+        signInWithGoogle,
+        signInWithEmail,
+        signUpWithEmail,
         signInAnonymously,
         signOut,
         ensureOwnershipToken,

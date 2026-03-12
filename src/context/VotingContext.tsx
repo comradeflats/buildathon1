@@ -10,7 +10,8 @@ import { calculateTeamScores } from '@/lib/scoring';
 interface Toast {
   id: string;
   message: string;
-  type: 'success' | 'error';
+  type: 'success' | 'error' | 'info' | 'phase';
+  icon?: string;
 }
 
 interface VotingContextType {
@@ -39,9 +40,9 @@ interface VotingContextType {
   deleteTeam: (teamId: string) => Promise<void>;
   toggleFavorite: (teamId: string) => Promise<void>;
   isFavorite: (teamId: string) => boolean;
-  toast: Toast | null;
-  showToast: (message: string, type: 'success' | 'error') => void;
-  clearToast: () => void;
+  toasts: Toast[];
+  showToast: (message: string, type?: 'success' | 'error' | 'info' | 'phase', icon?: string) => void;
+  clearToast: (id: string) => void;
 }
 
 const VotingContext = createContext<VotingContextType | undefined>(undefined);
@@ -61,7 +62,7 @@ export function VotingProvider({ children }: { children: ReactNode }) {
   } = useVotes();
   const { teams, eventName, isLoading, getTeamById, addTeam, updateTeam, removeTeam } = useTeams();
   const { themes, getThemeById, getThemeCriteria, getThemesByEventId } = useThemes();
-  const [toast, setToast] = useState<Toast | null>(null);
+  const [toasts, setToasts] = useState<Toast[]>([]);
   const [currentEventId, setCurrentEventId] = useState<string | null>(null);
 
   // Filter votes to only include those for teams that exist in our state
@@ -90,16 +91,16 @@ export function VotingProvider({ children }: { children: ReactNode }) {
     [validVotes, teams, themes]
   );
 
-  const showToast = useCallback((message: string, type: 'success' | 'error') => {
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' | 'phase' = 'success', icon?: string) => {
     const id = Date.now().toString();
-    setToast({ id, message, type });
+    setToasts((current) => [...current, { id, message, type, icon }]);
     setTimeout(() => {
-      setToast((current) => (current?.id === id ? null : current));
-    }, 3000);
+      setToasts((current) => current.filter((t) => t.id !== id));
+    }, 5000); // 5 seconds for live wire energy
   }, []);
 
-  const clearToast = useCallback(() => {
-    setToast(null);
+  const clearToast = useCallback((id: string) => {
+    setToasts((current) => current.filter((t) => t.id !== id));
   }, []);
 
   return (
@@ -130,7 +131,7 @@ export function VotingProvider({ children }: { children: ReactNode }) {
         deleteTeam: removeTeam,
         toggleFavorite,
         isFavorite,
-        toast,
+        toasts,
         showToast,
         clearToast,
       }}

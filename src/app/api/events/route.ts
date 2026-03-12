@@ -53,7 +53,21 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { organizationId, name, description, status, startDate, endDate, submissionDeadline, keyboardsDownTime, visibility, slug } = body;
+    const { 
+      organizationId, 
+      name, 
+      description, 
+      location, 
+      address, 
+      coordinates, 
+      status, 
+      startDate, 
+      endDate, 
+      submissionDeadline, 
+      keyboardsDownTime, 
+      visibility, 
+      slug 
+    } = body;
 
     // Verify user is org admin
     const user = await requireOrgAdmin(request, organizationId);
@@ -75,14 +89,19 @@ export async function POST(request: NextRequest) {
     const eventData = {
       name,
       description: description || '',
+      location: location || '',
+      address: address || '',
+      coordinates: coordinates || null,
       isActive: status === 'active',
       status: status || 'upcoming',
+      phase: 'registration', // Default to registration phase
       startDate,
       endDate,
       submissionDeadline: submissionDeadline || null,
       keyboardsDownTime: keyboardsDownTime || null,
       createdAt: new Date().toISOString(),
       themesGenerated: false,
+      showVotes: true, // Default to true, organizers can hide later
       scoresRevealed: false,
       // Multi-tenant fields
       slug: eventSlug,

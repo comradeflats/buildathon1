@@ -1,16 +1,19 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { User, LogOut, ChevronDown, FileText, UserCircle, X } from 'lucide-react';
+import { User, LogOut, ChevronDown, FileText, UserCircle, X, LogIn, LayoutGrid, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { AuthButton } from './AuthButton';
-import { GuestButton } from './GuestButton';
+import { Button } from '@/components/ui/Button';
+import { SignInModal } from './SignInModal';
+import { usePathname } from 'next/navigation';
 
 export function UserMenu() {
   const { user, isAnonymous, signOut, authError, clearAuthError } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -39,12 +42,26 @@ export function UserMenu() {
     return (
       <>
         <div className="flex items-center gap-2">
-          <AuthButton variant="ghost" size="sm" iconOnly className="sm:hidden" />
-          <AuthButton variant="ghost" size="sm" className="hidden sm:flex" />
-          <div className="hidden sm:block w-px h-4 bg-zinc-700" />
-          <GuestButton variant="ghost" size="sm" iconOnly className="sm:hidden" />
-          <GuestButton variant="ghost" size="sm" className="hidden sm:flex" />
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => {
+              if (pathname === '/signup') return;
+              setIsSignInModalOpen(true);
+            }}
+            className="flex items-center gap-2"
+          >
+            <LogIn size={18} />
+            <span className="hidden sm:inline">Sign In</span>
+          </Button>
         </div>
+        <SignInModal 
+          isOpen={isSignInModalOpen} 
+          onClose={() => setIsSignInModalOpen(false)}
+          title="Welcome Back"
+          description="Sign in to your account to manage events and view submissions."
+          hideGuest={true}
+        />
         {errorToast}
       </>
     );
@@ -92,12 +109,28 @@ export function UserMenu() {
         {isOpen && (
           <div className="absolute right-0 mt-2 w-48 py-1 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50">
             <Link
+              href="/dashboard"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-200 hover:bg-zinc-700 transition-colors"
+            >
+              <LayoutGrid size={16} />
+              Dashboard
+            </Link>
+            <Link
               href="/my-submissions"
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-200 hover:bg-zinc-700 transition-colors"
             >
               <FileText size={16} />
               My Submissions
+            </Link>
+            <Link
+              href="/settings"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-200 hover:bg-zinc-700 transition-colors"
+            >
+              <Settings size={16} />
+              Settings
             </Link>
             <hr className="my-1 border-zinc-700" />
             <button

@@ -15,6 +15,7 @@ export default function OnboardingPage() {
   const [orgName, setOrgName] = useState('');
   const [orgSlug, setOrgSlug] = useState('');
   const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -86,6 +87,7 @@ export default function OnboardingPage() {
           name: orgName.trim(),
           slug: orgSlug.trim(),
           description: description.trim() || undefined,
+          location: location.trim() || undefined,
           websiteUrl: websiteUrl.trim() || undefined,
         }),
       });
@@ -188,6 +190,22 @@ export default function OnboardingPage() {
               placeholder="Tell us about your organization..."
               rows={3}
               className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:border-accent transition-colors resize-none"
+              disabled={isCreating}
+            />
+          </div>
+
+          {/* Location */}
+          <div>
+            <label htmlFor="location" className="block text-sm font-medium text-white mb-2">
+              Primary Location
+            </label>
+            <input
+              id="location"
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="e.g. Da Nang, Vietnam"
+              className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:border-accent transition-colors"
               disabled={isCreating}
             />
           </div>

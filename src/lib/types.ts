@@ -6,6 +6,9 @@ export interface Organization {
   description?: string;
   logoUrl?: string;
   websiteUrl?: string;
+  location?: string;         // Primary location (e.g., "Da Nang, Vietnam")
+  twitterUrl?: string;
+  discordUrl?: string;
   createdAt: string;
   updatedAt: string;
   createdBy: string;         // Firebase UID
@@ -19,7 +22,7 @@ export interface OrgMember {
   id: string;
   organizationId: string;
   userId: string;            // Firebase Auth UID
-  role: 'owner' | 'admin' | 'member';
+  role: 'owner' | 'admin' | 'member' | 'judge';
   email: string;
   displayName?: string;
   joinedAt: string;
@@ -32,25 +35,41 @@ export interface User {
   displayName?: string;
   photoUrl?: string;
   githubUsername?: string;
+  bio?: string;
+  role?: 'developer' | 'designer' | 'product' | 'other';
+  experienceLevel?: 'beginner' | 'intermediate' | 'expert';
+  profileCompleted?: boolean;
   createdAt: string;
   lastLoginAt: string;
   isOrganizer: boolean;
   organizationIds: string[];
 }
 
+export type EventPhase = 'registration' | 'building' | 'last_call' | 'review' | 'judging' | 'results';
+export type VotingModel = 'peer' | 'expert';
+
 export interface Event {
   id: string;
   name: string;
   description?: string;
+  location?: string;              // City or venue name
+  coordinates?: {                 // Lat/Long for map discovery
+    lat: number;
+    lng: number;
+  };
+  address?: string;               // Full physical address
   isActive: boolean;
   status: 'upcoming' | 'active' | 'archived';
+  phase: EventPhase;              // Current live phase of the buildathon
+  votingModel: VotingModel;       // Peer voting vs Expert judging
   startDate: string;              // ISO date
   endDate: string;                // ISO date
   submissionDeadline?: string;    // ISO date
   keyboardsDownTime?: string;     // ISO datetime - when coding must stop
   createdAt: string;
   themesGenerated: boolean;
-  scoresRevealed?: boolean;       // Whether leaderboard scores are visible
+  showVotes: boolean;             // Whether live votes are visible to participants
+  scoresRevealed?: boolean;       // Whether final leaderboard scores are visible
   // Multi-tenant fields
   slug: string;                   // URL-friendly slug
   organizationId: string;         // Owner organization
@@ -69,6 +88,8 @@ export interface Theme {
   judgingCriteria: string[];
   eventId: string;
   organizationId?: string;        // Owner organization (denormalized)
+  isPublished?: boolean;          // Whether the theme is visible to participants
+  createdAt?: string;             // ISO timestamp
 }
 
 export interface GitHubRepoData {

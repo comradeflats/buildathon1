@@ -2,13 +2,15 @@
 
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, Users, Loader2, Plus, Clock } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Loader2, Plus, Clock, MapPin, Settings } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { EventPhaseController } from '@/components/admin/EventPhaseController';
 import { useEventBySlug } from '@/hooks/useEventBySlug';
 import { useTeams } from '@/hooks/useTeams';
 import { useThemes } from '@/hooks/useThemes';
+import { useOrgPermissions } from '@/hooks/useOrgPermissions';
 import { getThemeEmoji } from '@/lib/themeIcons';
 
 export default function EventBySlugPage() {
@@ -18,8 +20,9 @@ export default function EventBySlugPage() {
   const { event, isLoading: isEventLoading, error } = useEventBySlug(slug);
   const { teams, isLoading: isTeamsLoading } = useTeams();
   const { themes, isLoading: isThemesLoading } = useThemes();
+  const { isAdmin, isLoading: isPermsLoading } = useOrgPermissions(event?.organizationId || null);
 
-  const isLoading = isEventLoading || isTeamsLoading || isThemesLoading;
+  const isLoading = isEventLoading || isTeamsLoading || isThemesLoading || isPermsLoading;
 
   const eventTeams = event ? teams.filter((team) => team.eventId === event.id) : [];
   const eventThemes = event ? themes.filter((theme) => theme.eventId === event.id) : [];
@@ -102,6 +105,12 @@ export default function EventBySlugPage() {
               <p className="text-zinc-400 mb-2">{event.description}</p>
             )}
             <div className="text-zinc-400 flex flex-wrap items-center gap-4 text-sm">
+              {event.location && (
+                <span className="flex items-center gap-1 text-emerald-400 font-medium" title={event.address}>
+                  <MapPin size={14} />
+                  {event.location}
+                </span>
+              )}
               {dateRange && (
                 <span className="flex items-center gap-1">
                   <Calendar size={14} />
@@ -131,6 +140,11 @@ export default function EventBySlugPage() {
           )}
         </div>
       </div>
+
+      {/* Admin Controls */}
+      {isAdmin && event && (
+        <EventPhaseController event={event} />
+      )}
 
       {/* Themes for this event */}
       {eventThemes.length > 0 && (

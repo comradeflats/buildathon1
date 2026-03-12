@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
   try {
     const user = await verifyFirebaseToken(request);
     const body = await request.json();
-    const { name, description, logoUrl, websiteUrl, slug, settings } = body;
+    const { name, description, location, logoUrl, websiteUrl, twitterUrl, discordUrl, slug, settings } = body;
 
     // Generate slug if not provided
     const orgSlug = slug || (await generateOrgSlug(name));
@@ -119,8 +119,11 @@ export async function POST(request: NextRequest) {
       name,
       slug: orgSlug,
       description: description || '',
+      location: location || '',
       logoUrl: logoUrl || '',
       websiteUrl: websiteUrl || '',
+      twitterUrl: twitterUrl || '',
+      discordUrl: discordUrl || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       createdBy: user.uid,

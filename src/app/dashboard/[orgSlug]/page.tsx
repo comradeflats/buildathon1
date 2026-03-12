@@ -7,6 +7,7 @@ import { Loader2, Calendar, Users, BarChart3, Plus, ArrowRight } from 'lucide-re
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { SetupWizard } from '@/components/admin/SetupWizard';
 import { useAuth } from '@/context/AuthContext';
 import { useOrganizations } from '@/hooks/useOrganizations';
 import { useOrgEvents } from '@/hooks/useOrgEvents';
@@ -56,6 +57,7 @@ export default function OrgDashboardPage() {
 
   // Calculate stats
   const activeEvents = events.filter((e) => e.status === 'active').length;
+  const hasThemes = events.some((e) => e.themesGenerated);
   const totalSubmissions = events.reduce((acc, event) => {
     // This would need actual submission count from teams
     return acc;
@@ -94,6 +96,14 @@ export default function OrgDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Setup Wizard */}
+      <SetupWizard 
+        orgSlug={slug}
+        hasEvents={events.length > 0}
+        hasThemes={hasThemes}
+        hasMembers={org.memberCount > 1}
+      />
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">

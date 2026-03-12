@@ -221,7 +221,7 @@ export function ProjectSubmissionForm({ initialTeam, preselectedEventId, presele
       projectName: projectName || defaultProjectName,
       description: description || defaultDescription,
       members: members
-        .split(',')
+        .split(/\n|,/)
         .map((m) => m.trim())
         .filter(Boolean),
       techStack,
@@ -277,70 +277,18 @@ export function ProjectSubmissionForm({ initialTeam, preselectedEventId, presele
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Submission Type Intro - Show only when URL not yet entered */}
-      {!primaryUrl.trim() && !isEditMode && (
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-white mb-2">What are you submitting?</h2>
-          <p className="text-sm text-zinc-400 mb-4">Choose how you want to share your project</p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <button
-              type="button"
-              onClick={() => handleUrlTypeChange('github')}
-              className={`p-4 rounded-lg border text-left transition-all ${
-                urlType === 'github'
-                  ? 'border-accent bg-accent/10'
-                  : 'border-zinc-700 hover:border-zinc-600 hover:bg-zinc-800/50'
-              }`}
-            >
-              <Github size={24} className={urlType === 'github' ? 'text-accent' : 'text-zinc-400'} />
-              <h3 className="font-medium text-white mt-2">GitHub Repo</h3>
-              <p className="text-xs text-zinc-500 mt-1">Source code repository</p>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleUrlTypeChange('website')}
-              className={`p-4 rounded-lg border text-left transition-all ${
-                urlType === 'website'
-                  ? 'border-emerald-500 bg-emerald-500/10'
-                  : 'border-zinc-700 hover:border-zinc-600 hover:bg-zinc-800/50'
-              }`}
-            >
-              <Globe size={24} className={urlType === 'website' ? 'text-emerald-400' : 'text-zinc-400'} />
-              <h3 className="font-medium text-white mt-2">Website / Demo</h3>
-              <p className="text-xs text-zinc-500 mt-1">Deployed app or demo</p>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleUrlTypeChange('general')}
-              className={`p-4 rounded-lg border text-left transition-all ${
-                urlType === 'general'
-                  ? 'border-blue-500 bg-blue-500/10'
-                  : 'border-zinc-700 hover:border-zinc-600 hover:bg-zinc-800/50'
-              }`}
-            >
-              <Link size={24} className={urlType === 'general' ? 'text-blue-400' : 'text-zinc-400'} />
-              <h3 className="font-medium text-white mt-2">Any Link</h3>
-              <p className="text-xs text-zinc-500 mt-1">Figma, Notion, video, etc.</p>
-            </button>
-          </div>
-        </Card>
-      )}
-
       {/* Project URL Input */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-white flex items-center gap-2">
             {urlType === 'github' ? (
-              <Github size={20} />
+              <Github size={20} className="text-accent" />
             ) : urlType === 'website' ? (
-              <Globe size={20} />
+              <Globe size={20} className="text-emerald-400" />
             ) : (
-              <Link size={20} />
+              <Link size={20} className="text-blue-400" />
             )}
-            {urlTypeInfo.label}
+            Project Link
           </h2>
 
           {/* URL Type Selector */}
@@ -350,7 +298,7 @@ export function ProjectSubmissionForm({ initialTeam, preselectedEventId, presele
               onClick={() => setShowTypeDropdown(!showTypeDropdown)}
               className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors px-2 py-1 rounded border border-zinc-700 hover:border-zinc-600"
             >
-              Change Type
+              Type: {urlTypeInfo.label}
               <ChevronDown size={12} />
             </button>
 
@@ -358,11 +306,11 @@ export function ProjectSubmissionForm({ initialTeam, preselectedEventId, presele
               <div className="absolute right-0 top-full mt-1 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg z-10 min-w-[160px]">
                 <button
                   type="button"
-                  onClick={() => handleUrlTypeChange('github')}
-                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-zinc-700 transition-colors ${urlType === 'github' ? 'text-accent' : 'text-white'}`}
+                  onClick={() => handleUrlTypeChange('general')}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-zinc-700 transition-colors ${urlType === 'general' ? 'text-accent' : 'text-white'}`}
                 >
-                  <Github size={14} />
-                  GitHub Repo
+                  <Link size={14} />
+                  General Link
                 </button>
                 <button
                   type="button"
@@ -374,18 +322,20 @@ export function ProjectSubmissionForm({ initialTeam, preselectedEventId, presele
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleUrlTypeChange('general')}
-                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-zinc-700 transition-colors ${urlType === 'general' ? 'text-accent' : 'text-white'}`}
+                  onClick={() => handleUrlTypeChange('github')}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-zinc-700 transition-colors ${urlType === 'github' ? 'text-accent' : 'text-white'}`}
                 >
-                  <Link size={14} />
-                  Any Link
+                  <Github size={14} />
+                  GitHub (Advanced)
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        <p className="text-xs text-zinc-500 mb-4">{urlTypeInfo.description}</p>
+        <p className="text-sm text-zinc-400 mb-6">
+          Submit your project via Figma, Notion, a live website, or a GitHub repository.
+        </p>
 
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-3">
@@ -407,30 +357,15 @@ export function ProjectSubmissionForm({ initialTeam, preselectedEventId, presele
               type="button"
               onClick={handleValidateUrl}
               disabled={isFetching || !primaryUrl.trim()}
-              className="shrink-0 h-12 sm:h-auto"
+              className="shrink-0 h-12 sm:h-auto px-6"
             >
               {isFetching ? (
                 <Loader2 size={18} className="animate-spin" />
-              ) : urlType === 'github' ? (
-                'Fetch'
               ) : (
                 'Validate'
               )}
             </Button>
           </div>
-
-          {/* Auto-detected type indicator */}
-          {primaryUrl && !urlValidated && (
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
-              <span>Detected as:</span>
-              <Badge variant="outline" className="text-[10px] py-0">
-                {urlType === 'github' && <Github size={10} className="mr-1" />}
-                {urlType === 'website' && <Globe size={10} className="mr-1" />}
-                {urlType === 'general' && <Link size={10} className="mr-1" />}
-                {urlTypeInfo.label}
-              </Badge>
-            </div>
-          )}
 
           {urlError && (
             <div className="flex items-start gap-2 text-red-400 text-sm">
@@ -443,9 +378,12 @@ export function ProjectSubmissionForm({ initialTeam, preselectedEventId, presele
 
       {/* Repository Preview (GitHub only) */}
       {urlType === 'github' && repoData && (
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Repository Preview</h2>
-
+        <Card className="p-6 border-accent/30 bg-accent/5">
+          <div className="flex items-center gap-2 mb-4">
+            <Github size={18} className="text-accent" />
+            <h2 className="text-lg font-semibold text-white">GitHub Integration Enabled</h2>
+          </div>
+          
           <div className="space-y-4">
             <div className="flex items-start justify-between">
               <div>
@@ -468,25 +406,15 @@ export function ProjectSubmissionForm({ initialTeam, preselectedEventId, presele
               {repoData.language && (
                 <Badge>{repoData.language}</Badge>
               )}
-              <Badge variant="secondary">
-                <Star size={12} className="mr-1" />
+              <Badge variant="secondary" className="bg-zinc-800">
+                <Star size={12} className="mr-1 text-amber-400" />
                 {repoData.stars}
               </Badge>
-              <Badge variant="secondary">
-                <GitFork size={12} className="mr-1" />
+              <Badge variant="secondary" className="bg-zinc-800">
+                <GitFork size={12} className="mr-1 text-zinc-400" />
                 {repoData.forks}
               </Badge>
             </div>
-
-            {repoData.topics.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {repoData.topics.slice(0, 6).map((topic) => (
-                  <Badge key={topic} variant="outline">
-                    {topic}
-                  </Badge>
-                ))}
-              </div>
-            )}
           </div>
         </Card>
       )}
@@ -617,15 +545,18 @@ export function ProjectSubmissionForm({ initialTeam, preselectedEventId, presele
 
             <div>
               <label className="block text-sm font-medium text-zinc-400 mb-2">
-                Team Members (comma-separated)
+                Team Members (one per line)
               </label>
-              <input
-                type="text"
+              <textarea
                 value={members}
                 onChange={(e) => setMembers(e.target.value)}
-                placeholder="Alice, Bob, Charlie"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                placeholder="Alice&#10;Bob&#10;Charlie"
+                rows={3}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none"
               />
+              <p className="text-xs text-zinc-500 mt-1">
+                List the names of everyone on your team.
+              </p>
             </div>
           </div>
         </Card>

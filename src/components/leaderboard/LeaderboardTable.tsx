@@ -29,13 +29,11 @@ export function LeaderboardTable({ eventId }: LeaderboardTableProps) {
   const shouldShowScores = (() => {
     if (eventId) {
       const event = events.find(e => e.id === eventId);
-      return event?.scoresRevealed !== false; // Default to showing if not explicitly hidden
+      return event?.scoresRevealed !== false && event?.showVotes !== false; // Hide if either is false
     }
-    // For global leaderboard, show scores only if all events have them revealed
-    // Or default to showing if no events have scoresRevealed set
     const relevantEvents = events.filter(e => e.status === 'active' || e.status === 'archived');
     if (relevantEvents.length === 0) return true;
-    return relevantEvents.every(e => e.scoresRevealed !== false);
+    return relevantEvents.every(e => e.scoresRevealed !== false && e.showVotes !== false);
   })();
 
   if (leaderboard.length === 0) {

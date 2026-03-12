@@ -12,6 +12,7 @@ import { FavoriteToggle } from './FavoriteToggle';
 import { useVoting } from '@/context/VotingContext';
 import { useEvents } from '@/hooks/useEvents';
 import { useAuth } from '@/context/AuthContext';
+import { useOrgPermissions } from '@/hooks/useOrgPermissions';
 import { ensureAbsoluteUrl, fetchLatestCommitDateFromUrl } from '@/lib/github';
 import { Team, Scores } from '@/lib/types';
 import { getUrlLinkText } from '@/lib/urls';
@@ -35,13 +36,15 @@ export function VotingForm({ team }: VotingFormProps) {
     updateVote,
   } = useVoting();
   const { getEventById } = useEvents();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const alreadyVoted = hasVotedFor(team.id);
   const theme = getThemeById(team.themeId);
   const criteria = getThemeCriteria(team.themeId);
   const event = getEventById(team.eventId);
   const existingVote = getVoteForTeam(team.id);
+
+  const { isAdmin } = useOrgPermissions(event?.organizationId || null);
 
   // Initialize scores based on number of criteria
   const [scores, setScores] = useState<Scores>({});
@@ -141,8 +144,7 @@ export function VotingForm({ team }: VotingFormProps) {
     }
   };
 
-  // Check if another project is already the favorite
-  const hasOtherFavorite = favoriteTeamId && favoriteTeamId !== team.id;
+  const canVote = event?.phase === 'judging' || isAdmin;
 
   return (
     <div className="max-w-2xl lg:max-w-4xl mx-auto">
@@ -153,6 +155,16 @@ export function VotingForm({ team }: VotingFormProps) {
         <ArrowLeft size={20} />
         Back to Projects
       </Link>
+
+      {event && event.phase !== 'judging' && !isAdmin && (
+        <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-3 text-amber-400">
+          <Clock size={20} className="shrink-0" />
+          <p className="text-sm font-medium">
+            Voting is currently {event.phase === 'results' ? 'closed' : 'locked'}. 
+            {event.phase !== 'results' && ' It will open during the live demos!'}
+          </p>
+        </div>
+      )}
 
       <Card className="p-6">
         <div className="flex items-start justify-between mb-4">
@@ -366,28 +378,30 @@ export function VotingForm({ team }: VotingFormProps) {
               </div>
             </div>
 
-            <Button
-              type="submit"
-              size="lg"
-              disabled={!isValid || isSubmitting}
-              className="w-full py-6 text-lg font-bold shadow-lg shadow-accent/20"
-            >
-              {isSubmitting ? (
-                'Saving...'
-              ) : isEditing ? (
-                <>
-                  <Send size={18} className="mr-2" />
-                  Update Vote
-                </>
-              ) : (
-                <>
-                  <Send size={18} className="mr-2" />
-                  Submit Vote
-                </>
-              )}
-            </Button>
+            {canVote && (
+              <Button
+                type="submit"
+                size="lg"
+                disabled={!isValid || isSubmitting}
+                className="w-full py-6 text-lg font-bold shadow-lg shadow-accent/20"
+              >
+                {isSubmitting ? (
+                  'Saving...'
+                ) : isEditing ? (
+                  <>
+                    <Send size={18} className="mr-2" />
+                    Update Vote
+                  </>
+                ) : (
+                  <>
+                    <Send size={18} className="mr-2" />
+                    Submit Vote
+                  </>
+                )}
+              </Button>
+            )}
 
-            {!isValid && criteria.length > 0 && (
+            {!isValid && criteria.length > 0 && canVote && (
               <p className="text-sm text-zinc-500 text-center mt-3">
                 Please rate all criteria before submitting
               </p>
