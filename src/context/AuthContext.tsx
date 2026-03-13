@@ -72,11 +72,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function initializeAuth() {
       console.log('[AUTH] initializeAuth called');
       const isMobile = isMobileDevice();
-      console.log('[AUTH] isMobile:', isMobile);
+      console.log('[AUTH] isMobile:', isMobile, 'window.innerWidth:', typeof window !== 'undefined' ? window.innerWidth : 'n/a');
+
+      let redirectChecked = false;
+      let authStateReceived = false;
+
+      const checkComplete = () => {
+        if (redirectChecked && authStateReceived && isMounted) {
+          console.log('[AUTH] Both redirect and auth state checked, setting isLoading(false)');
+          setIsLoading(false);
+        }
+      };
 
       try {
         // First, check for redirect result (for mobile auth)
-        // CRITICAL: We MUST wait for this before setting isLoading to false
         console.log('[AUTH] Checking redirect result...');
         const result = await getRedirectResult(auth);
         
@@ -92,6 +101,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (isMounted) {
           setAuthError(`Redirect error: ${error?.code || error?.message || 'Unknown'}`);
         }
+      } finally {
+        redirectChecked = true;
+        checkComplete();
       }
 
       // Then set up the auth state listener
@@ -120,7 +132,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUserProfile(null);
         }
         
-        setIsLoading(false);
+        authStateReceived = true;
+        checkComplete();
       });
     }
 

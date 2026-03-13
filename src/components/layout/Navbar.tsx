@@ -20,9 +20,10 @@ export function Navbar() {
   return (
     <nav className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-40">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between max-w-5xl">
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-4 sm:gap-8">
           <Link href="/" className="text-xl font-black shrink-0 tracking-tight">
-            <span className="text-white">buildathon.</span>
+            <span className="text-white hidden sm:inline">buildathon.</span>
+            <span className="text-white sm:hidden">b.</span>
             <span className="text-emerald-400">live</span>
           </Link>
 
@@ -49,9 +50,11 @@ export function Navbar() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <UserMenu />
-          <WorkspaceSwitcher />
+          <div className="hidden sm:block">
+            <WorkspaceSwitcher />
+          </div>
         </div>
       </div>
     </nav>

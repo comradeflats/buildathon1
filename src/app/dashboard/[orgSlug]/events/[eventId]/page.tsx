@@ -3,7 +3,24 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, ArrowLeft, ExternalLink, Users, BarChart3, Calendar, Save, AlertCircle, Map as MapIcon } from 'lucide-react';
+import { 
+  Loader2, 
+  ArrowLeft, 
+  ExternalLink, 
+  Users, 
+  BarChart3, 
+  Calendar, 
+  Save, 
+  AlertCircle, 
+  Map as MapIcon,
+  CheckCircle2,
+  Sparkles,
+  Zap,
+  Trophy,
+  LayoutGrid,
+  MapPin,
+  Clock
+} from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -14,7 +31,63 @@ import { useOrgPermissions } from '@/hooks/useOrgPermissions';
 import { useTeams } from '@/hooks/useTeams';
 import { useThemes } from '@/hooks/useThemes';
 import { ThemeManager } from '@/components/admin/ThemeManager';
+import { EventPhaseController } from '@/components/admin/EventPhaseController';
 import { geocodeLocation } from '@/lib/utils';
+import { EventPhase } from '@/lib/types';
+
+const PHASE_CONFIG: Record<EventPhase, { color: string, glow: string }> = {
+  registration: { color: 'emerald', glow: 'shadow-emerald-500/20 bg-emerald-500/5' },
+  building: { color: 'blue', glow: 'shadow-blue-500/20 bg-blue-500/5' },
+  last_call: { color: 'amber', glow: 'shadow-amber-500/20 bg-amber-500/5' },
+  review: { color: 'purple', glow: 'shadow-purple-500/20 bg-purple-500/5' },
+  judging: { color: 'pink', glow: 'shadow-pink-500/20 bg-pink-500/5' },
+  results: { color: 'yellow', glow: 'shadow-yellow-500/20 bg-yellow-500/5' },
+};
+
+function SetupChecklist({ event, eventThemes, onEdit }: { event: any, eventThemes: any[], onEdit: () => void }) {
+  const checks = [
+    { label: 'Event Description', done: !!event.description, task: 'Add a description to tell builders what to expect.' },
+    { label: 'Map Coordinates', done: !!event.coordinates?.lat, task: 'Set location coordinates so your event appears on the map.' },
+    { label: 'Themes Created', done: eventThemes.length > 0, task: 'Add at least one theme for participants to build for.' },
+    { label: 'Themes Deployed', done: eventThemes.some(t => t.isPublished), task: 'Publish your themes so they are visible on the public page.' },
+    { label: 'Submission Code', done: !!event.submissionCode, task: 'Ensure a submission code is set to prevent spam.' },
+  ];
+
+  const completed = checks.filter(c => c.done).length;
+  if (completed === checks.length) return null;
+
+  return (
+    <Card className="p-6 border-amber-500/20 bg-amber-500/5 animate-in fade-in slide-in-from-right-4 duration-500">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2 bg-amber-500/10 rounded-lg text-amber-500">
+          <AlertCircle size={20} />
+        </div>
+        <div>
+          <h2 className="font-bold text-white">Event Setup Checklist</h2>
+          <p className="text-xs text-zinc-400">{completed} of {checks.length} essential steps completed</p>
+        </div>
+      </div>
+      <div className="space-y-3">
+        {checks.map((check, i) => (
+          <div key={i} className="flex items-start gap-3 group">
+            <div className={`mt-0.5 rounded-full p-0.5 ${check.done ? 'bg-emerald-500/20 text-emerald-500' : 'bg-zinc-800 text-zinc-600'}`}>
+              <CheckCircle2 size={14} />
+            </div>
+            <div className="flex-1">
+              <p className={`text-sm font-medium ${check.done ? 'text-zinc-400 line-through' : 'text-zinc-200'}`}>
+                {check.label}
+              </p>
+              {!check.done && <p className="text-[10px] text-zinc-500 mt-0.5">{check.task}</p>}
+            </div>
+          </div>
+        ))}
+        <Button variant="ghost" size="sm" className="w-full mt-2 border border-amber-500/30 text-amber-400 hover:bg-amber-500/10" onClick={onEdit}>
+          Complete Setup
+        </Button>
+      </div>
+    </Card>
+  );
+}
 
 export default function ManageEventPage() {
   const params = useParams();
@@ -51,9 +124,11 @@ export default function ManageEventPage() {
       return;
     }
 
+    console.log('[GEO] Starting lookup for:', editForm.location);
     setIsGeocoding(true);
     try {
       const result = await geocodeLocation(editForm.location);
+      console.log('[GEO] Result received:', result);
       if (result) {
         setEditForm(prev => ({
           ...prev,
@@ -63,6 +138,8 @@ export default function ManageEventPage() {
       } else {
         alert('Could not find coordinates for this location. Try adding a city or country.');
       }
+    } catch (error) {
+      console.error('[GEO] Error in lookupCoordinates:', error);
     } finally {
       setIsGeocoding(false);
     }
@@ -157,11 +234,16 @@ export default function ManageEventPage() {
 
   const eventTeams = teams.filter((t) => t.eventId === eventId);
   const eventThemes = getThemesByEventId(eventId);
+  const currentPhase = event.phase || 'registration';
+  const config = PHASE_CONFIG[currentPhase as EventPhase] || PHASE_CONFIG.registration;
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-8 pb-20 relative">
+      {/* Background Phase Glow */}
+      <div className={`fixed top-0 right-0 w-[500px] h-[500px] rounded-full blur-[120px] -z-10 opacity-20 transition-all duration-1000 ${config.glow.split(' ')[0]}`} />
+
       {/* Header */}
-      <div>
+      <div className="relative">
         <Link
           href={`/dashboard/${orgSlug}/events`}
           className="inline-flex items-center gap-2 text-zinc-400 hover:text-white transition-colors mb-4"
@@ -169,10 +251,10 @@ export default function ManageEventPage() {
           <ArrowLeft size={16} />
           Back to Events
         </Link>
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-white">{event.name}</h1>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-3 mb-2">
+              <h1 className="text-3xl sm:text-4xl font-black text-white truncate tracking-tight">{event.name}</h1>
               <Badge
                 variant={
                   event.status === 'active'
@@ -181,28 +263,29 @@ export default function ManageEventPage() {
                     ? 'default'
                     : 'secondary'
                 }
-                className="capitalize"
+                className="capitalize px-3 py-1 font-bold"
               >
                 {event.status}
               </Badge>
             </div>
             {event.description && !isEditing && (
-              <p className="text-zinc-400">{event.description}</p>
+              <p className="text-zinc-400 max-w-2xl line-clamp-2">{event.description}</p>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0">
             <Button 
               variant={isEditing ? "ghost" : "secondary"} 
               onClick={() => setIsEditing(!isEditing)}
               disabled={isSaving}
+              className="hidden sm:flex"
             >
-              {isEditing ? 'Cancel' : 'Edit Event'}
+              {isEditing ? 'Cancel' : 'Edit Details'}
             </Button>
             {!isEditing && (
               <Link href={`/e/${event.slug}`} target="_blank">
-                <Button>
-                  View Public Page
-                  <ExternalLink size={16} className="ml-2" />
+                <Button className="bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black">
+                  <span className="hidden sm:inline">View Public</span>
+                  <ExternalLink size={16} className="sm:ml-2" />
                 </Button>
               </Link>
             )}
@@ -211,7 +294,7 @@ export default function ManageEventPage() {
       </div>
 
       {isEditing ? (
-        <Card className="p-8 border-accent/20 bg-accent/5 animate-in fade-in slide-in-from-top-4">
+        <Card className="p-8 border-emerald-500/20 bg-emerald-500/5 animate-in fade-in slide-in-from-top-4">
           <div className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -345,104 +428,177 @@ export default function ManageEventPage() {
           </div>
         </Card>
       ) : (
-        <>
-          {/* Stats */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-zinc-400">Submissions</span>
-                <Users className="text-zinc-500" size={20} />
-              </div>
-              <div className="text-3xl font-bold text-white">{eventTeams.length}</div>
-              <div className="text-sm text-zinc-500 mt-1">Total projects submitted</div>
-            </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content Area */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Live Controller - The most important thing when managing */}
+            <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <EventPhaseController event={event} />
+            </section>
 
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-zinc-400">Themes</span>
-                <BarChart3 className="text-zinc-500" size={20} />
-              </div>
-              <div className="text-3xl font-bold text-white">{eventThemes.length}</div>
-              <div className="text-sm text-zinc-500 mt-1">Available themes</div>
-            </Card>
+            {/* Dynamic Reordering based on phase */}
+            {event.phase === 'registration' || event.phase === 'building' ? (
+              <>
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 px-1">
+                    <Sparkles size={18} className="text-emerald-400" />
+                    <h2 className="text-lg font-bold text-white uppercase tracking-wider">Themes & Rules</h2>
+                  </div>
+                  <ThemeManager eventId={eventId} organizationId={org.id} />
+                </section>
 
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-zinc-400">Dates</span>
-                <Calendar className="text-zinc-500" size={20} />
-              </div>
-              <div className="text-sm font-medium text-white">
-                {event.startDate && new Date(event.startDate).toLocaleDateString('en-GB')}
-              </div>
-              <div className="text-sm text-zinc-500 mt-1">
-                {event.endDate && `Until ${new Date(event.endDate).toLocaleDateString('en-GB')}`}
-              </div>
-            </Card>
+                <section className="space-y-4">
+                   <div className="flex items-center gap-2 px-1">
+                    <Users size={18} className="text-blue-400" />
+                    <h2 className="text-lg font-bold text-white uppercase tracking-wider">Submissions ({eventTeams.length})</h2>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Card className="p-6 border-zinc-800 bg-zinc-900/30 flex flex-col items-center justify-center text-center py-12">
+                       <Users className="text-zinc-700 mb-3" size={32} />
+                       <p className="text-zinc-500 text-sm">Participant management coming soon.</p>
+                       <p className="text-[10px] text-zinc-600 mt-1">View the public gallery to see all teams.</p>
+                    </Card>
+                    <Card className="p-6 border-zinc-800 bg-zinc-900/30 flex flex-col items-center justify-center text-center py-12">
+                       <BarChart3 className="text-zinc-700 mb-3" size={32} />
+                       <div className="text-2xl font-black text-white">{eventTeams.length}</div>
+                       <p className="text-zinc-500 text-sm">Projects Submitted</p>
+                    </Card>
+                  </div>
+                </section>
+              </>
+            ) : (
+              <>
+                <section className="space-y-4">
+                   <div className="flex items-center gap-2 px-1">
+                    <Zap size={18} className="text-pink-400" />
+                    <h2 className="text-lg font-bold text-white uppercase tracking-wider">Live Judging & Results</h2>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                     <Card className="p-8 border-pink-500/20 bg-pink-500/5 flex flex-col items-center justify-center text-center py-16">
+                        <Trophy className="text-pink-500 mb-4 animate-bounce" size={48} />
+                        <h3 className="text-xl font-bold text-white mb-2">Reviewing Mode Active</h3>
+                        <p className="text-zinc-400 max-w-md">Open the public voting page to participate in demos or reveal final scores to the audience.</p>
+                        <Link href={`/vote?event=${event.id}`} target="_blank" className="mt-6">
+                           <Button className="bg-pink-500 hover:bg-pink-600 text-white font-black px-8">
+                             OPEN VOTING PORTAL
+                           </Button>
+                        </Link>
+                     </Card>
+                  </div>
+                </section>
+
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 px-1">
+                    <Sparkles size={18} className="text-zinc-500" />
+                    <h2 className="text-lg font-bold text-white uppercase tracking-wider">Event Themes</h2>
+                  </div>
+                  <ThemeManager eventId={eventId} organizationId={org.id} />
+                </section>
+              </>
+            )}
           </div>
 
-          {/* Event Details Summary */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">Event Details</h2>
-              {(!event.coordinates || !event.coordinates.lat) && (
-                <Badge variant="outline" className="border-amber-500/20 text-amber-500 bg-amber-500/5">
-                  <AlertCircle size={12} className="mr-1.5" />
-                  Missing Map Coordinates
-                </Badge>
-              )}
+          {/* Sidebar Area */}
+          <div className="space-y-6">
+            {/* 1. Setup Checklist for new events */}
+            <SetupChecklist event={event} eventThemes={eventThemes} onEdit={() => setIsEditing(true)} />
+
+            {/* 2. Quick Stats */}
+            <Card className="p-6 bg-zinc-900/50 border-zinc-800">
+               <h3 className="text-xs font-black text-zinc-500 uppercase tracking-widest mb-4">Timeline</h3>
+               <div className="space-y-4">
+                 <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-zinc-400">
+                       <Calendar size={14} />
+                       <span className="text-sm">Start</span>
+                    </div>
+                    <span className="text-sm font-bold text-white">
+                       {event.startDate && new Date(event.startDate).toLocaleDateString('en-GB')}
+                    </span>
+                 </div>
+                 <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-zinc-400">
+                       <Clock size={14} />
+                       <span className="text-sm">Ends</span>
+                    </div>
+                    <span className="text-sm font-bold text-white">
+                       {event.endDate && new Date(event.endDate).toLocaleDateString('en-GB')}
+                    </span>
+                 </div>
+               </div>
+            </Card>
+
+            {/* 3. Event Link & Details */}
+            <Card className="p-6 bg-zinc-900/50 border-zinc-800">
+              <h3 className="text-xs font-black text-zinc-500 uppercase tracking-widest mb-4">Event Access</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">Public URL</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <input 
+                      readOnly 
+                      value={`buildathon.live/e/${event.slug}`}
+                      className="text-[11px] text-zinc-400 bg-black border border-zinc-800 px-3 py-2 rounded flex-1 truncate"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`https://buildathon.live/e/${event.slug}`);
+                      }}
+                    >
+                      <Save size={14} />
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">Submission Code</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <code className="text-sm font-black text-emerald-400 bg-emerald-500/10 px-3 py-2 rounded flex-1 text-center tracking-[0.2em]">
+                      {event.submissionCode || 'NONE'}
+                    </code>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                   <Link href={`/gallery/${event.id}`} target="_blank" className="w-full">
+                      <Button variant="secondary" className="w-full text-xs border-zinc-700 text-zinc-400 hover:text-white">
+                        <LayoutGrid size={14} className="mr-2" />
+                        Live Project Gallery
+                      </Button>
+                   </Link>
+                </div>
+              </div>
+            </Card>
+
+            {/* 4. Location Details */}
+            <Card className="p-6 bg-zinc-900/50 border-zinc-800">
+              <h3 className="text-xs font-black text-zinc-500 uppercase tracking-widest mb-4">Location</h3>
+              <div className="space-y-3">
+                 <div className="flex items-start gap-2">
+                    <MapPin size={16} className="text-zinc-500 shrink-0 mt-0.5" />
+                    <div>
+                       <p className="text-sm text-white font-medium">{event.location || 'Not set'}</p>
+                       {!event.coordinates?.lat && (
+                         <p className="text-[10px] text-amber-500 mt-1 flex items-center gap-1">
+                            <AlertCircle size={10} />
+                            Missing coordinates
+                         </p>
+                       )}
+                    </div>
+                 </div>
+              </div>
+            </Card>
+
+            <div className="pt-4 px-2">
+               <p className="text-[10px] text-zinc-600 text-center leading-relaxed">
+                  Tip: Change phases to control what participants see on the public portal.
+               </p>
             </div>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm text-zinc-500">Public URL</label>
-                <div className="flex items-center gap-2 mt-1">
-                  <code className="text-sm text-white bg-zinc-800 px-3 py-2 rounded flex-1">
-                    buildathon.live/e/{event.slug}
-                  </code>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      navigator.clipboard.writeText(`https://buildathon.live/e/${event.slug}`);
-                    }}
-                  >
-                    Copy
-                  </Button>
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm text-zinc-500">Start Date</label>
-                  <p className="text-white mt-1">
-                    {event.startDate && new Date(event.startDate).toLocaleString('en-GB')}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm text-zinc-500">End Date</label>
-                  <p className="text-white mt-1">
-                    {event.endDate && new Date(event.endDate).toLocaleString('en-GB')}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm text-zinc-500">Location</label>
-                  <p className="text-white mt-1">{event.location || 'Not set'}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-zinc-500">Coordinates</label>
-                  <p className="text-white mt-1">
-                    {event.coordinates ? `${event.coordinates.lat}, ${event.coordinates.lng}` : 'Not set (will not show on map)'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Theme Management */}
-          <ThemeManager eventId={eventId} organizationId={org.id} />
-        </>
+          </div>
+        </div>
       )}
     </div>
   );

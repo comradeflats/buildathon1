@@ -96,26 +96,26 @@ export function UserMenu() {
   return (
     <>
       <div className="relative" ref={menuRef}>
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition-colors"
-        >
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt={displayName}
-              className="w-6 h-6 rounded-full"
-            />
-          ) : (
-            <div className="w-6 h-6 rounded-full bg-zinc-600 flex items-center justify-center">
-              <User size={14} className="text-zinc-300" />
-            </div>
-          )}
-          <span className="text-sm text-zinc-200 max-w-[120px] truncate">
-            {displayName}
-          </span>
-          <ChevronDown size={14} className={`text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
+    <button
+      onClick={() => setIsOpen(!isOpen)}
+      className="flex items-center gap-2 px-2 sm:px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition-colors"
+    >
+      {avatarUrl ? (
+        <img
+          src={avatarUrl}
+          alt={displayName}
+          className="w-6 h-6 rounded-full"
+        />
+      ) : (
+        <div className="w-6 h-6 rounded-full bg-zinc-600 flex items-center justify-center">
+          <User size={14} className="text-zinc-300" />
+        </div>
+      )}
+      <span className="text-sm text-zinc-200 max-w-[120px] truncate hidden sm:inline">
+        {displayName}
+      </span>
+      <ChevronDown size={14} className={`text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+    </button>
 
         {isOpen && (
           <div className="absolute right-0 mt-2 w-48 py-1 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50">

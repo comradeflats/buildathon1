@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Sparkles, Plus, Loader2, Trash2, CheckCircle2, Circle, Edit2, Save, X, Info } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Theme } from '@/lib/types';
 import { useAuth } from '@/context/AuthContext';
 import { useVoting } from '@/context/VotingContext';
-import { getThemeEmoji } from '@/lib/themeIcons';
+import { getThemeEmoji, ICON_KEYS, THEME_EMOJIS, THEME_ICONS, ICON_COLORS } from '@/lib/themeIcons';
 
 interface ThemeManagerProps {
   eventId: string;
@@ -18,6 +18,7 @@ interface ThemeManagerProps {
 export function ThemeManager({ eventId, organizationId }: ThemeManagerProps) {
   const { getFirebaseToken } = useAuth();
   const { showToast } = useVoting();
+  const formRef = useRef<HTMLDivElement>(null);
   
   const [themes, setThemes] = useState<Theme[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,6 +28,12 @@ export function ThemeManager({ eventId, organizationId }: ThemeManagerProps) {
   const [editingThemeId, setEditingThemeId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Theme>>({});
   const [isAddingManual, setIsAddingManual] = useState(false);
+
+  const scrollToForm = () => {
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  };
 
   useEffect(() => {
     fetchThemes();
@@ -174,7 +181,7 @@ export function ThemeManager({ eventId, organizationId }: ThemeManagerProps) {
               setIsAddingManual(true);
               setEditForm({
                 name: '',
-                emoji: '✨',
+                iconKey: 'sparkles',
                 concept: '',
                 judgingCriteria: [
                   'Creative Interpretation: How unique was the approach to the theme?',
@@ -184,6 +191,7 @@ export function ThemeManager({ eventId, organizationId }: ThemeManagerProps) {
                   'The \'Ship\' Factor: How complete and polished is the prototype?'
                 ]
               });
+              scrollToForm();
             }}
           >
             <Plus size={16} className="mr-2" />
@@ -279,35 +287,87 @@ export function ThemeManager({ eventId, organizationId }: ThemeManagerProps) {
         )}
       </div>
 
-      {/* Manual Add Modal Placeholder (Simplifying as inline for now) */}
+      {/* Manual Add Form */}
       {isAddingManual && (
-        <Card className="p-6 border-accent/50 fixed inset-x-4 bottom-4 md:relative md:inset-0 z-50 shadow-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-white">Add Manual Theme</h3>
-            <button onClick={() => setIsAddingManual(false)}><X size={20} className="text-zinc-500" /></button>
+        <Card ref={formRef} className="p-8 border-emerald-500/50 bg-zinc-900 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+               <h3 className="text-xl font-bold text-white">Add Manual Theme</h3>
+               <p className="text-sm text-zinc-500">Configure a custom challenge for your buildathon.</p>
+            </div>
+            <button 
+              onClick={() => setIsAddingManual(false)}
+              className="p-2 hover:bg-zinc-800 rounded-full transition-colors"
+            >
+              <X size={20} className="text-zinc-500 hover:text-white" />
+            </button>
           </div>
-          <div className="space-y-4">
-            <div className="grid grid-cols-4 gap-3">
+
+          <div className="space-y-6">
+            <div className="space-y-3">
+               <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Select Theme Icon</label>
+               <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-12 gap-2">
+                  {ICON_KEYS.map((key) => {
+                    const Icon = THEME_ICONS[key];
+                    const color = ICON_COLORS[key] || 'text-zinc-400';
+                    const isSelected = editForm.iconKey === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setEditForm({ ...editForm, iconKey: key })}
+                        className={`p-2.5 rounded-xl border transition-all flex items-center justify-center hover:scale-110 active:scale-95 ${
+                          isSelected 
+                            ? `bg-zinc-800 border-emerald-500/50 ${color} ring-2 ring-emerald-500/20` 
+                            : 'bg-zinc-950 border-zinc-800 text-zinc-600 hover:border-zinc-700'
+                        }`}
+                        title={key}
+                      >
+                        <Icon size={18} />
+                      </button>
+                    );
+                  })}
+               </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Theme Name</label>
               <input
-                placeholder="Emoji"
-                value={editForm.emoji}
-                onChange={e => setEditForm({...editForm, emoji: e.target.value})}
-                className="col-span-1 bg-zinc-900 border border-zinc-700 rounded p-2 text-white"
-              />
-              <input
-                placeholder="Theme Name"
+                placeholder="e.g. The Sustainable City"
                 value={editForm.name}
                 onChange={e => setEditForm({...editForm, name: e.target.value})}
-                className="col-span-3 bg-zinc-900 border border-zinc-700 rounded p-2 text-white"
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
               />
             </div>
-            <textarea
-              placeholder="Concept (Concise summary of the theme)"
-              value={editForm.concept}
-              onChange={e => setEditForm({...editForm, concept: e.target.value})}
-              className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-white h-20"
-            />
-            <Button className="w-full" onClick={() => handleSaveManual(editForm)}>Save Theme</Button>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">The Concept</label>
+              <textarea
+                placeholder="Concise summary of the challenge (e.g. Build a micro-app that helps urban residents track their carbon footprint in real-time.)"
+                value={editForm.concept}
+                onChange={e => setEditForm({...editForm, concept: e.target.value})}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white h-28 focus:outline-none focus:border-emerald-500 transition-colors resize-none"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button 
+                variant="ghost" 
+                type="button"
+                onClick={() => setIsAddingManual(false)} 
+                className="flex-1 h-12"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="button"
+                className="flex-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black h-12 px-12" 
+                onClick={() => handleSaveManual(editForm)}
+                disabled={!editForm.name || !editForm.concept}
+              >
+                SAVE THEME
+              </Button>
+            </div>
           </div>
         </Card>
       )}

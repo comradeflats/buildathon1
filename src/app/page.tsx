@@ -21,18 +21,18 @@ export default function HomePage() {
   };
 
   return (
-    <div className="space-y-32 pb-20">
+    <div className="space-y-32 pb-20 overflow-x-hidden">
       {/* Hero Section - The Pitch */}
       <section className="relative pt-20 pb-12 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-emerald-500/10 blur-[120px] rounded-full -z-10 opacity-60" />
         
-        <div className="text-center max-w-4xl mx-auto space-y-8 px-4">
+        <div className="text-center max-w-4xl mx-auto space-y-8 px-6">
           <Badge variant="outline" className="py-1.5 px-5 border-emerald-500/30 text-emerald-400 bg-emerald-500/5 animate-in fade-in slide-in-from-top-4 duration-700">
             <Sparkles size={14} className="mr-2 fill-emerald-400" />
             Your Portal to Live Innovation
           </Badge>
           
-          <h1 className="text-5xl md:text-7xl font-black text-white tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-white tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100 break-words">
             buildathon.<span className="text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text">live</span>
           </h1>
           
