@@ -113,7 +113,7 @@ function ExploreArenas() {
               Arena <span className="text-emerald-400">Explorer</span>
             </h1>
             <p className="text-zinc-500 font-medium">
-              Find your next live building experience across {events.length} global locations.
+              Discover and join live building experiences across global locations.
             </p>
           </div>
 
