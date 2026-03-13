@@ -544,8 +544,13 @@ export default function ManageEventPage() {
         </Card>
       ) : (
         <div className="space-y-8">
-          {/* Launch Center - New Activation Bar */}
+          {/* Arena Command Center - Prominent Organizer Controls */}
           <section className="animate-in fade-in slide-in-from-top-4 duration-700">
+            <EventPhaseController event={event} variant="command-center" />
+          </section>
+
+          {/* Launch Center - New Activation Bar */}
+          <section className="animate-in fade-in slide-in-from-top-4 duration-1000">
             <LaunchCenter 
               event={event} 
               eventThemes={eventThemes} 
@@ -556,11 +561,6 @@ export default function ManageEventPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content Area */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Live Controller - The most important thing when managing */}
-            <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <EventPhaseController event={event} />
-            </section>
-
             {/* Dynamic Reordering based on phase */}
             {event.phase === 'registration' || event.phase === 'building' ? (
               <>

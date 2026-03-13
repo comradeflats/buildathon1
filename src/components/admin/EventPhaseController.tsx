@@ -1,10 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { 
   Zap, Clock, Users, Trophy, Play, CheckCircle, 
   Eye, EyeOff, Loader2, ChevronRight, Settings, 
-  Pause, MousePointer2, ChevronLeft, LayoutPanelLeft 
+  Pause, MousePointer2, ChevronLeft, LayoutPanelLeft,
+  ShieldCheck, ShieldAlert, RotateCcw, ExternalLink,
+  X
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -12,9 +15,11 @@ import { Badge } from '@/components/ui/Badge';
 import { Event, EventPhase } from '@/lib/types';
 import { useAuth } from '@/context/AuthContext';
 import { useVoting } from '@/context/VotingContext';
+import { useEvents } from '@/hooks/useEvents';
 
 interface EventPhaseControllerProps {
   event: Event;
+  variant?: 'drawer' | 'command-center';
 }
 
 const PHASES: { id: EventPhase; label: string; icon: any; color: string; description: string }[] = [
@@ -156,11 +161,10 @@ function LiveTimer({ event, onUpdate }: { event: Event, onUpdate: (updates: Part
   );
 }
 
-import { useEffect } from 'react';
-
-export function EventPhaseController({ event }: EventPhaseControllerProps) {
+export function EventPhaseController({ event, variant = 'drawer' }: EventPhaseControllerProps) {
   const { getFirebaseToken } = useAuth();
   const { showToast } = useVoting();
+  const { resetEvent } = useEvents();
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -196,8 +200,187 @@ export function EventPhaseController({ event }: EventPhaseControllerProps) {
     }
   };
 
+  const handleReset = async () => {
+    if (!confirm('DANGER: This will reset the event and DELETE ALL SUBMISSIONS. Are you sure?')) return;
+    try {
+      setIsUpdating('reset');
+      await resetEvent(event.id);
+      showToast('Event reset successfully', 'success');
+    } catch (error) {
+      showToast('Failed to reset event', 'error');
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
   const currentPhaseIndex = PHASES.findIndex(p => p.id === event.phase);
   const nextPhase = PHASES[currentPhaseIndex + 1];
+
+  const content = (
+    <div className={`${variant === 'drawer' ? 'p-6 space-y-8' : 'grid grid-cols-1 lg:grid-cols-3 gap-8 p-6'}`}>
+      {/* Current Phase Status & Next Action */}
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Live Phase</label>
+          <div className={`p-4 bg-zinc-900 rounded-2xl border border-zinc-800 flex items-center gap-4 ${variant === 'command-center' ? 'bg-black/40 border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.05)]' : ''}`}>
+            <div className={`p-3 rounded-xl bg-black/40 ${PHASES[currentPhaseIndex]?.color || 'text-white'}`}>
+              {(() => {
+                const Icon = PHASES[currentPhaseIndex]?.icon || Play;
+                return <Icon size={24} />;
+              })()}
+            </div>
+            <div className="flex-1">
+              <p className={`text-xl font-black ${PHASES[currentPhaseIndex]?.color || 'text-white'}`}>
+                {PHASES[currentPhaseIndex]?.label || 'Unknown'}
+              </p>
+              <p className="text-[10px] text-zinc-500 leading-tight mt-0.5">
+                {PHASES[currentPhaseIndex]?.description}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Judging Portal Link */}
+        {(event.phase === 'review' || event.phase === 'judging') && (
+          <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+            <label className="text-[10px] font-black text-pink-500/60 uppercase tracking-widest animate-pulse">Live Judging Active</label>
+            <Link href={`/vote?event=${event.id}`} target="_blank" className="block">
+              <Button className="w-full bg-pink-500 hover:bg-pink-600 text-white font-black h-12 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-pink-500/20 transition-all hover:scale-[1.02]">
+                <ExternalLink size={16} />
+                VOTING PORTAL
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {nextPhase && (
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Next Sequence</label>
+            <Button
+              onClick={() => updateEvent({ phase: nextPhase.id })}
+              disabled={!!isUpdating}
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black h-14 rounded-2xl shadow-lg shadow-emerald-500/10 flex items-center justify-between px-6 transition-all hover:scale-[1.01]"
+            >
+              <div className="text-left">
+                <span className="text-[10px] opacity-60 block">START</span>
+                <span className="text-sm">{nextPhase.label.toUpperCase()}</span>
+              </div>
+              {isUpdating === nextPhase.id ? (
+                <Loader2 size={20} className="animate-spin" />
+              ) : (
+                <ChevronRight size={20} />
+              )}
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Visibility, Safety & Timer */}
+      <div className="space-y-6">
+        <div className="space-y-3">
+          <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Visibility & Controls</label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => updateEvent({ showVotes: !event.showVotes })}
+              disabled={!!isUpdating}
+              className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl text-[10px] font-bold transition-all border ${
+                event.showVotes 
+                  ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-400' 
+                  : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              {event.showVotes ? <Eye size={18} /> : <EyeOff size={18} />}
+              VOTES
+            </button>
+            
+            <button
+              onClick={() => updateEvent({ scoresRevealed: !event.scoresRevealed })}
+              disabled={!!isUpdating}
+              className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl text-[10px] font-bold transition-all border ${
+                event.scoresRevealed 
+                  ? 'bg-yellow-500/5 border-yellow-500/20 text-yellow-400' 
+                  : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              <Trophy size={18} />
+              LEADERBOARD
+            </button>
+
+            <button
+              onClick={() => updateEvent({ forceLive: !event.forceLive })}
+              disabled={!!isUpdating}
+              className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl text-[10px] font-bold transition-all border ${
+                event.forceLive 
+                  ? 'bg-blue-500/5 border-blue-500/20 text-blue-400' 
+                  : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              {event.forceLive ? <ShieldCheck size={18} /> : <ShieldAlert size={18} />}
+              SAFETY
+            </button>
+
+            <button
+              onClick={handleReset}
+              disabled={!!isUpdating}
+              className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl text-[10px] font-bold bg-red-500/5 border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-all"
+            >
+              {isUpdating === 'reset' ? <Loader2 size={18} className="animate-spin" /> : <RotateCcw size={18} />}
+              RESET
+            </button>
+          </div>
+        </div>
+
+        {(event.phase === 'building' || event.phase === 'last_call') && (
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Live Clock</label>
+            <LiveTimer event={event} onUpdate={updateEvent} />
+          </div>
+        )}
+      </div>
+
+      {/* Full Sequence Map */}
+      <div className={`${variant === 'drawer' ? 'pt-6 border-t border-zinc-900' : ''}`}>
+        <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest block mb-4">Sequence Map</label>
+        <div className={`grid ${variant === 'drawer' ? 'grid-cols-1 gap-1' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2'}`}>
+          {PHASES.map((phase, index) => {
+            const isCurrent = phase.id === event.phase;
+            const isPast = index < currentPhaseIndex;
+            const Icon = phase.icon;
+            
+            return (
+              <button
+                key={phase.id}
+                onClick={() => updateEvent({ phase: phase.id })}
+                disabled={!!isUpdating}
+                className={`flex items-center gap-3 p-2 rounded-lg transition-all border ${isCurrent ? 'bg-white/5 border-zinc-700 text-white shadow-lg' : 'border-transparent text-zinc-500 hover:bg-white/5 hover:text-zinc-300'}`}
+              >
+                <div className={`w-7 h-7 flex items-center justify-center rounded-md ${isCurrent ? 'bg-emerald-500 text-zinc-950' : 'bg-zinc-900 text-zinc-600'}`}>
+                  <Icon size={14} />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-left leading-tight">{phase.label}</span>
+                {isCurrent && <div className="ml-auto w-1 h-3 bg-emerald-500 rounded-full" />}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (variant === 'command-center') {
+    return (
+      <Card className="border-emerald-500/20 bg-emerald-500/5 shadow-[0_0_50px_rgba(16,185,129,0.05)] overflow-hidden">
+        <div className="p-4 bg-emerald-500/10 border-b border-emerald-500/20 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Zap size={18} className="text-emerald-500" />
+            <h2 className="text-sm font-black text-white uppercase tracking-widest">Arena Command Center</h2>
+          </div>
+          <Badge className="bg-emerald-500 text-zinc-950 font-black">ORGANIZER</Badge>
+        </div>
+        {content}
+      </Card>
+    );
+  }
 
   return (
     <>
@@ -235,122 +418,8 @@ export function EventPhaseController({ event }: EventPhaseControllerProps) {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-8">
-            {/* Current Phase Status */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Live Phase</label>
-              <div className="p-4 bg-zinc-900 rounded-2xl border border-zinc-800 flex items-center gap-4">
-                <div className={`p-3 rounded-xl bg-black/40 ${PHASES[currentPhaseIndex]?.color || 'text-white'}`}>
-                  {(() => {
-                    const Icon = PHASES[currentPhaseIndex]?.icon || Play;
-                    return <Icon size={24} />;
-                  })()}
-                </div>
-                <div>
-                  <p className={`text-xl font-black ${PHASES[currentPhaseIndex]?.color || 'text-white'}`}>
-                    {PHASES[currentPhaseIndex]?.label || 'Unknown'}
-                  </p>
-                  <p className="text-[10px] text-zinc-500 leading-tight mt-0.5">
-                    {PHASES[currentPhaseIndex]?.description}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Next Phase Quick Action */}
-            {nextPhase && (
-              <div className="space-y-3">
-                <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Next Sequence</label>
-                <Button
-                  onClick={() => updateEvent({ phase: nextPhase.id })}
-                  disabled={!!isUpdating}
-                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black h-14 rounded-2xl shadow-lg shadow-emerald-500/10 flex items-center justify-between px-6"
-                >
-                  <div className="text-left">
-                    <span className="text-[10px] opacity-60 block">START</span>
-                    <span className="text-sm">{nextPhase.label.toUpperCase()}</span>
-                  </div>
-                  {isUpdating === nextPhase.id ? (
-                    <Loader2 size={20} className="animate-spin" />
-                  ) : (
-                    <ChevronRight size={20} />
-                  )}
-                </Button>
-              </div>
-            )}
-
-            {/* Privacy Toggles */}
-            <div className="space-y-3">
-              <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Live Visibility</label>
-              <div className="grid grid-cols-1 gap-2">
-                <button
-                  onClick={() => updateEvent({ showVotes: !event.showVotes })}
-                  disabled={!!isUpdating}
-                  className={`flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all border ${
-                    event.showVotes 
-                      ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-400' 
-                      : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    {event.showVotes ? <Eye size={16} /> : <EyeOff size={16} />}
-                    VOTES {event.showVotes ? 'ENABLED' : 'HIDDEN'}
-                  </div>
-                  <div className={`w-2 h-2 rounded-full ${event.showVotes ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-zinc-700'}`} />
-                </button>
-                
-                <button
-                  onClick={() => updateEvent({ scoresRevealed: !event.scoresRevealed })}
-                  disabled={!!isUpdating}
-                  className={`flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all border ${
-                    event.scoresRevealed 
-                      ? 'bg-yellow-500/5 border-yellow-500/20 text-yellow-400' 
-                      : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Trophy size={16} />
-                    LEADERBOARD {event.scoresRevealed ? 'PUBLIC' : 'LOCKED'}
-                  </div>
-                  <div className={`w-2 h-2 rounded-full ${event.scoresRevealed ? 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]' : 'bg-zinc-700'}`} />
-                </button>
-              </div>
-            </div>
-
-            {/* Dynamic Controls */}
-            {(event.phase === 'building' || event.phase === 'last_call') && (
-              <div className="space-y-3">
-                <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Live Clock</label>
-                <LiveTimer event={event} onUpdate={updateEvent} />
-              </div>
-            )}
-
-            {/* Full Sequence Map */}
-            <div className="pt-6 border-t border-zinc-900">
-               <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest block mb-4">Sequence Map</label>
-               <div className="space-y-1">
-                 {PHASES.map((phase, index) => {
-                   const isCurrent = phase.id === event.phase;
-                   const isPast = index < currentPhaseIndex;
-                   const Icon = phase.icon;
-                   
-                   return (
-                     <button
-                        key={phase.id}
-                        onClick={() => updateEvent({ phase: phase.id })}
-                        disabled={!!isUpdating}
-                        className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all ${isCurrent ? 'bg-white/5 text-white' : 'text-zinc-500 hover:bg-white/5 hover:text-zinc-300'}`}
-                     >
-                        <div className={`w-7 h-7 flex items-center justify-center rounded-md ${isCurrent ? 'bg-emerald-500 text-zinc-950' : 'bg-zinc-900 text-zinc-600'}`}>
-                           <Icon size={14} />
-                        </div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest">{phase.label}</span>
-                        {isCurrent && <div className="ml-auto w-1 h-3 bg-emerald-500 rounded-full" />}
-                     </button>
-                   );
-                 })}
-               </div>
-            </div>
+          <div className="flex-1 overflow-y-auto p-0">
+            {content}
           </div>
 
           <div className="p-6 bg-zinc-900/30 border-t border-zinc-900 text-center">

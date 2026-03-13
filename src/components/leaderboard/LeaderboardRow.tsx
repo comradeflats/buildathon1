@@ -69,9 +69,15 @@ export function LeaderboardRow({ teamScore, rank, hideScores = false }: Leaderbo
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-white font-semibold truncate text-sm md:text-base">
-                {teamScore.team.projectName}
-              </h3>
+              <Link 
+                href={`/vote?teamId=${teamScore.teamId}`}
+                onClick={(e) => e.stopPropagation()}
+                className="hover:underline"
+              >
+                <h3 className="text-white font-semibold truncate text-sm md:text-base hover:text-accent transition-colors">
+                  {teamScore.team.projectName}
+                </h3>
+              </Link>
               {isWinner && <Badge variant="winner" className="text-[10px] py-0 px-1">Winner</Badge>}
               {theme && (
                 <span className="text-sm" title={theme.name}>

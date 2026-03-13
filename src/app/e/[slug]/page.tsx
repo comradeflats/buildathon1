@@ -6,19 +6,22 @@ import Link from 'next/link';
 import { 
   ArrowLeft, Calendar, Users, Loader2, Plus, Clock, 
   MapPin, Settings, Info, CheckCircle, AlertCircle,
-  Trophy, LayoutGrid, Sparkles, UserPlus, Activity, LogOut, ShieldCheck, LayoutPanelLeft
+  Trophy, LayoutGrid, Sparkles, UserPlus, Activity, LogOut, ShieldCheck, LayoutPanelLeft, ChevronRight
 } from 'lucide-react';
 
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { EventPhaseController } from '@/components/admin/EventPhaseController';
+import { PhaseBanner } from '@/components/events/PhaseBanner';
+import { TeamGallery, LiveStageTracker } from '@/components/gallery/TeamGallery';
+import { LeaderboardTable } from '@/components/leaderboard/LeaderboardTable';
 import { useEventBySlug } from '@/hooks/useEventBySlug';
 import { useTeams } from '@/hooks/useTeams';
 import { useThemes } from '@/hooks/useThemes';
 import { useOrgPermissions } from '@/hooks/useOrgPermissions';
 import { useRegistration } from '@/hooks/useRegistration';
-import { getThemeEmoji } from '@/lib/themeIcons';
+import { getThemeEmoji, getThemeIconColor } from '@/lib/themeIcons';
 import { getEventStatus } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { useVoting } from '@/context/VotingContext';
@@ -79,6 +82,7 @@ export default function EventBySlugPage() {
   const [isJoining, setIsJoining] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+  const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
 
   // Automatically open registration modal after signing in if we were in the middle of joining
   useEffect(() => {
@@ -92,6 +96,13 @@ export default function EventBySlugPage() {
 
   const eventTeams = event ? teams.filter((team) => team.eventId === event.id) : [];
   const eventThemes = event ? themes.filter((theme) => theme.eventId === event.id) : [];
+
+  // Initialize selected theme
+  useEffect(() => {
+    if (eventThemes.length > 0 && !selectedThemeId) {
+      setSelectedThemeId(eventThemes[0].id);
+    }
+  }, [eventThemes, selectedThemeId]);
 
   const handleRegisterClick = async () => {
     if (!isAuthenticated) {
@@ -329,8 +340,15 @@ export default function EventBySlugPage() {
 
     // 2. ACTIVE FLOW
     if (status === 'active') {
+      const isReviewPhase = event.phase === 'review';
+      const isJudgingPhase = event.phase === 'judging';
+      const isResultsPhase = event.phase === 'results';
+      const showLeaderboard = isJudgingPhase || isResultsPhase;
+
       return (
-        <div className="space-y-8">
+        <div className="space-y-8 animate-in fade-in duration-1000">
+          <PhaseBanner phase={event.phase || 'building'} />
+
           <div className="relative px-8 py-10 rounded-[2.5rem] bg-zinc-900/20 border border-zinc-800 overflow-hidden">
             <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-emerald-500/5 to-transparent -z-10" />
             <div className="flex flex-col md:flex-row items-center justify-between gap-8">
@@ -352,14 +370,21 @@ export default function EventBySlugPage() {
                    </Button>
                  </Link>
                  {canSubmit ? (
-                   <Link href={`/e/${slug}/submit`}>
+                   <Link href={`/submit?eventId=${event.id}`}>
                      <Button size="lg" className="h-14 px-8 text-lg font-black shadow-xl shadow-accent/20 rounded-2xl bg-white text-zinc-950 hover:bg-zinc-200">
                        <Plus size={20} className="mr-2" />
                        SUBMIT PROJECT
                      </Button>
                    </Link>
-                 ) : !registration ? (
-                   <Button onClick={handleRegister} className="h-14 px-8 rounded-2xl font-black">
+                 ) : isReviewPhase ? (
+                    <Link href={`/vote?event=${event.id}`}>
+                      <Button size="lg" className="h-14 px-8 text-lg font-black shadow-xl shadow-pink-500/20 rounded-2xl bg-pink-500 text-white hover:bg-pink-600">
+                        <Trophy size={20} className="mr-2" />
+                        VOTING PORTAL
+                      </Button>
+                    </Link>
+                 ) : !registration && (event.phase === 'registration' || event.phase === 'building') ? (
+                   <Button onClick={handleRegisterClick} className="h-14 px-8 rounded-2xl font-black">
                      JOIN EVENT
                    </Button>
                  ) : null}
@@ -367,70 +392,146 @@ export default function EventBySlugPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-             <div className="p-4 rounded-2xl bg-zinc-900/30 border border-zinc-800/50 flex flex-col items-center justify-center text-center">
-                <p className="text-xl font-black text-white">{event.currentRegistrations || 0}</p>
-                <p className="text-[9px] text-zinc-500 uppercase font-black tracking-widest">Builders Joined</p>
-             </div>
-             <div className="p-4 rounded-2xl bg-zinc-900/30 border border-zinc-800/50 flex flex-col items-center justify-center text-center">
-                <p className="text-xl font-black text-white">{eventTeams.length}</p>
-                <p className="text-[9px] text-zinc-500 uppercase font-black tracking-widest">Projects Shipped</p>
-             </div>
-             {(event.phase === 'building' || event.phase === 'last_call') && (
-               <div className="col-span-2">
-                  <ParticipantTimer event={event} />
-               </div>
-             )}
-          </div>
-
-          <div className="rounded-[2.5rem] bg-zinc-900/20 border border-zinc-800 overflow-hidden">
-            <div className="grid lg:grid-cols-5 divide-y lg:divide-y-0 lg:divide-x divide-zinc-800">
-              <div className="lg:col-span-3 p-8 md:p-12 space-y-10">
-                <h2 className="text-3xl font-black text-white flex items-center gap-4 italic">
-                  <Sparkles size={32} className="text-emerald-400" />
-                  THE CHALLENGE
-                </h2>
-                <div className="space-y-6">
-                  {eventThemes.map((theme) => (
-                    <div key={theme.id} className="group p-8 rounded-3xl bg-black/20 border border-zinc-800/50 hover:border-emerald-500/30 transition-all duration-500">
-                      <div className="flex items-start gap-6">
-                        <div className="w-16 h-16 shrink-0 rounded-2xl bg-zinc-800 flex items-center justify-center text-emerald-400">
-                          <LayoutPanelLeft size={32} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-2xl font-black text-white mb-2 tracking-tight">{theme.name}</h3>
-                          <p className="text-zinc-400 leading-relaxed text-sm mb-6">{theme.concept}</p>
-                          <div className="flex flex-wrap gap-2">
-                            {theme.judgingCriteria?.slice(0, 3).map((c, i) => (
-                              <Badge key={i} variant="outline" className="text-[10px] py-1 border-zinc-800 text-zinc-500 bg-black/40">{c.split(':')[0]}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="lg:col-span-2 p-8 md:p-12 bg-black/20">
-                <h2 className="text-3xl font-black text-white flex items-center gap-4 italic mb-10">
-                  <ShieldCheck size={32} className="text-yellow-500" />
-                  STANDARDS
-                </h2>
-                <div className="space-y-8">
-                  {eventThemes[0]?.judgingCriteria?.map((criterion, idx) => (
-                    <div key={idx} className="flex gap-5 group">
-                      <span className="text-2xl font-black text-zinc-800 group-hover:text-yellow-500/20 transition-colors">0{idx + 1}</span>
-                      <p className="text-zinc-400 text-sm leading-relaxed font-medium">{criterion}</p>
-                    </div>
-                  ))}
-                </div>
-                {registration && (
-                  <div className="mt-12 pt-8 border-t border-zinc-800">
-                     <button onClick={handleWithdraw} className="text-[10px] font-black text-zinc-600 hover:text-red-400 uppercase tracking-[0.2em] transition-colors">Withdraw from Arena</button>
+          {/* Dynamic Content based on Phase */}
+          <div className="space-y-12">
+            {/* 1. Live Stage Tracker (Review Phase) */}
+            {isReviewPhase && (
+              <section className="animate-in slide-in-from-top-4 duration-700">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 border border-purple-500/20">
+                    <Activity size={20} />
                   </div>
-                )}
+                  <h2 className="text-2xl font-black text-white italic tracking-tight">LIVE ON STAGE</h2>
+                </div>
+                <LiveStageTracker event={event} teams={eventTeams} />
+              </section>
+            )}
+
+            {/* 2. Stats & Timer */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 rounded-2xl bg-zinc-900/30 border border-zinc-800/50 flex flex-col items-center justify-center text-center">
+                  <p className="text-xl font-black text-white">{event.currentRegistrations || 0}</p>
+                  <p className="text-[9px] text-zinc-500 uppercase font-black tracking-widest">Builders Joined</p>
               </div>
+              <div className="p-4 rounded-2xl bg-zinc-900/30 border border-zinc-800/50 flex flex-col items-center justify-center text-center">
+                  <p className="text-xl font-black text-white">{eventTeams.length}</p>
+                  <p className="text-[9px] text-zinc-500 uppercase font-black tracking-widest">Projects Shipped</p>
+              </div>
+              {(event.phase === 'building' || event.phase === 'last_call') && (
+                <div className="col-span-2">
+                    <ParticipantTimer event={event} />
+                </div>
+              )}
             </div>
+
+            {/* 3. Leaderboard (Judging & Results) */}
+            {showLeaderboard && (
+              <section className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-400 border border-yellow-500/20">
+                      <Trophy size={20} />
+                    </div>
+                    <h2 className="text-2xl font-black text-white italic tracking-tight">WALL OF FAME</h2>
+                  </div>
+                  {isJudgingPhase && (
+                    <Badge variant="outline" className="border-zinc-800 text-zinc-500 px-4 py-1.5 rounded-full">
+                      CALCULATING RESULTS...
+                    </Badge>
+                  )}
+                </div>
+                <div className="max-w-4xl">
+                  <LeaderboardTable eventId={event.id} />
+                </div>
+              </section>
+            )}
+
+            {/* 4. The Challenge (Themes) - Hidden in Results if too noisy, but keeping for context */}
+            {!isResultsPhase && (
+              <div className="rounded-[2.5rem] bg-zinc-900/20 border border-zinc-800 overflow-hidden">
+                <div className="grid lg:grid-cols-5 divide-y lg:divide-y-0 lg:divide-x divide-zinc-800">
+                  <div className="lg:col-span-3 p-8 md:p-12 space-y-10">
+                    <h2 className="text-3xl font-black text-white flex items-center gap-4 italic">
+                      <Sparkles size={32} className="text-emerald-400" />
+                      THE CHALLENGE
+                    </h2>
+                    <div className="space-y-4">
+                      {eventThemes.map((theme) => {
+                        const isSelected = selectedThemeId === theme.id;
+                        const themeColor = getThemeIconColor(theme);
+                        
+                        return (
+                          <button 
+                            key={theme.id} 
+                            onClick={() => setSelectedThemeId(theme.id)}
+                            className={`w-full text-left group p-6 rounded-3xl transition-all duration-500 border ${
+                              isSelected 
+                                ? `bg-white/5 border-zinc-400 shadow-xl` 
+                                : 'bg-black/20 border-zinc-800/50 hover:border-zinc-700'
+                            }`}
+                          >
+                            <div className="flex items-start gap-6">
+                              <div className={`w-14 h-14 shrink-0 rounded-2xl bg-zinc-800 flex items-center justify-center ${isSelected ? themeColor : 'text-zinc-500'}`}>
+                                <LayoutPanelLeft size={28} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className={`text-xl font-black mb-1 tracking-tight ${isSelected ? 'text-white' : 'text-zinc-400'}`}>{theme.name}</h3>
+                                <p className={`leading-relaxed text-sm line-clamp-2 ${isSelected ? 'text-zinc-300' : 'text-zinc-500'}`}>{theme.concept}</p>
+                              </div>
+                              {isSelected && (
+                                <div className={`w-2 h-2 rounded-full mt-2 ${themeColor.replace('text-', 'bg-')} shadow-[0_0_10px_currentColor]`} />
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="lg:col-span-2 p-8 md:p-12 bg-black/20">
+                    <h2 className="text-3xl font-black text-white flex items-center gap-4 italic mb-10">
+                      <ShieldCheck size={32} className="text-yellow-500" />
+                      STANDARDS
+                    </h2>
+                    <div className="space-y-6">
+                      {(() => {
+                        const selectedTheme = eventThemes.find(t => t.id === selectedThemeId) || eventThemes[0];
+                        const themeColor = getThemeIconColor(selectedTheme);
+                        
+                        return selectedTheme?.judgingCriteria?.map((criterion, idx) => (
+                          <div key={idx} className="flex gap-5 group animate-in fade-in slide-in-from-right-4 duration-500" style={{ animationDelay: `${idx * 100}ms` }}>
+                            <span className={`text-2xl font-black transition-colors ${themeColor}`}>0{idx + 1}</span>
+                            <p className="text-zinc-300 text-sm leading-relaxed font-medium">{criterion}</p>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                    {registration && (
+                      <div className="mt-12 pt-8 border-t border-zinc-800">
+                        <button onClick={handleWithdraw} className="text-[10px] font-black text-zinc-600 hover:text-red-400 uppercase tracking-[0.2em] transition-colors">Withdraw from Arena</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* 5. Full Gallery (Brief overview) */}
+            <section className="pt-8 border-t border-zinc-900">
+               <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+                      <LayoutGrid size={20} />
+                    </div>
+                    <h2 className="text-2xl font-black text-white italic tracking-tight">COMMUNITY PROJECTS</h2>
+                  </div>
+                  <Link href={`/e/${slug}/gallery`}>
+                    <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-white">
+                      VIEW ALL PROJECTS <ChevronRight size={16} className="ml-1" />
+                    </Button>
+                  </Link>
+               </div>
+               <TeamGallery eventId={event.id} />
+            </section>
           </div>
         </div>
       );
@@ -494,6 +595,7 @@ export default function EventBySlugPage() {
       />
 
       {isAdmin && <EventPhaseController event={event} />}
-    </div>
+      </div>
+
   );
 }

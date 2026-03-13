@@ -81,6 +81,7 @@ export interface Event {
   createdAt: string;
   themesGenerated: boolean;
   isLive: boolean;               // Manual "Go Live" trigger for organizers
+  forceLive?: boolean;            // Prevent accidental "Go Live" clicks
   visibility: 'public' | 'unlisted' | 'private'; // Whether event appears on global maps/lists
   showVotes: boolean;             // Whether live votes are visible to participants
   scoresRevealed?: boolean;       // Whether final leaderboard scores are visible

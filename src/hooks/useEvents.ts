@@ -122,6 +122,27 @@ export function useEvents() {
     }
   }, []);
 
+  const resetEvent = useCallback(async (eventId: string): Promise<void> => {
+    try {
+      const response = await fetch('/api/admin/events/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId,
+          adminSession: 'authenticated',
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to reset event');
+      }
+    } catch (err) {
+      console.error('Error resetting event:', err);
+      throw err;
+    }
+  }, []);
+
   return {
     events,
     isLoading,
@@ -132,5 +153,6 @@ export function useEvents() {
     createEvent,
     updateEvent,
     deleteEvent,
+    resetEvent,
   };
 }

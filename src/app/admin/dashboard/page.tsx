@@ -16,19 +16,24 @@ import {
   Edit2,
   Eye,
   EyeOff,
+  ShieldCheck,
+  ShieldAlert,
+  RotateCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { useAdmin } from '@/context/AdminContext';
 import { useEvents } from '@/hooks/useEvents';
+import { useVoting } from '@/context/VotingContext';
 import { Event } from '@/lib/types';
 import { generateSubmissionCode } from '@/lib/utils';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const { isAdmin, isLoading: isAdminLoading, logout } = useAdmin();
-  const { events, isLoading: isEventsLoading, createEvent, updateEvent, deleteEvent } = useEvents();
+  const { events, isLoading: isEventsLoading, createEvent, updateEvent, deleteEvent, resetEvent } = useEvents();
+  const { showToast } = useVoting();
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newEventName, setNewEventName] = useState('');
@@ -142,7 +147,12 @@ export default function AdminDashboardPage() {
   };
 
   const handleGoLive = async (event: Event) => {
-    if (!confirm('Are you sure you want to go live early? This will update the start date to now and reveal full themes to participants.')) {
+    if (!event.forceLive) {
+      setError('Please enable "Force Live" toggle before going live');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to go live? This will update the start date to now and reveal full themes to participants.')) {
       return;
     }
 
@@ -157,6 +167,30 @@ export default function AdminDashboardPage() {
       });
     } catch (err) {
       setError('Failed to go live');
+    }
+  };
+
+  const handleResetEvent = async (event: Event) => {
+    if (!confirm('DANGER: This will reset the event to "Registration" phase AND DELETE ALL SUBMISSIONS AND VOTES. This cannot be undone. Are you sure?')) {
+      return;
+    }
+
+    try {
+      await resetEvent(event.id);
+      showToast('Event reset successfully', 'success');
+    } catch (err) {
+      setError('Failed to reset event');
+    }
+  };
+
+  const handleToggleForceLive = async (event: Event) => {
+    try {
+      await updateEvent({
+        ...event,
+        forceLive: !event.forceLive,
+      });
+    } catch (err) {
+      setError('Failed to toggle safety lock');
     }
   };
 
@@ -527,24 +561,44 @@ export default function AdminDashboardPage() {
 
                         <div className="flex items-center gap-2">
                           {event.status === 'upcoming' && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleGoLive(event)}
-                              className="h-8 text-xs bg-emerald-600 hover:bg-emerald-500 font-bold"
-                            >
-                              GO LIVE
-                            </Button>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => handleToggleForceLive(event)}
+                                title={event.forceLive ? "Safety Lock: ON (Click to lock)" : "Safety Lock: OFF (Click to unlock)"}
+                                className={`p-1.5 rounded-lg transition-all ${event.forceLive ? 'bg-emerald-500/10 text-emerald-500' : 'bg-zinc-800 text-zinc-500 hover:text-zinc-300'}`}
+                              >
+                                {event.forceLive ? <ShieldCheck size={16} /> : <ShieldAlert size={16} />}
+                              </button>
+                              <Button
+                                size="sm"
+                                onClick={() => handleGoLive(event)}
+                                className={`h-8 text-xs font-bold transition-all ${event.forceLive ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'}`}
+                              >
+                                GO LIVE
+                              </Button>
+                            </div>
                           )}
 
                           {event.status === 'active' && (
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => handleArchive(event)}
-                              className="h-8 text-xs border-zinc-700 text-zinc-400 font-bold"
-                            >
-                              ARCHIVE
-                            </Button>
+                            <>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleResetEvent(event)}
+                                title="Reset Event (Deletes submissions)"
+                                className="h-8 w-8 p-0 text-red-500 hover:bg-red-500/10"
+                              >
+                                <RotateCcw size={16} />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => handleArchive(event)}
+                                className="h-8 text-xs border-zinc-700 text-zinc-400 font-bold"
+                              >
+                                ARCHIVE
+                              </Button>
+                            </>
                           )}
 
                           <Button

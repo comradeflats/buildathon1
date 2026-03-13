@@ -1,7 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Sparkles, Plus, Loader2, Trash2, CheckCircle2, Circle, X, Info, LayoutGrid, Wand2, ArrowRight, Save, Lock, Minus, PlusCircle } from 'lucide-react';
+import { 
+  Sparkles, Plus, Loader2, Trash2, CheckCircle2, Circle, X, Info, 
+  LayoutGrid, Wand2, ArrowRight, Save, Lock, Minus, PlusCircle, 
+  Pencil, Check, AlertTriangle 
+} from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -26,6 +30,8 @@ export function ThemeManager({ eventId, organizationId }: ThemeManagerProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [editingThemeId, setEditingThemeId] = useState<string | null>(null);
+  const [editingCriteria, setEditingCriteria] = useState<string[]>([]);
   
   const [creationMode, setCreationMode] = useState<CreationMode | null>(null);
   const [roughIdea, setRoughIdea] = useState('');
@@ -161,6 +167,27 @@ export function ThemeManager({ eventId, organizationId }: ThemeManagerProps) {
     }
   };
 
+  const startEditingCriteria = (theme: Theme) => {
+    setEditingThemeId(theme.id);
+    setEditingCriteria([...theme.judgingCriteria]);
+  };
+
+  const saveEditingCriteria = async (themeId: string) => {
+    try {
+      setIsSaving(true);
+      await handleUpdate(themeId, { judgingCriteria: editingCriteria });
+      setEditingThemeId(null);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const updateEditingCriterion = (index: number, value: string) => {
+    const newCriteria = [...editingCriteria];
+    newCriteria[index] = value;
+    setEditingCriteria(newCriteria);
+  };
+
   const togglePublish = async (theme: Theme) => {
     await handleUpdate(theme.id, { isPublished: !theme.isPublished });
   };
@@ -252,16 +279,67 @@ export function ThemeManager({ eventId, organizationId }: ThemeManagerProps) {
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 mb-1">
                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Judging Criteria</p>
-                       {(theme as any).metadata?.generated && <Lock size={10} className="text-zinc-600" />}
+                       {(theme as any).metadata?.generated && !editingThemeId && <Lock size={10} className="text-zinc-600" />}
+                       {editingThemeId === theme.id ? (
+                         <div className="flex items-center gap-2">
+                           <button 
+                             onClick={() => saveEditingCriteria(theme.id)}
+                             disabled={isSaving}
+                             className="text-[10px] font-bold text-emerald-500 hover:text-emerald-400 flex items-center gap-1"
+                           >
+                             <Check size={10} /> SAVE
+                           </button>
+                           <button 
+                             onClick={() => setEditingThemeId(null)}
+                             className="text-[10px] font-bold text-zinc-500 hover:text-zinc-400 flex items-center gap-1"
+                           >
+                             <X size={10} /> CANCEL
+                           </button>
+                         </div>
+                       ) : (
+                         <button 
+                           onClick={() => startEditingCriteria(theme)}
+                           className="text-[10px] font-bold text-zinc-600 hover:text-accent flex items-center gap-1"
+                         >
+                           <Pencil size={10} /> EDIT
+                         </button>
+                       )}
                     </div>
-                    <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
-                      {theme.judgingCriteria.map((criterion, i) => (
-                        <li key={i} className="text-xs text-zinc-500 flex items-center gap-2">
-                          <span className="text-accent">•</span>
-                          {criterion.split(':')[0]}
-                        </li>
-                      ))}
-                    </ul>
+                    
+                    {editingThemeId === theme.id ? (
+                      <div className="space-y-2 max-w-md">
+                        {editingCriteria.map((criterion, i) => (
+                          <div key={i} className="flex gap-2">
+                            <input
+                              value={criterion}
+                              onChange={(e) => updateEditingCriterion(i, e.target.value)}
+                              className="flex-1 bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-accent"
+                            />
+                            <button 
+                              onClick={() => setEditingCriteria(editingCriteria.filter((_, idx) => idx !== i))}
+                              className="text-zinc-600 hover:text-red-500"
+                            >
+                              <Minus size={14} />
+                            </button>
+                          </div>
+                        ))}
+                        <button 
+                          onClick={() => setEditingCriteria([...editingCriteria, ''])}
+                          className="text-[10px] font-bold text-accent hover:underline flex items-center gap-1"
+                        >
+                          <Plus size={10} /> ADD CRITERION
+                        </button>
+                      </div>
+                    ) : (
+                      <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
+                        {theme.judgingCriteria.map((criterion, i) => (
+                          <li key={i} className="text-xs text-zinc-500 flex items-center gap-2">
+                            <span className="text-accent">•</span>
+                            {criterion.split(':')[0]}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 </div>
 

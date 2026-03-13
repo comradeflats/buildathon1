@@ -137,7 +137,7 @@ export function VotingForm({ team }: VotingFormProps) {
       } else {
         await submitVote(team.id, scores, isFavorite);
         showToast(`Vote submitted for ${team.projectName}!`, 'success');
-        router.push('/');
+        router.push(`/leaderboard?event=${team.eventId}`);
       }
     } catch (err) {
       showToast('Failed to submit vote. Please try again.', 'error');

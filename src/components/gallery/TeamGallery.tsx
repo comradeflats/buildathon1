@@ -7,16 +7,17 @@ import { useTeams } from '@/context/TeamContext';
 import { useEvents } from '@/hooks/useEvents';
 import { useVotes } from '@/hooks/useVotes';
 import { useAdmin } from '@/context/AdminContext';
-import { Loader2, LayoutGrid, Monitor, Users, CheckCircle2, ChevronRight, AlertCircle, Play, ExternalLink } from 'lucide-react';
+import { Loader2, LayoutGrid, Monitor, Users, CheckCircle2, ChevronRight, AlertCircle, Play, ExternalLink, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { LeaderboardTable } from '@/components/leaderboard/LeaderboardTable';
 
 interface TeamGalleryProps {
   eventId?: string;
 }
 
-function LiveStageTracker({ event, teams }: { event: any, teams: any[] }) {
+export function LiveStageTracker({ event, teams }: { event: any, teams: any[] }) {
   const { votes } = useVotes();
   const { updateEvent } = useEvents();
   const { isAdmin } = useAdmin();
@@ -146,6 +147,7 @@ function LiveStageTracker({ event, teams }: { event: any, teams: any[] }) {
 export function TeamGallery({ eventId }: TeamGalleryProps) {
   const { teams, isLoading: isTeamsLoading } = useTeams();
   const { getEventById, isLoading: isEventsLoading } = useEvents();
+  const [activeTab, setActiveTab] = useState<'gallery' | 'leaderboard'>('gallery');
 
   const event = eventId ? getEventById(eventId) : null;
   const isLoading = isTeamsLoading || (eventId && isEventsLoading);
@@ -163,26 +165,65 @@ export function TeamGallery({ eventId }: TeamGalleryProps) {
     );
   }
 
-  if (filteredTeams.length === 0) {
-    return (
-      <div className="text-center py-20 text-zinc-500 bg-zinc-900/20 border border-dashed border-zinc-800 rounded-2xl">
-        <LayoutGrid className="mx-auto mb-4 opacity-20" size={48} />
-        <p className="font-medium text-white">No teams found in this arena.</p>
-        <p className="text-sm mt-1">Check back later or explore other arenas.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-8">
       {event?.phase === 'review' && (
         <LiveStageTracker event={event} teams={filteredTeams} />
       )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredTeams.map((team) => (
-          <TeamCard key={team.id} team={team} event={event} />
-        ))}
+
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-zinc-800 pb-6">
+        <div className="flex p-1 bg-zinc-900 border border-zinc-800 rounded-xl w-fit">
+          <button
+            onClick={() => setActiveTab('gallery')}
+            className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${
+              activeTab === 'gallery' 
+                ? 'bg-zinc-800 text-white shadow-lg shadow-black/20' 
+                : 'text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            <LayoutGrid size={18} className={activeTab === 'gallery' ? 'text-emerald-400' : ''} />
+            Project Gallery
+          </button>
+          <button
+            onClick={() => setActiveTab('leaderboard')}
+            className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${
+              activeTab === 'leaderboard' 
+                ? 'bg-zinc-800 text-white shadow-lg shadow-black/20' 
+                : 'text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            <Trophy size={18} className={activeTab === 'leaderboard' ? 'text-yellow-400' : ''} />
+            Live Leaderboard
+          </button>
+        </div>
+
+        {activeTab === 'gallery' && (
+          <p className="text-xs font-bold text-zinc-500 uppercase tracking-[0.2em]">
+            Showing <span className="text-white">{filteredTeams.length}</span> Shipped Projects
+          </p>
+        )}
+      </div>
+
+      <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+        {activeTab === 'gallery' ? (
+          filteredTeams.length === 0 ? (
+            <div className="text-center py-20 text-zinc-500 bg-zinc-900/20 border border-dashed border-zinc-800 rounded-2xl">
+              <LayoutGrid className="mx-auto mb-4 opacity-20" size={48} />
+              <p className="font-medium text-white">No teams found in this arena.</p>
+              <p className="text-sm mt-1">Check back later or explore other arenas.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredTeams.map((team) => (
+                <TeamCard key={team.id} team={team} event={event} />
+              ))}
+            </div>
+          )
+        ) : (
+          <div className="max-w-5xl">
+            <LeaderboardTable eventId={eventId} />
+          </div>
+        )}
       </div>
     </div>
   );
