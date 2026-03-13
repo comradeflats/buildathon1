@@ -16,7 +16,7 @@ export function SignInModal({ isOpen, onClose, title, description, hideGuest = f
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed top-0 left-0 w-full h-full z-50 flex items-center justify-center min-h-screen p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div 
         className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl animate-in zoom-in-95 duration-200 hide-scrollbar"
         onClick={(e) => e.stopPropagation()}

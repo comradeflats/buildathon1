@@ -19,6 +19,11 @@ export function useRegistration(eventId?: string) {
 
     try {
       const token = await getFirebaseToken();
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+      
       const response = await fetch(`/api/events/${eventId}/register`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -52,6 +57,11 @@ export function useRegistration(eventId?: string) {
 
     try {
       const token = await getFirebaseToken();
+      if (!token) {
+        setIsRegistering(false);
+        return;
+      }
+      
       const response = await fetch(`/api/events/${eventId}/register`, {
         method: 'POST',
         headers: {
@@ -85,6 +95,11 @@ export function useRegistration(eventId?: string) {
 
     try {
       const token = await getFirebaseToken();
+      if (!token) {
+        setIsRegistering(false);
+        return;
+      }
+      
       const response = await fetch(`/api/events/${eventId}/register`, {
         method: 'DELETE',
         headers: {

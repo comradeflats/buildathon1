@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestoreAdmin } from '@/lib/firebase-admin';
 import { verifyFirebaseToken, requireOrgAdmin, handleAuthError } from '@/lib/auth-helpers';
-import { RegistrationStatus } from '@/lib/types';
+import { RegistrationStatus, EventRegistration } from '@/lib/types';
 
 /**
  * GET /api/events/[id]/participants
@@ -13,20 +13,26 @@ export async function GET(
 ) {
   try {
     const eventId = params.eventId;
+    console.log(`[PARTICIPANTS API] Fetching for EventID: ${eventId}`);
     const db = getFirestoreAdmin();
     
     // Get event to check organizationId
     const eventDoc = await db.collection('events').doc(eventId).get();
     if (!eventDoc.exists) {
+      console.error(`[PARTICIPANTS API] Event NOT FOUND: ${eventId}`);
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
     
     const eventData = eventDoc.data()!;
+    console.log(`[PARTICIPANTS API] Event: ${eventData.name}, Org: ${eventData.organizationId}`);
     // Verify admin permissions
     await requireOrgAdmin(request, eventData.organizationId);
     
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
+    
+    const allRegsSnapshot = await db.collection('registrations').count().get();
+    console.log(`[PARTICIPANTS API] Total registrations in DB: ${allRegsSnapshot.data().count}`);
     
     let query = db.collection('registrations').where('eventId', '==', eventId);
     
@@ -34,14 +40,24 @@ export async function GET(
       query = query.where('status', '==', status);
     }
     
-    const snapshot = await query.orderBy('registeredAt', 'desc').get();
-    const participants = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const snapshot = await query.get();
+    console.log(`[PARTICIPANTS API] Found ${snapshot.docs.length} participants for event ${eventId}`);
+    
+    const participants = (snapshot.docs
+      .map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as unknown as EventRegistration[])
+      .sort((a, b) => {
+        // Sort by registeredAt desc
+        const dateA = new Date(a.registeredAt || 0).getTime();
+        const dateB = new Date(b.registeredAt || 0).getTime();
+        return dateB - dateA;
+      });
     
     return NextResponse.json({ participants });
   } catch (error) {
+    console.error('[PARTICIPANTS API ERROR]', error);
     return handleAuthError(error);
   }
 }

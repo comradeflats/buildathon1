@@ -3,6 +3,7 @@ import { TeamProvider } from '@/context/TeamContext';
 import { VotingProvider } from '@/context/VotingContext';
 import { AdminProvider } from '@/context/AdminContext';
 import { AuthProvider } from '@/context/AuthContext';
+import { OrgProvider } from '@/context/OrgContext';
 import { Navbar } from '@/components/layout/Navbar';
 import { Toast } from '@/components/ui/Toast';
 import './globals.css';
@@ -21,18 +22,20 @@ export default function RootLayout({
     <html lang="en">
       <body className="min-h-screen bg-background text-foreground">
         <AuthProvider>
-          <AdminProvider>
-            <TeamProvider>
-              <VotingProvider>
-                <Navbar />
+          <OrgProvider>
+            <AdminProvider>
+              <TeamProvider>
+                <VotingProvider>
+                  <Navbar />
 
-                <main className="container mx-auto px-4 py-8 max-w-5xl">
-                  {children}
-                </main>
-                <Toast />
-              </VotingProvider>
-            </TeamProvider>
-          </AdminProvider>
+                  <main className="container mx-auto px-4 py-8 max-w-5xl">
+                    {children}
+                  </main>
+                  <Toast />
+                </VotingProvider>
+              </TeamProvider>
+            </AdminProvider>
+          </OrgProvider>
         </AuthProvider>
       </body>
     </html>

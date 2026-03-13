@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
@@ -22,6 +22,7 @@ import { getThemeEmoji } from '@/lib/themeIcons';
 import { useAuth } from '@/context/AuthContext';
 import { useVoting } from '@/context/VotingContext';
 import { RegisterModal } from '@/components/events/RegisterModal';
+import { SignInModal } from '@/components/auth/SignInModal';
 
 export default function EventBySlugPage() {
   const params = useParams();
@@ -38,6 +39,15 @@ export default function EventBySlugPage() {
 
   const [isJoining, setIsJoining] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+
+  // Automatically open registration modal after signing in if we were in the middle of joining
+  useEffect(() => {
+    if (isAuthenticated && isSignInModalOpen) {
+      setIsSignInModalOpen(false);
+      setIsModalOpen(true);
+    }
+  }, [isAuthenticated, isSignInModalOpen]);
 
   const isLoading = isEventLoading || isTeamsLoading || isThemesLoading || isPermsLoading || isRegLoading;
 
@@ -46,15 +56,8 @@ export default function EventBySlugPage() {
 
   const handleRegisterClick = async () => {
     if (!isAuthenticated) {
-      setIsJoining(true);
-      try {
-        await signInAnonymously();
-      } catch (err) {
-        console.error('Failed to sign in:', err);
-        setIsJoining(false);
-        showToast('Failed to sign in', 'error');
-        return;
-      }
+      setIsSignInModalOpen(true);
+      return;
     }
     setIsModalOpen(true);
   };
@@ -253,6 +256,14 @@ export default function EventBySlugPage() {
           onClose={() => setIsModalOpen(false)}
           onConfirm={handleConfirmRegistration}
           isWaitlist={(event.maxParticipants || 0) <= (event.currentRegistrations || 0)}
+        />
+
+        <SignInModal 
+          isOpen={isSignInModalOpen} 
+          onClose={() => setIsSignInModalOpen(false)}
+          title="Sign in to Register"
+          description="You need to be signed in to join the event. You can continue as a guest if you prefer."
+          hideGuest={false}
         />
 
         {isAdmin && <EventPhaseController event={event} />}

@@ -318,7 +318,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Get Firebase ID token for API calls
   const getFirebaseToken = useCallback(async (): Promise<string | null> => {
-    if (!user || user.isAnonymous) {
+    if (!user) {
       return null;
     }
 

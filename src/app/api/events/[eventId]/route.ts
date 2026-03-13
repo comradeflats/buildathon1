@@ -21,9 +21,13 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({
+    const eventData = {
       id: eventDoc.id,
       ...eventDoc.data(),
+    };
+
+    return NextResponse.json({
+      event: eventData
     });
   } catch (error) {
     console.error('Error fetching event:', error);

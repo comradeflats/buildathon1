@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useMemo, Suspense } from 'react';
+import { useState, useMemo, Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft, Loader2, LayoutGrid, Trophy, Calendar, MapPin, Share2, UserPlus, Send } from 'lucide-react';
+import { ChevronLeft, Loader2, LayoutGrid, Trophy, Calendar, MapPin, Share2, UserPlus, Send, CheckCircle, Clock } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -11,21 +11,38 @@ import { TeamGallery } from '@/components/gallery/TeamGallery';
 import { LeaderboardTable } from '@/components/leaderboard/LeaderboardTable';
 import { useEvents } from '@/hooks/useEvents';
 import { useAuth } from '@/context/AuthContext';
+import { useRegistration } from '@/hooks/useRegistration';
+import { useVoting } from '@/context/VotingContext';
 import { SignInModal } from '@/components/auth/SignInModal';
+import { RegisterModal } from '@/components/events/RegisterModal';
 import { getEventStatus } from '@/lib/utils';
 
 function EventArenaPage() {
   const { eventId } = useParams();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const { showToast } = useVoting();
   const { getEventById, isLoading: isEventsLoading } = useEvents();
+  const { registration, isRegistering, register, isLoading: isRegLoading } = useRegistration(eventId as string);
+  
   const [activeTab, setActiveTab] = useState<'gallery' | 'leaderboard'>('gallery');
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+
+  // Automatically open registration modal after signing in if we were in the middle of joining
+  useEffect(() => {
+    if (isAuthenticated && isSignInModalOpen) {
+      setIsSignInModalOpen(false);
+      setIsRegisterModalOpen(true);
+    }
+  }, [isAuthenticated, isSignInModalOpen]);
 
   const event = useMemo(() => 
     typeof eventId === 'string' ? getEventById(eventId) : undefined
   , [eventId, getEventById]);
 
-  if (isEventsLoading) {
+  const isLoading = isEventsLoading || isRegLoading;
+
+  if (isLoading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <Loader2 size={32} className="animate-spin text-zinc-400" />
@@ -49,6 +66,28 @@ function EventArenaPage() {
 
   const status = getEventStatus(event.startDate, event.endDate);
   const isRegistrationOpen = status === 'upcoming' || status === 'active';
+  const isApproved = registration?.status === 'approved';
+  const isWaitlisted = registration?.status === 'waitlisted';
+
+  const handleRegisterClick = () => {
+    if (!isAuthenticated) {
+      setIsSignInModalOpen(true);
+      return;
+    }
+    setIsRegisterModalOpen(true);
+  };
+
+  const handleConfirmRegistration = async (metadata: { skillLevel: string; teamIntent: string }) => {
+    try {
+      const result = await register(metadata);
+      showToast(result.message, result.status === 'approved' ? 'success' : 'info');
+    } catch (err: any) {
+      console.error('Registration failed:', err);
+      showToast(err.message || 'Registration failed', 'error');
+    } finally {
+      setIsRegisterModalOpen(false);
+    }
+  };
 
   return (
     <div className="space-y-8 pb-20">
@@ -106,27 +145,32 @@ function EventArenaPage() {
 
           {/* Action Center */}
           <div className="flex flex-col gap-3 min-w-[240px]">
-            {isRegistrationOpen && (
+            {isRegistrationOpen && !registration && (
               <Button 
                 size="lg"
-                onClick={() => !user && setIsSignInModalOpen(true)}
+                onClick={handleRegisterClick}
                 className="w-full bg-white text-zinc-950 hover:bg-zinc-200 font-black rounded-xl h-14 transition-all active:scale-95"
               >
-                {user ? (
-                  <>
-                    <UserPlus size={20} className="mr-2" />
-                    YOU'RE REGISTERED
-                  </>
-                ) : (
-                  <>
-                    <UserPlus size={20} className="mr-2" />
-                    REGISTER TO BUILD
-                  </>
-                )}
+                <UserPlus size={20} className="mr-2" />
+                REGISTER TO BUILD
               </Button>
             )}
 
-            {status === 'active' ? (
+            {isApproved && (
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3 mb-1">
+                <CheckCircle className="text-emerald-500" size={20} />
+                <span className="text-sm font-bold text-emerald-400 uppercase tracking-wider">Registered</span>
+              </div>
+            )}
+
+            {isWaitlisted && (
+              <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center gap-3 mb-1">
+                <Clock className="text-yellow-500" size={20} />
+                <span className="text-sm font-bold text-yellow-500 uppercase tracking-wider">On Waitlist</span>
+              </div>
+            )}
+
+            {status === 'active' && isApproved ? (
               <Link href={`/submit?eventId=${event.id}`}>
                 <Button 
                   size="lg"
@@ -137,6 +181,16 @@ function EventArenaPage() {
                   SUBMIT PROJECT
                 </Button>
               </Link>
+            ) : status === 'active' && !registration ? (
+              <Button 
+                size="lg"
+                variant="secondary"
+                onClick={handleRegisterClick}
+                className="w-full border-zinc-700 text-zinc-400 bg-zinc-900 hover:bg-zinc-800 font-bold rounded-xl h-14 transition-all active:scale-95"
+              >
+                <UserPlus size={20} className="mr-2" />
+                JOIN TO SUBMIT
+              </Button>
             ) : status === 'upcoming' ? (
               <div className="p-4 rounded-xl bg-zinc-950/50 border border-zinc-800 text-center">
                 <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest leading-relaxed">Submissions open when<br/>arena goes live</p>
@@ -182,6 +236,13 @@ function EventArenaPage() {
           </div>
         )}
       </div>
+
+      <RegisterModal 
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+        onConfirm={handleConfirmRegistration}
+        isWaitlist={(event.maxParticipants || 0) <= (event.currentRegistrations || 0)}
+      />
 
       <SignInModal 
         isOpen={isSignInModalOpen} 

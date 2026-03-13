@@ -71,7 +71,7 @@ export function UserMenu() {
           onClose={() => setIsSignInModalOpen(false)}
           title="Welcome Back"
           description="Sign in to your account to manage events and view submissions."
-          hideGuest={true}
+          hideGuest={false}
         />
         {errorToast}
       </>

@@ -6,12 +6,13 @@ import Link from 'next/link';
 import { 
   Loader2, Users, ArrowLeft, Search, Filter, 
   CheckCircle, Clock, XCircle, Trash2, Mail,
-  UserCheck, UserX, UserPlus, AlertCircle
+  UserCheck, UserX, UserPlus, AlertCircle, Copy, Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { useAuth } from '@/context/AuthContext';
+import { useVoting } from '@/context/VotingContext';
 import { useOrganizations } from '@/hooks/useOrganizations';
 import { useOrgPermissions } from '@/hooks/useOrgPermissions';
 import { EventRegistration, RegistrationStatus, Event } from '@/lib/types';
@@ -23,6 +24,7 @@ export default function ParticipantsPage() {
   const eventId = params.eventId as string;
 
   const { user, getFirebaseToken } = useAuth();
+  const { showToast } = useVoting();
   const { organizations, isLoading: orgsLoading } = useOrganizations();
   const [org, setOrg] = useState<any>(null);
   const [event, setEvent] = useState<Event | null>(null);
@@ -142,6 +144,21 @@ export default function ParticipantsPage() {
   const approvedCount = participants.filter(p => p.status === 'approved').length;
   const waitlistCount = participants.filter(p => p.status === 'waitlisted').length;
 
+  const copyEmails = (status: RegistrationStatus) => {
+    const emails = participants
+      .filter(p => p.status === status && p.email)
+      .map(p => p.email)
+      .join(', ');
+
+    if (!emails) {
+      showToast(`No ${status} participants with emails found.`, 'info');
+      return;
+    }
+
+    navigator.clipboard.writeText(emails);
+    showToast(`Copied ${status} participants' emails to clipboard!`, 'success');
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -174,6 +191,45 @@ export default function ParticipantsPage() {
           </div>
         </div>
       </div>
+
+      {/* Messaging Tools */}
+      <Card className="p-4 bg-zinc-900/50 border-zinc-800">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-accent/10 rounded-lg text-accent shrink-0">
+              <Info size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">Contact Participants</p>
+              <p className="text-xs text-zinc-500 mt-1">
+                Need to send an update? Copy participant emails and paste them into your preferred email client (BCC recommended).
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              onClick={() => copyEmails('approved')}
+              disabled={approvedCount === 0}
+              className="h-9"
+            >
+              <Copy size={14} className="mr-2" />
+              Copy Approved
+            </Button>
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              onClick={() => copyEmails('waitlisted')}
+              disabled={waitlistCount === 0}
+              className="h-9"
+            >
+              <Copy size={14} className="mr-2" />
+              Copy Waitlisted
+            </Button>
+          </div>
+        </div>
+      </Card>
 
       {/* Controls */}
       <div className="flex flex-col md:flex-row gap-4">

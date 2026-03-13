@@ -3,49 +3,81 @@
 import { useState } from 'react';
 import { 
   X, CheckCircle, AlertCircle, Loader2, 
-  User, Code, Users, Star, ArrowRight, Sparkles 
+  User, Code, Users, Star, ArrowRight, Sparkles, Mail
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { useAuth } from '@/context/AuthContext';
 
 interface RegisterModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (data: { skillLevel: string; teamIntent: string }) => Promise<void>;
+  onConfirm: (data: { 
+    skillLevel: string; 
+    teamIntent: string;
+    displayName?: string;
+    email?: string;
+  }) => Promise<void>;
   isWaitlist: boolean;
   eventDate?: string;
 }
 
 export function RegisterModal({ isOpen, onClose, onConfirm, isWaitlist, eventDate }: RegisterModalProps) {
+  const { isAnonymous } = useAuth();
   const [skillLevel, setSkillLevel] = useState('intermediate');
   const [teamIntent, setTeamIntent] = useState('find_team');
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!agreed) return;
+    setError(null);
+
+    if (!agreed) {
+      setError('Please agree to the Fair Play Commitment');
+      return;
+    }
+
+    if (isAnonymous) {
+      if (!displayName.trim()) {
+        setError('Please enter a display name');
+        return;
+      }
+      if (!email.trim() || !email.includes('@')) {
+        setError('Please enter a valid email address');
+        return;
+      }
+    }
 
     setIsSubmitting(true);
     try {
-      await onConfirm({ skillLevel, teamIntent });
+      await onConfirm({ 
+        skillLevel, 
+        teamIntent,
+        displayName: isAnonymous ? displayName : undefined,
+        email: isAnonymous ? email : undefined
+      });
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Registration failed:', err);
+      setError(err.message || 'Registration failed');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+    <div className="fixed top-0 left-0 w-full h-full z-[100] flex items-center justify-center min-h-screen p-4 sm:p-6">
       <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm" onClick={onClose} />
       
-      <Card className="relative w-full max-w-lg bg-zinc-900 border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+      <Card className="relative w-full max-w-lg bg-zinc-900 border-zinc-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="p-6 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
+        <div className="p-6 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50 shrink-0">
           <div>
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <Sparkles size={20} className="text-accent" />
@@ -63,7 +95,49 @@ export function RegisterModal({ isOpen, onClose, onConfirm, isWaitlist, eventDat
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto hide-scrollbar">
+          {error && (
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3 text-red-400 text-sm">
+              <AlertCircle size={18} className="shrink-0" />
+              {error}
+            </div>
+          )}
+
+          {/* Guest Identity Fields */}
+          {isAnonymous && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                  <User size={14} />
+                  Full Name / Alias
+                </label>
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="How should we call you?"
+                  className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                  <Mail size={14} />
+                  Contact Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="For event updates"
+                  className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                />
+                <p className="text-[10px] text-zinc-500 mt-1 italic">
+                  Note: Guest registration is linked to this browser.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Skill Level */}
           <div className="space-y-3">
             <label className="text-sm font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
@@ -145,7 +219,7 @@ export function RegisterModal({ isOpen, onClose, onConfirm, isWaitlist, eventDat
           </div>
 
           {/* Actions */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 pb-2">
             <Button
               type="submit"
               disabled={!agreed || isSubmitting}

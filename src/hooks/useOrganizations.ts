@@ -27,6 +27,16 @@ export interface CreateOrgData {
   websiteUrl?: string;
   settings?: {
     allowPublicEventDiscovery: boolean;
+    branding?: {
+      primaryColor?: string;
+      accentColor?: string;
+      bannerUrl?: string;
+    };
+    accessControl?: {
+      inviteLinkEnabled: boolean;
+      inviteLinkCode?: string;
+      defaultRole?: 'admin' | 'member' | 'judge';
+    };
   };
 }
 
@@ -120,6 +130,14 @@ export function useOrganizations() {
           memberCount: 1,
           settings: data.settings || {
             allowPublicEventDiscovery: true,
+            branding: {
+              primaryColor: '#10b981',
+              accentColor: '#06b6d4',
+            },
+            accessControl: {
+              inviteLinkEnabled: false,
+              defaultRole: 'member'
+            }
           },
         };
 

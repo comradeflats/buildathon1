@@ -14,7 +14,7 @@ export async function POST(
   try {
     const eventId = params.eventId;
     const body = await request.json();
-    const { skillLevel, teamIntent } = body;
+    const { skillLevel, teamIntent, displayName, email } = body;
     const user = await verifyFirebaseToken(request);
     
     const db = getFirestoreAdmin();
@@ -30,12 +30,36 @@ export async function POST(
       
       const eventData = eventDoc.data()!;
       
-      // Check if user is already registered
+      // Identity resolution: use provided guest info, then user account info, then fallbacks
+      const finalDisplayName = displayName || user.displayName || 'Guest';
+      const finalEmail = email || user.email || '';
+
+      if (!finalEmail) {
+        throw new Error('Email is required for registration');
+      }
+
+      // Check if user (UID) is already registered
       const regId = `${eventId}_${user.uid}`;
-      const existingReg = await transaction.get(registrationsRef.doc(regId));
+      const existingRegByUid = await transaction.get(registrationsRef.doc(regId));
         
-      if (existingReg.exists) {
-        return { alreadyRegistered: true, status: existingReg.data()?.status };
+      if (existingRegByUid.exists) {
+        return { alreadyRegistered: true, status: existingRegByUid.data()?.status };
+      }
+
+      // Check if EMAIL is already registered for this specific event
+      const existingRegByEmailQuery = registrationsRef
+        .where('eventId', '==', eventId)
+        .where('email', '==', finalEmail.toLowerCase())
+        .limit(1);
+      
+      const emailSnapshot = await transaction.get(existingRegByEmailQuery);
+      
+      if (!emailSnapshot.empty) {
+        return { 
+          alreadyRegistered: true, 
+          status: emailSnapshot.docs[0].data()?.status,
+          message: 'This email is already registered for this event. Please sign in with your other account.'
+        };
       }
       
       const currentCount = eventData.currentRegistrations || 0;
@@ -45,17 +69,17 @@ export async function POST(
       if (currentCount >= maxParticipants) {
         status = 'waitlisted';
       }
-      
+
       const regData = {
         id: regId,
         eventId,
         userId: user.uid,
-        email: user.email || '',
-        displayName: user.displayName || 'Anonymous',
+        email: finalEmail.toLowerCase(),
+        displayName: finalDisplayName,
         status,
         registeredAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        organizationId: eventData.organizationId, // CRITICAL: Ensure this is indexed for Admin view
+        organizationId: eventData.organizationId,
         metadata: {
           skillLevel: skillLevel || 'intermediate',
           teamIntent: teamIntent || 'solo',
@@ -76,7 +100,7 @@ export async function POST(
     
     if (result.alreadyRegistered) {
       return NextResponse.json({ 
-        message: 'You are already registered for this event', 
+        message: result.message || 'You are already registered for this event', 
         status: result.status 
       });
     }
@@ -119,21 +143,32 @@ export async function DELETE(
       const eventData = eventDoc.data()!;
       const oldStatus = regDoc.data()?.status;
       
+      let nextRegDoc = null;
+      
+      // If the withdrawing user was 'approved', check for someone to promote
+      if (oldStatus === 'approved') {
+        const waitlistedQuery = db.collection('registrations')
+          .where('eventId', '==', eventId)
+          .where('status', '==', 'waitlisted');
+          
+        const waitlistedSnapshot = await transaction.get(waitlistedQuery);
+        if (!waitlistedSnapshot.empty) {
+          // Find the one with the earliest registeredAt
+          nextRegDoc = waitlistedSnapshot.docs.sort((a, b) => {
+            const dateA = new Date(a.data().registeredAt || 0).getTime();
+            const dateB = new Date(b.data().registeredAt || 0).getTime();
+            return dateA - dateB;
+          })[0];
+        }
+      }
+
+      // --- ALL READS COMPLETED ABOVE, ALL WRITES BELOW ---
+
       // Delete the registration
       transaction.delete(regRef);
       
-      // If the withdrawing user was 'approved', promote the next person on the waitlist
       if (oldStatus === 'approved') {
-        const nextInLineQuery = db.collection('registrations')
-          .where('eventId', '==', eventId)
-          .where('status', '==', 'waitlisted')
-          .orderBy('registeredAt', 'asc')
-          .limit(1);
-          
-        const nextInLineSnapshot = await transaction.get(nextInLineQuery);
-          
-        if (!nextInLineSnapshot.empty) {
-          const nextRegDoc = nextInLineSnapshot.docs[0];
+        if (nextRegDoc) {
           transaction.update(nextRegDoc.ref, { 
             status: 'approved',
             updatedAt: new Date().toISOString()
@@ -149,13 +184,14 @@ export async function DELETE(
     });
     
     return NextResponse.json({ success: true, message: 'Successfully withdrawn' });
-  } catch (error) {
+  } catch (error: any) {
+    console.error('[WITHDRAWAL ERROR]', error);
     return handleAuthError(error);
   }
 }
 
 /**
- * GET /api/events/[id]/register
+ * GET /api/events/[eventId]/register
  * Check registration status of the current user
  */
 export async function GET(

@@ -15,6 +15,17 @@ export interface Organization {
   memberCount: number;
   settings: {
     allowPublicEventDiscovery: boolean;
+    branding?: {
+      primaryColor?: string;
+      accentColor?: string;
+      bannerUrl?: string;
+      customFont?: string;
+    };
+    accessControl?: {
+      inviteLinkEnabled: boolean;
+      inviteLinkCode?: string;
+      defaultRole?: 'admin' | 'member' | 'judge';
+    };
   };
 }
 

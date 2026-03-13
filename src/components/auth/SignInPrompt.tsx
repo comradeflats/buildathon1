@@ -32,6 +32,15 @@ export function SignInPrompt({
 
   const formatError = (err: any) => {
     console.error('[AUTH] Formatting error:', err.code, err.message);
+    if (err.code === 'auth/account-exists-with-different-credential') {
+      return (
+        <div className="space-y-2 text-left">
+          <p className="font-bold text-amber-400">📧 ACCOUNT ALREADY EXISTS</p>
+          <p>You've previously signed in using a different method (likely Google or Email) with this same email address.</p>
+          <p className="text-xs opacity-90">Please sign in using your <b>original</b> method to access your account.</p>
+        </div>
+      );
+    }
     if (err.code === 'auth/operation-not-allowed') {
       return 'This sign-in method is not enabled in Firebase. Please enable it in the console.';
     }

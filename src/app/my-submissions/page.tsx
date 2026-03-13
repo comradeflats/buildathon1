@@ -2,12 +2,10 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, AlertTriangle, Github, Plus } from 'lucide-react';
+import { ArrowLeft, Loader2, Trophy, Calendar } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { useVoting } from '@/context/VotingContext';
 import { useTeams } from '@/context/TeamContext';
 import { TeamCard } from '@/components/gallery/TeamCard';
-import { AuthButton } from '@/components/auth/AuthButton';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
@@ -19,7 +17,7 @@ export default function MySubmissionsPage() {
     if (!isAuthenticated && !ownershipToken) return [];
 
     return teams.filter((team) => {
-      // For GitHub-authenticated users
+      // For authenticated users
       if (user && !isAnonymous && team.ownerId === user.uid) {
         return true;
       }
@@ -56,64 +54,26 @@ export default function MySubmissionsPage() {
         Projects you've submitted to buildathon events.
       </p>
 
-      {/* Warning for anonymous users */}
-      {ownershipToken && !isAuthenticated && (
-        <Card className="p-4 mb-6 border-yellow-500/30 bg-yellow-500/5">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <h3 className="font-medium text-yellow-500 mb-1">
-                Browser-Only Access
-              </h3>
-              <p className="text-sm text-zinc-400 mb-3">
-                Your submissions are linked to this browser. If you clear your browser data
-                or use a different device, you'll lose access to edit them.
-              </p>
-              <AuthButton size="sm" />
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Warning for anonymous Firebase users */}
-      {isAuthenticated && isAnonymous && (
-        <Card className="p-4 mb-6 border-yellow-500/30 bg-yellow-500/5">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <h3 className="font-medium text-yellow-500 mb-1">
-                Guest Account
-              </h3>
-              <p className="text-sm text-zinc-400 mb-3">
-                You're signed in as a guest. Sign in with GitHub to access your submissions
-                from any device and ensure you don't lose access.
-              </p>
-              <AuthButton size="sm" />
-            </div>
-          </div>
-        </Card>
-      )}
-
       {myTeams.length === 0 ? (
-        <Card className="p-8 text-center">
-          <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Github size={32} className="text-zinc-500" />
+        <Card className="p-12 text-center">
+          <div className="w-20 h-20 bg-zinc-800/50 rounded-full flex items-center justify-center mx-auto mb-6 border border-zinc-700">
+            <Trophy size={40} className="text-zinc-600" />
           </div>
-          <h2 className="text-lg font-semibold text-white mb-2">
+          <h2 className="text-xl font-bold text-white mb-3">
             No Submissions Yet
           </h2>
-          <p className="text-zinc-400 mb-6">
-            You haven't submitted any projects. Start by submitting your GitHub repository.
+          <p className="text-zinc-400 mb-8 max-w-sm mx-auto">
+            You haven't submitted any projects yet. Join an active event to start building and share your work with the community!
           </p>
-          <Link href="/submit">
-            <Button>
-              <Plus size={18} className="mr-2" />
-              Submit a Project
+          <Link href="/events">
+            <Button size="lg" className="px-8 font-bold">
+              <Calendar size={18} className="mr-2" />
+              Browse Events
             </Button>
           </Link>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           {myTeams.map((team) => (
             <TeamCard key={team.id} team={team} />
           ))}

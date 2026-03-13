@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getAuthAdmin } from './firebase-admin';
+import { getAuthAdmin, getFirestoreAdmin } from './firebase-admin';
 import { isOrgAdmin, isOrgMember, getOrgPermissions } from './permissions';
 
 export interface AuthUser {
@@ -65,8 +65,20 @@ export async function requireOrgAdmin(
   orgId: string
 ): Promise<AuthUser> {
   const user = await verifyFirebaseToken(request);
+  const db = getFirestoreAdmin();
 
-  const hasAccess = await isOrgAdmin(user.uid, orgId);
+  console.log(`[AUTH-HELPERS] Checking admin for User:${user.uid} in Org:${orgId}`);
+  let hasAccess = await isOrgAdmin(user.uid, orgId, db);
+
+  if (!hasAccess) {
+    // Fallback: Check if user is the creator of the organization
+    const orgDoc = await db.collection('organizations').doc(orgId).get();
+    const orgData = orgDoc.data();
+    if (orgDoc.exists && orgData && orgData.createdBy === user.uid) {
+      console.log(`[AUTH-HELPERS] User:${user.uid} is the CREATOR of Org:${orgId}. Granting access.`);
+      hasAccess = true;
+    }
+  }
 
   if (!hasAccess) {
     throw new Error('Insufficient permissions: requires org admin access');
@@ -83,8 +95,9 @@ export async function requireOrgMember(
   orgId: string
 ): Promise<AuthUser> {
   const user = await verifyFirebaseToken(request);
+  const db = getFirestoreAdmin();
 
-  const isMember = await isOrgMember(user.uid, orgId);
+  const isMember = await isOrgMember(user.uid, orgId, db);
 
   if (!isMember) {
     throw new Error('Not a member of this organization');
@@ -100,15 +113,18 @@ export async function getUserOrgPermissions(
   userId: string,
   orgId: string
 ) {
-  return await getOrgPermissions(userId, orgId);
+  const db = getFirestoreAdmin();
+  return await getOrgPermissions(userId, orgId, db);
 }
 
 /**
  * Middleware helper to handle authentication errors
  */
 export function handleAuthError(error: unknown): Response {
+  let message = 'Authentication error';
+  
   if (error instanceof Error) {
-    const message = error.message;
+    message = error.message;
 
     if (message.includes('No authorization token')) {
       return Response.json(
@@ -140,7 +156,7 @@ export function handleAuthError(error: unknown): Response {
   }
 
   return Response.json(
-    { error: 'Authentication error' },
+    { error: message },
     { status: 500 }
   );
 }

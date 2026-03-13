@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserMenu } from '@/components/auth/UserMenu';
-import { LayoutGrid, Trophy, Calendar, Globe } from 'lucide-react';
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
+import { Globe } from 'lucide-react';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -15,11 +16,13 @@ export function Navbar() {
   return (
     <nav className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-40">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between max-w-5xl">
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-4 md:gap-8">
           <Link href="/" className="text-xl font-black flex items-center gap-1 shrink-0">
             <span className="text-white">buildathon</span>
             <span className="text-emerald-400">.live</span>
           </Link>
+
+          <WorkspaceSwitcher />
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">

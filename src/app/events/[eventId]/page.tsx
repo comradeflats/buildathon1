@@ -1,27 +1,46 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, Users, Loader2, Plus, Clock } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Loader2, Plus, Clock, UserPlus, CheckCircle } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useEvents } from '@/hooks/useEvents';
 import { useTeams } from '@/hooks/useTeams';
 import { useThemes } from '@/hooks/useThemes';
+import { useRegistration } from '@/hooks/useRegistration';
+import { useAuth } from '@/context/AuthContext';
+import { useVoting } from '@/context/VotingContext';
 import { getThemeEmoji } from '@/lib/themeIcons';
+import { RegisterModal } from '@/components/events/RegisterModal';
+import { SignInModal } from '@/components/auth/SignInModal';
 
 export default function EventPage() {
   const params = useParams();
   const router = useRouter();
   const eventId = params.eventId as string;
+  const { isAuthenticated } = useAuth();
+  const { showToast } = useVoting();
 
   const { events, isLoading: isEventsLoading, getEventById } = useEvents();
   const { teams, isLoading: isTeamsLoading } = useTeams();
   const { themes, isLoading: isThemesLoading } = useThemes();
+  const { registration, isRegistering, register, isLoading: isRegLoading } = useRegistration(eventId);
 
-  const isLoading = isEventsLoading || isTeamsLoading || isThemesLoading;
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+
+  // Automatically open registration modal after signing in if we were in the middle of joining
+  useEffect(() => {
+    if (isAuthenticated && isSignInModalOpen) {
+      setIsSignInModalOpen(false);
+      setIsModalOpen(true);
+    }
+  }, [isAuthenticated, isSignInModalOpen]);
+
+  const isLoading = isEventsLoading || isTeamsLoading || isThemesLoading || isRegLoading;
 
   const event = getEventById(eventId);
 
@@ -31,6 +50,7 @@ export default function EventPage() {
       router.replace(`/e/${event.slug}`);
     }
   }, [event, router]);
+
   const eventTeams = teams.filter((team) => team.eventId === eventId);
   const eventThemes = themes.filter((theme) => theme.eventId === eventId);
 
@@ -48,7 +68,29 @@ export default function EventPage() {
     return `${dateStr}, ${timeStr}`;
   };
 
-  const canSubmit = event?.status === 'active' || event?.status === 'upcoming';
+  const handleRegisterClick = () => {
+    if (!isAuthenticated) {
+      setIsSignInModalOpen(true);
+      return;
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmRegistration = async (metadata: { skillLevel: string; teamIntent: string }) => {
+    try {
+      const result = await register(metadata);
+      showToast(result.message, result.status === 'approved' ? 'success' : 'info');
+    } catch (err: any) {
+      console.error('Registration failed:', err);
+      showToast(err.message || 'Registration failed', 'error');
+    } finally {
+      setIsModalOpen(false);
+    }
+  };
+
+  const isApproved = registration?.status === 'approved';
+  const isWaitlisted = registration?.status === 'waitlisted';
+  const canSubmit = event?.status === 'active' && isApproved;
 
   if (isLoading) {
     return (
@@ -131,14 +173,33 @@ export default function EventPage() {
             </div>
           </div>
 
-          {canSubmit && (
-            <Link href={`/submit?eventId=${eventId}`}>
-              <Button size="lg" className="shrink-0">
-                <Plus size={18} className="mr-2" />
-                Submit Project
-              </Button>
-            </Link>
-          )}
+          <div className="flex items-center gap-3">
+            {canSubmit ? (
+              <Link href={`/submit?eventId=${eventId}`}>
+                <Button size="lg" className="shrink-0">
+                  <Plus size={18} className="mr-2" />
+                  Submit Project
+                </Button>
+              </Link>
+            ) : event.status === 'active' || event.status === 'upcoming' ? (
+              !registration ? (
+                <Button onClick={handleRegisterClick} size="lg" className="shrink-0">
+                  <UserPlus size={18} className="mr-2" />
+                  {event.status === 'active' ? 'Join Event to Submit' : 'Register for Event'}
+                </Button>
+              ) : isWaitlisted ? (
+                <Badge variant="secondary" className="px-4 py-2 h-10 flex items-center gap-2">
+                  <Clock size={16} />
+                  On Waitlist
+                </Badge>
+              ) : isApproved && event.status === 'upcoming' ? (
+                <Badge variant="success" className="px-4 py-2 h-10 flex items-center gap-2">
+                  <CheckCircle size={16} />
+                  Registered
+                </Badge>
+              ) : null
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -180,13 +241,24 @@ export default function EventPage() {
                 <h3 className="font-semibold text-white mb-2">{theme.name}</h3>
                 <p className="text-sm text-zinc-400 mb-4 flex-1">{theme.concept}</p>
 
-                {canSubmit && (
+                {canSubmit ? (
                   <Link href={`/submit?eventId=${eventId}&themeId=${theme.id}`} className="block">
                     <Button variant="secondary" size="sm" className="w-full">
                       Submit
                     </Button>
                   </Link>
-                )}
+                ) : event.status === 'active' || event.status === 'upcoming' ? (
+                  !registration && (
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={handleRegisterClick}
+                    >
+                      Join to Submit
+                    </Button>
+                  )
+                ) : null}
               </div>
             ))}
           </div>
@@ -203,6 +275,20 @@ export default function EventPage() {
           </Link>
         </div>
       )}
+
+      <RegisterModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={handleConfirmRegistration}
+        isWaitlist={(event.maxParticipants || 0) <= (event.currentRegistrations || 0)}
+      />
+
+      <SignInModal 
+        isOpen={isSignInModalOpen} 
+        onClose={() => setIsSignInModalOpen(false)}
+        title="Sign in to Register"
+        description="You need to be signed in to join the event. You can continue as a guest if you prefer."
+      />
     </div>
   );
 }

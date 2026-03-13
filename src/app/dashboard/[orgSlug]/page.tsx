@@ -3,7 +3,21 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, Calendar, Users, BarChart3, Plus, ArrowRight, Activity } from 'lucide-react';
+import { 
+  Loader2, 
+  Calendar, 
+  Users, 
+  BarChart3, 
+  Plus, 
+  ArrowRight, 
+  Activity, 
+  Settings,
+  ChevronRight,
+  Trophy,
+  Zap,
+  Globe,
+  Building2
+} from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -29,7 +43,6 @@ export default function OrgDashboardPage() {
       if (foundOrg) {
         setOrg(foundOrg);
       } else {
-        // Organization not found or user doesn't have access
         router.push('/dashboard');
       }
     }
@@ -40,13 +53,6 @@ export default function OrgDashboardPage() {
 
   const isLoading = authLoading || orgsLoading || !org;
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!authLoading && (!user || user.isAnonymous)) {
-      router.push('/signup');
-    }
-  }, [user, authLoading, router]);
-
   if (isLoading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -55,254 +61,226 @@ export default function OrgDashboardPage() {
     );
   }
 
-  // Calculate stats
   const activeEvent = events.find((e) => e.status === 'active');
   const hasThemes = events.some((e) => e.themesGenerated);
   const totalEvents = events.length;
   const totalApproved = events.reduce((acc, e) => acc + (e.currentRegistrations || 0), 0);
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-2 text-sm text-zinc-500 mb-2">
-          <Link href="/dashboard" className="hover:text-white transition-colors">
-            Organizations
-          </Link>
-          <span>/</span>
-          <span className="text-white">{org.name}</span>
-        </div>
-        <div className="flex items-start justify-between">
+    <div className="max-w-5xl mx-auto py-8 px-4 space-y-10">
+      {/* Enhanced Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-center gap-5">
+          <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-2xl flex items-center justify-center text-zinc-950 shadow-xl shadow-emerald-500/10">
+            {org.logoUrl ? (
+              <img src={org.logoUrl} alt="" className="w-full h-full rounded-2xl object-cover" />
+            ) : (
+              <Building2 size={32} />
+            )}
+          </div>
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">{org.name}</h1>
-            {org.description && (
-              <p className="text-zinc-400">{org.description}</p>
-            )}
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-black text-white">{org.name}</h1>
+              <Badge className="bg-zinc-800 text-zinc-400 border-zinc-700">Organization</Badge>
+            </div>
+            <div className="flex items-center gap-3 mt-1">
+              {org.websiteUrl && (
+                <a href={org.websiteUrl} target="_blank" className="text-sm text-zinc-500 hover:text-emerald-400 transition-colors flex items-center gap-1">
+                  <Globe size={14} />
+                  {new URL(org.websiteUrl).hostname}
+                </a>
+              )}
+              <span className="text-zinc-700">•</span>
+              <p className="text-sm text-zinc-500 font-medium">{org.memberCount} Team Members</p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Link href={`/dashboard/${slug}/settings`}>
-              <Button variant="ghost">Settings</Button>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <Link href={`/dashboard/${slug}/settings`}>
+            <Button variant="secondary" className="rounded-xl h-12">
+              <Settings size={18} className="mr-2" />
+              Settings
+            </Button>
+          </Link>
+          {permissions.canManageEvents && (
+            <Link href={`/dashboard/${slug}/events/new`}>
+              <Button className="rounded-xl h-12 px-6 shadow-lg shadow-emerald-500/20">
+                <Plus size={18} className="mr-2" />
+                New Event
+              </Button>
             </Link>
-            {permissions.canManageEvents && (
-              <Link href={`/dashboard/${slug}/events/new`}>
-                <Button>
-                  <Plus size={18} className="mr-2" />
-                  New Event
-                </Button>
-              </Link>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Setup Wizard */}
-      <SetupWizard 
-        orgSlug={slug}
-        hasEvents={events.length > 0}
-        hasThemes={hasThemes}
-        hasMembers={org.memberCount > 1}
-      />
+      {/* Hero Section: Active Event with High Prominence */}
+      {activeEvent ? (
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-[2rem] blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+          <Card className="relative p-8 border-emerald-500/30 bg-zinc-900/90 backdrop-blur-xl overflow-hidden rounded-[2rem]">
+            <div className="absolute top-0 right-0 p-8">
+              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Live Now</span>
+              </div>
+            </div>
 
-      {/* Live Event Activity */}
-      {activeEvent && (
-        <Card className="p-6 border-emerald-500/30 bg-emerald-500/5 backdrop-blur-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4">
-            <Badge variant="success" className="animate-pulse">Live Now</Badge>
-          </div>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-1">
-              <h2 className="text-sm font-bold text-emerald-500 uppercase tracking-widest flex items-center gap-2">
-                <Activity size={16} />
-                Active Event
-              </h2>
-              <h3 className="text-2xl font-black text-white">{activeEvent.name}</h3>
-              <p className="text-zinc-400 text-sm max-w-md">
-                Manage participants, monitor submissions, and oversee the build in real-time.
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="flex gap-4 pr-6 border-r border-zinc-800">
-                <div className="text-center">
-                  <p className="text-xl font-black text-white">{activeEvent.currentRegistrations || 0}</p>
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Participants</p>
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <h2 className="text-sm font-black text-emerald-500 uppercase tracking-[0.2em]">Active Event</h2>
+                  <h3 className="text-4xl font-black text-white leading-tight">{activeEvent.name}</h3>
                 </div>
-                <div className="text-center">
-                  <p className="text-xl font-black text-white">{activeEvent.phase.replace('_', ' ')}</p>
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Current Phase</p>
+                
+                <div className="flex gap-8">
+                  <div>
+                    <p className="text-3xl font-black text-white">{activeEvent.currentRegistrations || 0}</p>
+                    <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Participants</p>
+                  </div>
+                  <div className="w-px h-12 bg-zinc-800" />
+                  <div>
+                    <p className="text-3xl font-black text-white capitalize">{activeEvent.phase.replace('_', ' ')}</p>
+                    <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Current Phase</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <Link href={`/dashboard/${slug}/events/${activeEvent.id}/participants`}>
+                    <Button className="bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black px-6 py-6 rounded-2xl flex items-center gap-2">
+                      <Users size={20} />
+                      Manage Participants
+                    </Button>
+                  </Link>
+                  <Link href={`/dashboard/${slug}/events/${activeEvent.id}`}>
+                    <Button variant="secondary" className="px-6 py-6 rounded-2xl border-zinc-700">
+                      Event Console
+                    </Button>
+                  </Link>
                 </div>
               </div>
-              <div className="flex flex-col gap-2">
-                <Link href={`/dashboard/${slug}/events/${activeEvent.id}/participants`}>
-                  <Button size="sm" className="w-full">
-                    Manage Participants
-                  </Button>
-                </Link>
-                <Link href={`/e/${activeEvent.slug}`} target="_blank">
-                  <Button variant="ghost" size="sm" className="w-full text-zinc-400 hover:text-white">
-                    <ArrowRight size={14} className="mr-2" />
-                    Open Portal
-                  </Button>
-                </Link>
+
+              <div className="hidden md:block">
+                <div className="bg-zinc-950/50 border border-zinc-800 rounded-3xl p-6 space-y-4">
+                  <h4 className="text-xs font-black text-zinc-500 uppercase tracking-widest">Phase Control</h4>
+                  <div className="space-y-2">
+                    {['registration', 'building', 'review', 'judging'].map((p) => (
+                      <div key={p} className={`flex items-center justify-between p-3 rounded-xl border ${
+                        activeEvent.phase === p ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-zinc-900/50 border-zinc-800 text-zinc-600'
+                      }`}>
+                        <span className="text-xs font-bold capitalize">{p}</span>
+                        {activeEvent.phase === p && <Activity size={14} />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
+      ) : (
+        <SetupWizard 
+          orgSlug={slug}
+          hasEvents={events.length > 0}
+          hasThemes={hasThemes}
+          hasMembers={org.memberCount > 1}
+        />
       )}
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-zinc-400">Total Events</span>
-            <Calendar className="text-zinc-500" size={20} />
-          </div>
-          <div className="text-3xl font-bold text-white">{totalEvents}</div>
-          <div className="text-sm text-zinc-500 mt-1">
-            Buildathon history
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-zinc-400">Participants</span>
-            <Users className="text-zinc-500" size={20} />
-          </div>
-          <div className="text-3xl font-bold text-white">{totalApproved}</div>
-          <div className="text-sm text-zinc-500 mt-1">
-            Approved across all events
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-zinc-400">Organization Members</span>
-            <BarChart3 className="text-zinc-500" size={20} />
-          </div>
-          <div className="text-3xl font-bold text-white">{org.memberCount}</div>
-          <div className="text-sm text-zinc-500 mt-1">
-            Admins & Judges
-          </div>
-        </Card>
+      {/* Stats Grid */}
+      <div className="grid gap-6 md:grid-cols-3">
+        {[
+          { label: 'Total Events', value: totalEvents, icon: Calendar, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+          { label: 'Approved Builders', value: totalApproved, icon: Trophy, color: 'text-amber-400', bg: 'bg-amber-400/10' },
+          { label: 'Org Capacity', value: 'Pro', icon: Zap, color: 'text-purple-400', bg: 'bg-purple-400/10' },
+        ].map((stat, i) => (
+          <Card key={i} className="p-6 border-zinc-800 bg-zinc-900/30 backdrop-blur-sm group hover:border-zinc-700 transition-colors">
+            <div className="flex items-center justify-between mb-4">
+              <div className={`w-10 h-10 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center`}>
+                <stat.icon size={20} />
+              </div>
+              <ArrowRight size={16} className="text-zinc-700 group-hover:text-zinc-500 transition-colors" />
+            </div>
+            <div className="text-3xl font-black text-white mb-1">{stat.value}</div>
+            <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{stat.label}</div>
+          </Card>
+        ))}
       </div>
 
-      {/* Recent Events */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-white">Recent Events</h2>
-          <Link href={`/dashboard/${slug}/events`} className="text-accent hover:underline text-sm">
-            View all
+      {/* Recent Events List */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-black text-white">Recent Events</h2>
+          <Link href={`/dashboard/${slug}/events`} className="text-emerald-400 hover:text-emerald-300 text-sm font-bold flex items-center gap-1">
+            View All Events
+            <ChevronRight size={16} />
           </Link>
         </div>
 
         {eventsLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 size={24} className="animate-spin text-zinc-400" />
+          <div className="flex items-center justify-center py-20">
+            <Loader2 size={32} className="animate-spin text-zinc-700" />
           </div>
         ) : events.length === 0 ? (
-          <Card className="p-12 text-center">
-            <Calendar size={48} className="mx-auto text-zinc-600 mb-4" />
-            <h3 className="text-lg font-semibold text-white mb-2">No Events Yet</h3>
-            <p className="text-zinc-400 mb-6">
-              Create your first buildathon event to get started
+          <Card className="p-16 text-center border-dashed border-zinc-800 bg-transparent">
+            <div className="w-20 h-20 bg-zinc-900 rounded-3xl flex items-center justify-center mx-auto mb-6 text-zinc-700">
+              <Calendar size={40} />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Ready to host?</h3>
+            <p className="text-zinc-500 mb-8 max-w-xs mx-auto">
+              Create your first event to start accepting registrations and building your community.
             </p>
             {permissions.canManageEvents && (
               <Link href={`/dashboard/${slug}/events/new`}>
-                <Button>
-                  <Plus size={18} className="mr-2" />
-                  Create Event
+                <Button className="px-8 h-12 rounded-xl">
+                  Create First Event
                 </Button>
               </Link>
             )}
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="grid gap-4">
             {events.slice(0, 5).map((event) => (
               <Card
                 key={event.id}
-                className="p-4 hover:border-zinc-600 transition-colors cursor-pointer group"
-                onClick={() => router.push(`/e/${event.slug}`)}
+                className="p-5 hover:border-zinc-700 transition-all cursor-pointer group bg-zinc-900/20"
+                onClick={() => router.push(`/dashboard/${slug}/events/${event.id}`)}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1">
-                      <h3 className="font-semibold text-white group-hover:text-accent transition-colors">
+                  <div className="flex items-center gap-5">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                      event.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-zinc-800 text-zinc-500'
+                    }`}>
+                      <Calendar size={24} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-white group-hover:text-emerald-400 transition-colors">
                         {event.name}
                       </h3>
-                      <Badge
-                        variant={
-                          event.status === 'active'
-                            ? 'success'
-                            : event.status === 'upcoming'
-                            ? 'default'
-                            : 'secondary'
-                        }
-                        className="capitalize"
-                      >
-                        {event.status}
-                      </Badge>
+                      <div className="flex items-center gap-3 mt-1">
+                        <Badge variant={event.status === 'active' ? 'success' : 'default'} className="text-[10px] px-2 py-0">
+                          {event.status}
+                        </Badge>
+                        <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-wider">
+                          {new Date(event.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                      </div>
                     </div>
-                    {event.description && (
-                      <p className="text-sm text-zinc-400 line-clamp-1">
-                        {event.description}
-                      </p>
-                    )}
                   </div>
                   <div className="flex items-center gap-4">
-                    {permissions.canManageEvents && (
-                      <Link
-                        href={`/dashboard/${slug}/events/${event.id}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-sm text-zinc-400 hover:text-accent transition-colors"
-                      >
-                        Manage
-                      </Link>
-                    )}
-                    <ArrowRight size={20} className="text-zinc-600 group-hover:text-accent transition-colors" />
+                    <div className="text-right hidden sm:block">
+                      <p className="text-sm font-bold text-white">{event.currentRegistrations || 0}</p>
+                      <p className="text-[10px] text-zinc-500 font-bold uppercase">Registrations</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center text-zinc-500 group-hover:text-white group-hover:bg-zinc-700 transition-all">
+                      <ChevronRight size={20} />
+                    </div>
                   </div>
                 </div>
               </Card>
             ))}
           </div>
         )}
-      </div>
-
-      {/* Quick Actions */}
-      <div>
-        <h2 className="text-xl font-semibold text-white mb-4">Quick Actions</h2>
-        <div className="grid gap-3 md:grid-cols-2">
-          <Link href={`/dashboard/${slug}/events`}>
-            <Card className="p-4 hover:border-zinc-600 transition-colors cursor-pointer group">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center">
-                    <Calendar className="text-accent" size={20} />
-                  </div>
-                  <span className="font-medium text-white group-hover:text-accent transition-colors">
-                    Manage Events
-                  </span>
-                </div>
-                <ArrowRight size={20} className="text-zinc-600 group-hover:text-accent transition-colors" />
-              </div>
-            </Card>
-          </Link>
-
-          <Link href={`/dashboard/${slug}/members`}>
-            <Card className="p-4 hover:border-zinc-600 transition-colors cursor-pointer group">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center">
-                    <Users className="text-accent" size={20} />
-                  </div>
-                  <span className="font-medium text-white group-hover:text-accent transition-colors">
-                    Team Members
-                  </span>
-                </div>
-                <ArrowRight size={20} className="text-zinc-600 group-hover:text-accent transition-colors" />
-              </div>
-            </Card>
-          </Link>
-        </div>
       </div>
     </div>
   );
