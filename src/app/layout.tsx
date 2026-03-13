@@ -9,8 +9,11 @@ import { Toast } from '@/components/ui/Toast';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Submission Portal',
-  description: 'Join buildathon events, pick a theme, and submit your project',
+  title: {
+    default: 'Buildathon',
+    template: '%s | buildathon.live',
+  },
+  description: 'Join live building arenas, ship projects, and grow your builder legacy.',
 };
 
 export default function RootLayout({

@@ -22,3 +22,31 @@ export function getEventStatus(startDate: string, endDate: string): EventStatus 
     return 'archived';
   }
 }
+
+export async function geocodeLocation(query: string): Promise<{ lat: number; lng: number } | null> {
+  if (!query || query.trim().length < 3) return null;
+
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
+      {
+        headers: {
+          'Accept-Language': 'en',
+          'User-Agent': 'BuildathonArenaExplorer/1.0' // Nominatim requires a user agent
+        }
+      }
+    );
+
+    const data = await response.json();
+    if (data && data.length > 0) {
+      return {
+        lat: parseFloat(data[0].lat),
+        lng: parseFloat(data[0].lon)
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('Geocoding error:', error);
+    return null;
+  }
+}

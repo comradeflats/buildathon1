@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useOrganizations } from '@/hooks/useOrganizations';
 import { useOrgPermissions } from '@/hooks/useOrgPermissions';
 import { createSlug, validateSlug } from '@/lib/slugs';
+import { geocodeLocation } from '@/lib/utils';
 
 export default function NewEventPage() {
   const params = useParams();
@@ -35,6 +36,7 @@ export default function NewEventPage() {
   const { permissions, isLoading: permsLoading, orgId: fetchedOrgId } = useOrgPermissions(org?.id);
 
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -56,6 +58,27 @@ export default function NewEventPage() {
         setIsGettingLocation(false);
       }
     );
+  };
+
+  const lookupCoordinates = async () => {
+    const query = address || location;
+    if (!query) {
+      setError('Please enter a location or address to look up');
+      return;
+    }
+
+    setIsGeocoding(true);
+    try {
+      const result = await geocodeLocation(query);
+      if (result) {
+        setLat(result.lat.toString());
+        setLng(result.lng.toString());
+      } else {
+        setError('Could not find coordinates for this location. Try adding a city or country.');
+      }
+    } finally {
+      setIsGeocoding(false);
+    }
   };
 
   // Form state
@@ -285,21 +308,38 @@ export default function NewEventPage() {
           <div className="space-y-4 p-4 bg-zinc-900/50 rounded-xl border border-zinc-800">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">Location (Face to Face)</h3>
-              <Button 
-                type="button" 
-                variant="secondary" 
-                size="sm" 
-                onClick={getCurrentLocation}
-                disabled={isGettingLocation || isCreating}
-                className="text-xs h-8 border-emerald-500/30 hover:border-emerald-500 hover:bg-emerald-500/10 text-emerald-400"
-              >
-                {isGettingLocation ? (
-                  <Loader2 size={12} className="mr-2 animate-spin" />
-                ) : (
-                  <MapPin size={12} className="mr-2" />
-                )}
-                Use My Location
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  type="button" 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={lookupCoordinates}
+                  disabled={isGeocoding || isCreating || (!location && !address)}
+                  className="text-xs h-8 border-violet-500/30 hover:border-violet-500 hover:bg-violet-500/10 text-violet-400"
+                >
+                  {isGeocoding ? (
+                    <Loader2 size={12} className="mr-2 animate-spin" />
+                  ) : (
+                    <ArrowRight size={12} className="mr-2" />
+                  )}
+                  Find Coordinates
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={getCurrentLocation}
+                  disabled={isGettingLocation || isCreating}
+                  className="text-xs h-8 border-emerald-500/30 hover:border-emerald-500 hover:bg-emerald-500/10 text-emerald-400"
+                >
+                  {isGettingLocation ? (
+                    <Loader2 size={12} className="mr-2 animate-spin" />
+                  ) : (
+                    <MapPin size={12} className="mr-2" />
+                  )}
+                  Use My Location
+                </Button>
+              </div>
             </div>
             
             <div className="grid md:grid-cols-2 gap-4">

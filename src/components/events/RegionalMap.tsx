@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -26,25 +26,30 @@ interface RegionalMapProps {
 }
 
 // Custom component to handle map bounds and resizing
-function MapController({ events }: { events: Event[] }) {
+function MapController({ events }: { events: any[] }) {
   const map = useMap();
 
   useEffect(() => {
-    if (events.length === 0) return;
+    if (!events || events.length === 0) return;
 
-    const coords = events
-      .filter(e => e.coordinates)
+    // Filter for events that have valid coordinates
+    const relevantEvents = events.filter(e => 
+      e.coordinates && 
+      typeof e.coordinates.lat === 'number' && 
+      typeof e.coordinates.lng === 'number'
+    );
+
+    const coords = relevantEvents
       .map(e => [e.coordinates!.lat, e.coordinates!.lng] as L.LatLngExpression);
 
     if (coords.length > 0) {
       if (coords.length === 1) {
-        // If only one event, zoom in closely to it
-        map.setView(coords[0], 13, { animate: true });
+        map.setView(coords[0], 12, { animate: true });
       } else {
         const bounds = L.latLngBounds(coords);
         map.fitBounds(bounds, { 
-          padding: [50, 50], 
-          maxZoom: 12, 
+          padding: [70, 70], 
+          maxZoom: 10, 
           animate: true 
         });
       }
@@ -61,18 +66,60 @@ export default function RegionalMap({ events }: RegionalMapProps) {
     fixLeafletIcons();
   }, []);
 
-  const createCustomIcon = (color: string) => {
-    return new L.DivIcon({
-      className: 'custom-div-icon',
-      html: `<div style="background-color: ${color}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px ${color};"></div>`,
-      iconSize: [12, 12],
-      iconAnchor: [6, 6]
-    });
-  };
+  // Memoize icons to prevent re-creation on every render
+  const icons = useMemo(() => {
+    const createCustomIcon = (color: string, pulse: boolean = false) => {
+      return new L.DivIcon({
+        className: 'custom-div-icon',
+        html: `
+          <div style="
+            position: relative;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">
+            ${pulse ? `<div style="
+              position: absolute;
+              width: 100%;
+              height: 100%;
+              background-color: ${color};
+              border-radius: 50%;
+              opacity: 0.4;
+              animation: pulse 2s infinite;
+            "></div>` : ''}
+            <div style="
+              position: relative;
+              background-color: ${color};
+              width: 14px;
+              height: 14px;
+              border-radius: 50%;
+              border: 2.5px solid #fff;
+              box-shadow: 0 0 15px ${color}, 0 0 5px rgba(0,0,0,0.5);
+              z-index: 2;
+            "></div>
+          </div>
+          <style>
+            @keyframes pulse {
+              0% { transform: scale(1); opacity: 0.4; }
+              70% { transform: scale(2.5); opacity: 0; }
+              100% { transform: scale(1); opacity: 0; }
+            }
+          </style>
+        `,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+        popupAnchor: [0, -12]
+      });
+    };
 
-  const activeIcon = createCustomIcon('#10b981'); // Emerald
-  const upcomingIcon = createCustomIcon('#8b5cf6'); // Violet
-  const archivedIcon = createCustomIcon('#64748b'); // Slate-500
+    return {
+      active: createCustomIcon('#10b981', true), // Emerald
+      upcoming: createCustomIcon('#a78bfa', false), // Violet-400 (lighter for visibility)
+      archived: createCustomIcon('#94a3b8', false) // Slate-400
+    };
+  }, []);
 
   const toggleFilter = (status: string) => {
     setActiveFilter(prev => 
@@ -83,16 +130,16 @@ export default function RegionalMap({ events }: RegionalMapProps) {
   };
 
   // Derive statuses for display consistency
-  const processedEvents = events.map(e => ({
+  const processedEvents = useMemo(() => events.map(e => ({
     ...e,
     derivedStatus: getEventStatus(e.startDate, e.endDate)
-  }));
+  })), [events]);
 
   const filteredByStatus = processedEvents.filter(e => activeFilter.includes(e.derivedStatus));
 
-  const activeMarkers = filteredByStatus.filter(e => e.derivedStatus === 'active' && e.coordinates);
-  const upcomingMarkers = filteredByStatus.filter(e => e.derivedStatus === 'upcoming' && e.coordinates);
-  const archivedMarkers = filteredByStatus.filter(e => e.derivedStatus === 'archived' && e.coordinates);
+  const markers = useMemo(() => {
+    return filteredByStatus.filter(e => e.coordinates);
+  }, [filteredByStatus]);
 
   return (
     <div className="relative w-full h-[600px] bg-zinc-950 rounded-2xl overflow-hidden border border-zinc-800 z-0 group/map">
@@ -101,47 +148,25 @@ export default function RegionalMap({ events }: RegionalMapProps) {
         zoom={2} 
         style={{ height: '100%', width: '100%', background: '#09090b' }}
         zoomControl={false}
-        worldCopyJump={false}
+        worldCopyJump={true}
         maxBounds={[[-90, -180], [90, 180]]}
         minZoom={2}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          noWrap={true}
+          noWrap={false}
         />
         
-        <MapController events={events} />
+        <MapController events={processedEvents} />
 
-        {activeMarkers.map(event => (
+        {markers.map(event => (
           <Marker 
             key={event.id} 
             position={[event.coordinates!.lat, event.coordinates!.lng]}
-            icon={activeIcon}
-          >
-            <Popup className="dark-popup">
-              <EventPopup event={event} />
-            </Popup>
-          </Marker>
-        ))}
-
-        {upcomingMarkers.map(event => (
-          <Marker 
-            key={event.id} 
-            position={[event.coordinates!.lat, event.coordinates!.lng]}
-            icon={upcomingIcon}
-          >
-            <Popup className="dark-popup">
-              <EventPopup event={event} />
-            </Popup>
-          </Marker>
-        ))}
-
-        {archivedMarkers.map(event => (
-          <Marker 
-            key={event.id} 
-            position={[event.coordinates!.lat, event.coordinates!.lng]}
-            icon={archivedIcon}
+            icon={event.derivedStatus === 'active' ? icons.active : 
+                  event.derivedStatus === 'upcoming' ? icons.upcoming : 
+                  icons.archived}
           >
             <Popup className="dark-popup">
               <EventPopup event={event} />

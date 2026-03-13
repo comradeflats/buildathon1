@@ -146,9 +146,24 @@ function ExploreArenas() {
         {/* Map View - Secondary Visual */}
         <section className="relative group overflow-hidden rounded-[2.5rem] border border-zinc-800 bg-zinc-950 shadow-2xl">
           <div className="absolute top-4 left-4 z-10">
-            <Badge className="bg-zinc-900/80 backdrop-blur-md border-zinc-700 text-zinc-400 py-1.5 px-4">
-              <MapIcon size={14} className="mr-2 text-emerald-500" />
-              {mapEvents.length} Active & Upcoming Arenas
+            <Badge className="bg-zinc-900/80 backdrop-blur-md border-zinc-700 text-zinc-400 py-1.5 px-4 flex items-center gap-2">
+              <MapIcon size={14} className="text-emerald-500" />
+              {categorized.active.length > 0 && (
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  {categorized.active.length} Live {categorized.active.length === 1 ? 'Arena' : 'Arenas'}
+                </span>
+              )}
+              {categorized.active.length > 0 && categorized.upcoming.length > 0 && <span className="text-zinc-700">•</span>}
+              {categorized.upcoming.length > 0 && (
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
+                  {categorized.upcoming.length} Upcoming {categorized.upcoming.length === 1 ? 'Sprint' : 'Sprints'}
+                </span>
+              )}
+              {categorized.active.length === 0 && categorized.upcoming.length === 0 && (
+                <span>No Active or Upcoming Arenas</span>
+              )}
             </Badge>
           </div>
           <div className="h-[400px]">

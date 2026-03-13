@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, ArrowLeft, ExternalLink, Users, BarChart3, Calendar, Save, AlertCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, ExternalLink, Users, BarChart3, Calendar, Save, AlertCircle, Map as MapIcon } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -14,6 +14,7 @@ import { useOrgPermissions } from '@/hooks/useOrgPermissions';
 import { useTeams } from '@/hooks/useTeams';
 import { useThemes } from '@/hooks/useThemes';
 import { ThemeManager } from '@/components/admin/ThemeManager';
+import { geocodeLocation } from '@/lib/utils';
 
 export default function ManageEventPage() {
   const params = useParams();
@@ -31,6 +32,7 @@ export default function ManageEventPage() {
   const [event, setEvent] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
     description: '',
@@ -38,8 +40,33 @@ export default function ManageEventPage() {
     endDate: '',
     submissionDeadline: '',
     location: '',
-    status: 'upcoming'
+    status: 'upcoming',
+    lat: '',
+    lng: ''
   });
+
+  const lookupCoordinates = async () => {
+    if (!editForm.location) {
+      alert('Please enter a location first');
+      return;
+    }
+
+    setIsGeocoding(true);
+    try {
+      const result = await geocodeLocation(editForm.location);
+      if (result) {
+        setEditForm(prev => ({
+          ...prev,
+          lat: result.lat.toString(),
+          lng: result.lng.toString()
+        }));
+      } else {
+        alert('Could not find coordinates for this location. Try adding a city or country.');
+      }
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
 
   // Find organization by slug
   useEffect(() => {
@@ -69,7 +96,9 @@ export default function ManageEventPage() {
             endDate: foundEvent.endDate ? new Date(foundEvent.endDate).toISOString().slice(0, 16) : '',
             submissionDeadline: foundEvent.submissionDeadline ? new Date(foundEvent.submissionDeadline).toISOString().slice(0, 16) : '',
             location: foundEvent.location || '',
-            status: foundEvent.status || 'upcoming'
+            status: foundEvent.status || 'upcoming',
+            lat: foundEvent.coordinates?.lat?.toString() || '',
+            lng: foundEvent.coordinates?.lng?.toString() || ''
           });
         }
       }
@@ -83,12 +112,18 @@ export default function ManageEventPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      const lat = parseFloat(editForm.lat);
+      const lng = parseFloat(editForm.lng);
+
+      const { lat: _, lng: __, ...formData } = editForm;
+
       await updateEvent({
         ...event,
-        ...editForm,
+        ...formData,
         startDate: new Date(editForm.startDate).toISOString(),
         endDate: new Date(editForm.endDate).toISOString(),
         submissionDeadline: editForm.submissionDeadline ? new Date(editForm.submissionDeadline).toISOString() : undefined,
+        coordinates: (!isNaN(lat) && !isNaN(lng)) ? { lat, lng } : event.coordinates
       });
       setIsEditing(false);
     } catch (err) {
@@ -242,13 +277,59 @@ export default function ManageEventPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-zinc-400 uppercase tracking-wider">Location (City or Virtual)</label>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-bold text-zinc-400 uppercase tracking-wider">Location (City or Virtual)</label>
+                <Button 
+                  type="button" 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={lookupCoordinates}
+                  disabled={isGeocoding || !editForm.location}
+                  className="text-xs h-8 border-violet-500/30 hover:border-violet-500 hover:bg-violet-500/10 text-violet-400"
+                >
+                  {isGeocoding ? (
+                    <Loader2 size={12} className="mr-2 animate-spin" />
+                  ) : (
+                    <MapIcon size={12} className="mr-2" />
+                  )}
+                  Find on Map
+                </Button>
+              </div>
               <input 
                 type="text" 
                 value={editForm.location}
                 onChange={(e) => setEditForm({...editForm, location: e.target.value})}
                 className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent"
               />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+                  <MapIcon size={14} className="text-emerald-500" />
+                  Latitude
+                </label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. 10.7769"
+                  value={editForm.lat}
+                  onChange={(e) => setEditForm({...editForm, lat: e.target.value})}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+                  <MapIcon size={14} className="text-emerald-500" />
+                  Longitude
+                </label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. 106.7009"
+                  value={editForm.lng}
+                  onChange={(e) => setEditForm({...editForm, lng: e.target.value})}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent"
+                />
+              </div>
             </div>
 
             <div className="flex justify-end pt-4">
@@ -301,7 +382,15 @@ export default function ManageEventPage() {
 
           {/* Event Details Summary */}
           <Card className="p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Event Details</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-white">Event Details</h2>
+              {(!event.coordinates || !event.coordinates.lat) && (
+                <Badge variant="outline" className="border-amber-500/20 text-amber-500 bg-amber-500/5">
+                  <AlertCircle size={12} className="mr-1.5" />
+                  Missing Map Coordinates
+                </Badge>
+              )}
+            </div>
             <div className="space-y-4">
               <div>
                 <label className="text-sm text-zinc-500">Public URL</label>
@@ -336,12 +425,18 @@ export default function ManageEventPage() {
                 </div>
               </div>
 
-              {event.location && (
+              <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm text-zinc-500">Location</label>
-                  <p className="text-white mt-1">{event.location}</p>
+                  <p className="text-white mt-1">{event.location || 'Not set'}</p>
                 </div>
-              )}
+                <div>
+                  <label className="text-sm text-zinc-500">Coordinates</label>
+                  <p className="text-white mt-1">
+                    {event.coordinates ? `${event.coordinates.lat}, ${event.coordinates.lng}` : 'Not set (will not show on map)'}
+                  </p>
+                </div>
+              </div>
             </div>
           </Card>
 
