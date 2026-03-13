@@ -3,7 +3,7 @@
 import { useState, useMemo, Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft, Loader2, LayoutGrid, Trophy, Calendar, MapPin, Share2, UserPlus, Send, CheckCircle, Clock } from 'lucide-react';
+import { ChevronLeft, Loader2, LayoutGrid, Trophy, Calendar, MapPin, Share2, UserPlus, Send, CheckCircle, Clock, Sparkles, Lock, ChevronRight } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -12,10 +12,77 @@ import { LeaderboardTable } from '@/components/leaderboard/LeaderboardTable';
 import { useEvents } from '@/hooks/useEvents';
 import { useAuth } from '@/context/AuthContext';
 import { useRegistration } from '@/hooks/useRegistration';
+import { useThemes } from '@/hooks/useThemes';
 import { useVoting } from '@/context/VotingContext';
 import { SignInModal } from '@/components/auth/SignInModal';
 import { RegisterModal } from '@/components/events/RegisterModal';
 import { getEventStatus } from '@/lib/utils';
+
+function ThemeHypeCarousel({ themes, isLive }: { themes: any[], isLive: boolean }) {
+  const publishedThemes = themes.filter(t => t.isPublished);
+  if (publishedThemes.length === 0) return null;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-2">
+           <Sparkles className="text-emerald-400" size={18} />
+           <h2 className="text-lg font-bold text-white uppercase tracking-wider">Event Themes</h2>
+        </div>
+        {!isLive && (
+          <Badge variant="outline" className="text-[10px] border-emerald-500/20 text-emerald-500/60 bg-emerald-500/5">
+            PREVIEW MODE
+          </Badge>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {publishedThemes.map((theme) => (
+          <Card key={theme.id} className={`p-6 border-zinc-800 transition-all ${isLive ? 'bg-zinc-900/40 hover:border-emerald-500/30' : 'bg-zinc-900/20 grayscale-[0.5] opacity-80'}`}>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-zinc-800 flex items-center justify-center text-3xl">
+                {theme.emoji || '✨'}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-white truncate">{theme.name}</h3>
+                {!isLive && <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-0.5">Concept Hidden</p>}
+              </div>
+            </div>
+
+            {isLive ? (
+              <div className="space-y-4 animate-in fade-in duration-700">
+                <p className="text-sm text-zinc-400 leading-relaxed">{theme.concept}</p>
+                <div className="pt-2 border-t border-zinc-800/50">
+                   <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Judging Criteria</p>
+                   <ul className="space-y-1">
+                      {theme.judgingCriteria?.slice(0, 3).map((c: string, i: number) => (
+                        <li key={i} className="text-[11px] text-zinc-500 flex items-center gap-2">
+                          <div className="w-1 h-1 rounded-full bg-emerald-500" />
+                          <span className="truncate">{c.split(':')[0]}</span>
+                        </li>
+                      ))}
+                      {theme.judgingCriteria?.length > 3 && (
+                        <li className="text-[11px] text-zinc-600 italic">+{theme.judgingCriteria.length - 3} more criteria</li>
+                      )}
+                   </ul>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="h-4 bg-zinc-800/50 rounded-full w-3/4 animate-pulse" />
+                <div className="h-4 bg-zinc-800/50 rounded-full w-1/2 animate-pulse" />
+                <div className="flex items-center gap-2 text-zinc-600 mt-4 pt-4 border-t border-zinc-800/50">
+                   <Lock size={12} />
+                   <span className="text-[10px] font-bold uppercase tracking-widest">Locked until live</span>
+                </div>
+              </div>
+            )}
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function EventArenaPage() {
   const { eventId } = useParams();
@@ -24,6 +91,7 @@ function EventArenaPage() {
   const { showToast } = useVoting();
   const { getEventById, isLoading: isEventsLoading } = useEvents();
   const { registration, isRegistering, register, isLoading: isRegLoading } = useRegistration(eventId as string);
+  const { getThemesByEventId } = useThemes(eventId as string);
   
   const [activeTab, setActiveTab] = useState<'gallery' | 'leaderboard'>('gallery');
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
@@ -72,10 +140,13 @@ function EventArenaPage() {
     );
   }
 
-  const status = getEventStatus(event.startDate, event.endDate);
+  const status = getEventStatus(event.startDate, event.endDate, event.themesGenerated, event.isLive);
+  const eventThemes = getThemesByEventId(eventId as string);
   const isRegistrationOpen = status === 'upcoming' || status === 'active';
   const isApproved = registration?.status === 'approved';
   const isWaitlisted = registration?.status === 'waitlisted';
+  const isLive = status === 'active';
+  const canSubmit = (isLive && event.phase === 'building') && isApproved;
 
   const handleRegisterClick = () => {
     if (!isAuthenticated) {
@@ -207,6 +278,9 @@ function EventArenaPage() {
           </div>
         </div>
       </Card>
+
+      {/* Themes Section */}
+      <ThemeHypeCarousel themes={eventThemes} isLive={isLive} />
 
       {/* Custom Tab Navigation */}
       <div className="flex p-1 bg-zinc-900 border border-zinc-800 rounded-xl w-fit">

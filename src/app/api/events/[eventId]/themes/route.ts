@@ -15,13 +15,18 @@ export async function GET(
     const db = getFirestoreAdmin();
     const themesSnapshot = await db.collection('themes')
       .where('eventId', '==', params.eventId)
-      .orderBy('createdAt', 'desc')
       .get();
 
-    const themes = themesSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const themes = themesSnapshot.docs
+      .map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      .sort((a: any, b: any) => {
+        const dateA = new Date(a.createdAt || 0).getTime();
+        const dateB = new Date(b.createdAt || 0).getTime();
+        return dateB - dateA; // Descending
+      });
 
     return NextResponse.json({ themes });
   } catch (error) {
@@ -54,7 +59,7 @@ export async function POST(
     const themeData = {
       id: themeId,
       name,
-      emoji,
+      emoji: emoji || '✨',
       iconKey: iconKey || 'sparkles',
       concept,
       judgingCriteria: judgingCriteria || [],
@@ -74,6 +79,7 @@ export async function POST(
 
     return NextResponse.json({ success: true, theme: themeData });
   } catch (error) {
+    console.error('Error creating manual theme:', error);
     return handleAuthError(error);
   }
 }

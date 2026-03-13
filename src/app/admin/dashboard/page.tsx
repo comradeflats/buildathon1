@@ -89,6 +89,8 @@ export default function AdminDashboardPage() {
         keyboardsDownTime: newEventKeyboardsDown || undefined,
         createdAt: new Date().toISOString(),
         themesGenerated: false,
+        isLive: false,
+        visibility: 'public',
         showVotes: true,
         slug: eventId,
         organizationId: 'legacy',
@@ -139,15 +141,39 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleToggleStatus = async (event: Event, newStatus: 'upcoming' | 'active' | 'archived') => {
+  const handleGoLive = async (event: Event) => {
+    if (!confirm('Are you sure you want to go live early? This will update the start date to now and reveal full themes to participants.')) {
+      return;
+    }
+
     try {
       await updateEvent({
         ...event,
-        status: newStatus,
-        isActive: newStatus === 'active',
+        status: 'active',
+        isActive: true,
+        isLive: true,
+        phase: 'building',
+        startDate: new Date().toISOString(),
       });
     } catch (err) {
-      setError('Failed to update event');
+      setError('Failed to go live');
+    }
+  };
+
+  const handleArchive = async (event: Event) => {
+    if (!confirm('Are you sure you want to archive this event? This will end the voting and move it to the completed section.')) {
+      return;
+    }
+
+    try {
+      await updateEvent({
+        ...event,
+        status: 'archived',
+        isActive: false,
+        phase: 'results',
+      });
+    } catch (err) {
+      setError('Failed to archive event');
     }
   };
 
@@ -500,15 +526,26 @@ export default function AdminDashboardPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <select
-                            value={event.status}
-                            onChange={(e) => handleToggleStatus(event, e.target.value as any)}
-                            className="text-xs bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-white focus:outline-none focus:ring-1 focus:ring-accent"
-                          >
-                            <option value="upcoming">Upcoming</option>
-                            <option value="active">Active</option>
-                            <option value="archived">Archived</option>
-                          </select>
+                          {event.status === 'upcoming' && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleGoLive(event)}
+                              className="h-8 text-xs bg-emerald-600 hover:bg-emerald-500 font-bold"
+                            >
+                              GO LIVE
+                            </Button>
+                          )}
+
+                          {event.status === 'active' && (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => handleArchive(event)}
+                              className="h-8 text-xs border-zinc-700 text-zinc-400 font-bold"
+                            >
+                              ARCHIVE
+                            </Button>
+                          )}
 
                           <Button
                             size="sm"

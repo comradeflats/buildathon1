@@ -19,7 +19,9 @@ import {
   Trophy,
   LayoutGrid,
   MapPin,
-  Clock
+  Clock,
+  Rocket,
+  ShieldCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -30,6 +32,7 @@ import { useEvents } from '@/hooks/useEvents';
 import { useOrgPermissions } from '@/hooks/useOrgPermissions';
 import { useTeams } from '@/hooks/useTeams';
 import { useThemes } from '@/hooks/useThemes';
+import { useVoting } from '@/context/VotingContext';
 import { ThemeManager } from '@/components/admin/ThemeManager';
 import { EventPhaseController } from '@/components/admin/EventPhaseController';
 import { geocodeLocation } from '@/lib/utils';
@@ -89,6 +92,81 @@ function SetupChecklist({ event, eventThemes, onEdit }: { event: any, eventTheme
   );
 }
 
+function LaunchCenter({ event, eventThemes, onLaunchNow }: { event: any, eventThemes: any[], onLaunchNow: () => void }) {
+  const [now, setNow] = useState(new Date());
+  
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const hasThemes = eventThemes.some(t => t.isPublished);
+  const startTime = new Date(event.startDate);
+  const isTimeReached = now >= startTime;
+  const isLive = isTimeReached && hasThemes;
+
+  const getTimeRemaining = () => {
+    const diff = startTime.getTime() - now.getTime();
+    if (diff <= 0) return '00:00:00';
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const secs = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <Card className={`p-1 overflow-hidden border-2 transition-all duration-500 ${isLive ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-zinc-800 bg-zinc-950'}`}>
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4">
+        <div className="flex items-center gap-4">
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isLive ? 'bg-emerald-500 text-zinc-950 animate-pulse' : 'bg-zinc-900 text-zinc-500'}`}>
+            <Rocket size={24} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="font-black text-white uppercase tracking-wider">
+                {isLive ? 'Arena is Live' : 'Launch Center'}
+              </h2>
+              {isLive && <Badge variant="success" className="bg-emerald-500 text-zinc-950 font-black px-2 py-0 h-5">ACTIVE</Badge>}
+            </div>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              {isLive ? 'Themes are revealed and submissions are open.' : 'Complete setup to activate the arena.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="flex items-center gap-4 px-4 py-2 bg-zinc-900/50 rounded-xl border border-zinc-800/50">
+            <div className="flex items-center gap-2">
+              {hasThemes ? <CheckCircle2 size={14} className="text-emerald-500" /> : <div className="w-3.5 h-3.5 rounded-full border-2 border-zinc-700" />}
+              <span className={`text-[10px] font-bold uppercase tracking-widest ${hasThemes ? 'text-zinc-300' : 'text-zinc-600'}`}>Themes Deployed</span>
+            </div>
+            <div className="w-px h-4 bg-zinc-800" />
+            <div className="flex items-center gap-2">
+              {isTimeReached ? <CheckCircle2 size={14} className="text-emerald-500" /> : <Clock size={14} className="text-zinc-600" />}
+              <span className={`text-[10px] font-bold uppercase tracking-widest ${isTimeReached ? 'text-zinc-300' : 'text-zinc-600'}`}>
+                {isTimeReached ? 'Time Reached' : getTimeRemaining()}
+              </span>
+            </div>
+          </div>
+
+          {!isLive && (
+            <Button 
+              onClick={onLaunchNow}
+              disabled={!hasThemes}
+              className={`font-black px-8 h-12 rounded-xl transition-all active:scale-95 ${hasThemes ? 'bg-white text-zinc-950 hover:bg-zinc-200 shadow-xl shadow-white/10' : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'}`}
+            >
+              <Zap size={18} className="mr-2 fill-current" />
+              LAUNCH NOW
+            </Button>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export default function ManageEventPage() {
   const params = useParams();
   const router = useRouter();
@@ -100,6 +178,7 @@ export default function ManageEventPage() {
   const { getEventById, updateEvent, isLoading: isEventsLoading } = useEvents();
   const { teams } = useTeams();
   const { getThemesByEventId } = useThemes();
+  const { showToast } = useVoting();
 
   const [org, setOrg] = useState<any>(null);
   const [event, setEvent] = useState<any>(null);
@@ -115,7 +194,8 @@ export default function ManageEventPage() {
     location: '',
     status: 'upcoming',
     lat: '',
-    lng: ''
+    lng: '',
+    visibility: 'public' as 'public' | 'unlisted' | 'private'
   });
 
   const lookupCoordinates = async () => {
@@ -175,12 +255,31 @@ export default function ManageEventPage() {
             location: foundEvent.location || '',
             status: foundEvent.status || 'upcoming',
             lat: foundEvent.coordinates?.lat?.toString() || '',
-            lng: foundEvent.coordinates?.lng?.toString() || ''
+            lng: foundEvent.coordinates?.lng?.toString() || '',
+            visibility: foundEvent.visibility || 'public'
           });
         }
       }
     }
   }, [eventId, getEventById, org, orgSlug, router, isEventsLoading]);
+
+  const handleLaunchNow = async () => {
+    if (!confirm('This will update the start time to NOW and activate the arena immediately. Continue?')) return;
+    
+    try {
+      setIsSaving(true);
+      await updateEvent({
+        ...event,
+        startDate: new Date().toISOString(),
+        isLive: true
+      });
+      showToast('Arena Launched!', 'success');
+    } catch (err) {
+      showToast('Failed to launch arena', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const { permissions, isLoading: permsLoading, orgId: fetchedOrgId } = useOrgPermissions(org?.id);
 
@@ -234,8 +333,8 @@ export default function ManageEventPage() {
 
   const eventTeams = teams.filter((t) => t.eventId === eventId);
   const eventThemes = getThemesByEventId(eventId);
-  const currentPhase = event.phase || 'registration';
-  const config = PHASE_CONFIG[currentPhase as EventPhase] || PHASE_CONFIG.registration;
+  const currentPhase = (event.phase || 'registration') as EventPhase;
+  const config = PHASE_CONFIG[currentPhase] || PHASE_CONFIG.registration;
 
   return (
     <div className="space-y-8 pb-20 relative">
@@ -415,6 +514,22 @@ export default function ManageEventPage() {
               </div>
             </div>
 
+            <div className="grid md:grid-cols-2 gap-6 pt-4 border-t border-zinc-800">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-zinc-400 uppercase tracking-wider">Visibility</label>
+                <select 
+                  value={editForm.visibility}
+                  onChange={(e) => setEditForm({...editForm, visibility: e.target.value as any})}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent"
+                >
+                  <option value="public">Public (Global Discovery)</option>
+                  <option value="unlisted">Unlisted (Link Only)</option>
+                  <option value="private">Private (Org Members Only)</option>
+                </select>
+                <p className="text-[10px] text-zinc-500 mt-1">Unlisted events won't appear on the global map or discovery pages.</p>
+              </div>
+            </div>
+
             <div className="flex justify-end pt-4">
               <Button 
                 onClick={handleSave} 
@@ -428,7 +543,17 @@ export default function ManageEventPage() {
           </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="space-y-8">
+          {/* Launch Center - New Activation Bar */}
+          <section className="animate-in fade-in slide-in-from-top-4 duration-700">
+            <LaunchCenter 
+              event={event} 
+              eventThemes={eventThemes} 
+              onLaunchNow={handleLaunchNow} 
+            />
+          </section>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content Area */}
           <div className="lg:col-span-2 space-y-8">
             {/* Live Controller - The most important thing when managing */}
@@ -599,6 +724,7 @@ export default function ManageEventPage() {
             </div>
           </div>
         </div>
+      </div>
       )}
     </div>
   );

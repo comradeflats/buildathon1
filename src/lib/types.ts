@@ -80,12 +80,14 @@ export interface Event {
   keyboardsDownTime?: string;     // ISO datetime - when coding must stop
   createdAt: string;
   themesGenerated: boolean;
+  isLive: boolean;               // Manual "Go Live" trigger for organizers
+  visibility: 'public' | 'unlisted' | 'private'; // Whether event appears on global maps/lists
   showVotes: boolean;             // Whether live votes are visible to participants
   scoresRevealed?: boolean;       // Whether final leaderboard scores are visible
   // Multi-tenant fields
   slug: string;                   // URL-friendly slug
   organizationId: string;         // Owner organization
-  visibility?: 'public' | 'unlisted' | 'private';
+  // visibility field was previously here, but I'll move it up for better organization
   createdBy?: string;             // Creator's Firebase UID
   updatedAt?: string;             // Last update timestamp
   submissionCode: string;         // Required code for project submission
@@ -93,6 +95,11 @@ export interface Event {
   maxParticipants?: number;        // Capacity cap
   currentRegistrations?: number;   // Summary count for quick UI display
   isRegistrationOpen: boolean;     // Whether users can still join
+  // Live Stage & Timer
+  activeTeamId?: string | null;   // ID of team currently presenting
+  timerEndTime?: string | null;   // ISO timestamp for the building countdown
+  isTimerPaused?: boolean;        // Whether the building timer is paused
+  timerSecondsLeft?: number;      // Cache for paused time
 }
 
 export type RegistrationStatus = 'pending' | 'approved' | 'waitlisted' | 'rejected' | 'withdrawn';

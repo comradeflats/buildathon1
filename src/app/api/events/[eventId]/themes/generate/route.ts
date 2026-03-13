@@ -47,37 +47,34 @@ export async function POST(
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: {
-          type: SchemaType.ARRAY,
-          items: {
-            type: SchemaType.OBJECT,
-            properties: {
-              name: { type: SchemaType.STRING },
-              emoji: { type: SchemaType.STRING },
-              iconKey: { type: SchemaType.STRING },
-              concept: { type: SchemaType.STRING },
-              judgingCriteria: {
-                type: SchemaType.ARRAY,
-                items: { type: SchemaType.STRING },
-              },
+          type: SchemaType.OBJECT,
+          properties: {
+            name: { type: SchemaType.STRING },
+            emoji: { type: SchemaType.STRING },
+            iconKey: { type: SchemaType.STRING },
+            concept: { type: SchemaType.STRING },
+            judgingCriteria: {
+              type: SchemaType.ARRAY,
+              items: { type: SchemaType.STRING },
             },
-            required: ['name', 'emoji', 'iconKey', 'concept', 'judgingCriteria'],
           },
+          required: ['name', 'emoji', 'iconKey', 'concept', 'judgingCriteria'],
         },
       },
     });
 
-    const prompt = `Generate 3 unique and creative hackathon themes based on this rough idea: "${idea || 'Innovation and Creativity'}".
+    const prompt = `Generate ONE unique and creative hackathon theme based on this rough idea: "${idea || 'Innovation and Creativity'}".
 
-Each theme should follow these guidelines:
+The theme should follow these guidelines:
 1. It should be broad enough for creative interpretation but specific enough to provide focus.
 2. It should be suitable for a fast-paced buildathon.
-3. The names should be memorable (2-4 words).
+3. The name should be memorable (2-4 words).
 4. Provide a single relevant emoji.
 5. Select ONE iconKey from: sparkles, zap, link, clock, palette, target, lightbulb, globe, gauge, code, wand, eye, rocket, brain, compass, layers.
 6. The "Concept" should be exactly ONE concise sentence describing the friction point or "Superpower" the app provides.
 7. Provide exactly 5 judging criteria that reward creative execution, design, and utility.
 
-Return the response as a valid JSON array of 3 objects.`;
+Return the response as a valid JSON object.`;
 
     const result = await generativeModel.generateContent(prompt);
     const response = result.response;
@@ -85,9 +82,10 @@ Return the response as a valid JSON array of 3 objects.`;
 
     if (!text) throw new Error('No response from AI model');
 
-    const themes = JSON.parse(text);
+    const theme = JSON.parse(text);
 
-    return NextResponse.json({ themes });
+    // Return as array for compatibility with current frontend, but with only 1 item
+    return NextResponse.json({ themes: [theme] });
   } catch (error) {
     return handleAuthError(error);
   }

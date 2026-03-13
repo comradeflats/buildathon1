@@ -60,7 +60,7 @@ function MapController({ events }: { events: any[] }) {
 }
 
 export default function RegionalMap({ events }: RegionalMapProps) {
-  const [activeFilter, setActiveFilter] = useState<string[]>(['active', 'upcoming', 'archived']);
+  const [activeFilter, setActiveFilter] = useState<string[]>(['active', 'preparing', 'upcoming', 'archived']);
 
   useEffect(() => {
     fixLeafletIcons();
@@ -116,7 +116,7 @@ export default function RegionalMap({ events }: RegionalMapProps) {
 
     return {
       active: createCustomIcon('#10b981', true), // Emerald
-      upcoming: createCustomIcon('#a78bfa', false), // Violet-400 (lighter for visibility)
+      upcoming: createCustomIcon('#a78bfa', false), // Violet-400
       archived: createCustomIcon('#94a3b8', false) // Slate-400
     };
   }, []);
@@ -130,10 +130,12 @@ export default function RegionalMap({ events }: RegionalMapProps) {
   };
 
   // Derive statuses for display consistency
-  const processedEvents = useMemo(() => events.map(e => ({
-    ...e,
-    derivedStatus: getEventStatus(e.startDate, e.endDate)
-  })), [events]);
+  const processedEvents = useMemo(() => events
+    .filter(e => e.visibility !== 'unlisted') // Hide unlisted arenas from discovery
+    .map(e => ({
+      ...e,
+      derivedStatus: getEventStatus(e.startDate, e.endDate, e.themesGenerated, e.isLive)
+    })), [events]);
 
   const filteredByStatus = processedEvents.filter(e => activeFilter.includes(e.derivedStatus));
 
@@ -235,16 +237,22 @@ export default function RegionalMap({ events }: RegionalMapProps) {
 }
 
 function EventPopup({ event }: { event: any }) {
-  const status = getEventStatus(event.startDate, event.endDate);
+  const status = getEventStatus(event.startDate, event.endDate, event.themesGenerated, event.isLive);
   
+  const statusColors = {
+    active: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    upcoming: 'bg-violet-500/20 text-violet-400 border-violet-500/30',
+    archived: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
+  } as Record<string, string>;
+
   return (
     <div className="p-4 space-y-3">
       <div className="flex items-center justify-between">
         <Badge 
           variant={status === 'active' ? 'success' : status === 'upcoming' ? 'default' : 'secondary'}
-          className={`text-[10px] px-2 py-0 ${status === 'upcoming' ? 'bg-violet-500/20 text-violet-400 border-violet-500/30' : ''}`}
+          className={`text-[10px] px-2 py-0 ${statusColors[status] || ''}`}
         >
-          {status}
+          {status.toUpperCase()} ARENA
         </Badge>
         <div className="flex items-center text-zinc-400 text-[10px]">
           <MapPin size={10} className="mr-1" />
@@ -264,7 +272,7 @@ function EventPopup({ event }: { event: any }) {
 
       <Link 
         href={`/events/${event.id}`}
-        className="flex items-center justify-between w-full bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 text-[11px] font-bold py-2 px-3 rounded-lg transition-colors group"
+        className={`flex items-center justify-between w-full font-bold py-2 px-3 rounded-lg transition-colors group ${status === 'active' ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400' : 'bg-violet-500/10 hover:bg-violet-500/20 text-violet-400'}`}
       >
         EXPLORE ARENA
         <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />

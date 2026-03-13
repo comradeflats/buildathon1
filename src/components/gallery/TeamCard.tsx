@@ -5,31 +5,51 @@ import { ChevronRight, Users, Code, Github, ExternalLink, Edit2, Globe, Link as 
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { DeleteButton } from '@/components/admin/DeleteButton';
-import { Team } from '@/lib/types';
+import { Team, Event } from '@/lib/types';
 import { useVoting } from '@/context/VotingContext';
 import { useTeams } from '@/context/TeamContext';
 import { useAdmin } from '@/context/AdminContext';
 import { useAuth } from '@/context/AuthContext';
+import { useEvents } from '@/hooks/useEvents';
 import { ensureAbsoluteUrl } from '@/lib/github';
 import { getThemeIcon, getThemeIconColor } from '@/lib/themeIcons';
 
 interface TeamCardProps {
   team: Team;
+  event?: Event | null;
 }
 
-export function TeamCard({ team }: TeamCardProps) {
+export function TeamCard({ team, event }: TeamCardProps) {
   const { hasVotedFor, getThemeById, showToast } = useVoting();
   const { deleteTeam } = useTeams();
+  const { updateEvent } = useEvents();
   const { isAdmin } = useAdmin();
   const { user, isAnonymous, ownershipToken } = useAuth();
   const voted = hasVotedFor(team.id);
   const theme = getThemeById(team.themeId);
+  const isOnStage = event?.activeTeamId === team.id;
 
   // Check if user can edit this team
   const canEdit =
     isAdmin ||
     (user && !isAnonymous && team.ownerId === user.uid) ||
     (ownershipToken && team.ownershipToken === ownershipToken);
+
+  const handlePushToStage = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!event) return;
+    
+    try {
+      await updateEvent({
+        ...event,
+        activeTeamId: isOnStage ? null : team.id
+      });
+      showToast(isOnStage ? 'Team removed from stage' : `${team.projectName} is now on stage!`, 'success');
+    } catch (err) {
+      showToast('Failed to update stage.', 'error');
+    }
+  };
 
   const handleDelete = async () => {
     try {
@@ -48,8 +68,8 @@ export function TeamCard({ team }: TeamCardProps) {
   };
 
   return (
-    <div className="group relative h-full">
-      <Card hover className="p-5 h-full flex flex-col relative overflow-hidden">
+    <div className={`group relative h-full transition-all duration-500 ${isOnStage ? 'scale-[1.02] ring-2 ring-purple-500 rounded-xl shadow-2xl shadow-purple-500/20' : ''}`}>
+      <Card hover={!isOnStage} className={`p-5 h-full flex flex-col relative overflow-hidden ${isOnStage ? 'bg-purple-950/20 border-purple-500/50' : ''}`}>
         {/* Main Action - Vote Link (Stretched) */}
         <Link 
           href={`/vote?teamId=${team.id}`} 
@@ -61,9 +81,14 @@ export function TeamCard({ team }: TeamCardProps) {
         <div className="relative z-10 pointer-events-none flex flex-col h-full">
           <div className="flex items-start justify-between mb-3 gap-2">
             <div className="flex-1 min-w-0">
-              <h3 className="text-base md:text-lg font-semibold text-white mb-0.5 group-hover:text-accent transition-colors truncate">
-                {team.projectName}
-              </h3>
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-base md:text-lg font-semibold text-white group-hover:text-accent transition-colors truncate">
+                  {team.projectName}
+                </h3>
+                {isOnStage && (
+                  <Badge variant="default" className="bg-purple-500 text-white animate-pulse text-[10px] py-0 px-1.5 shrink-0">ON STAGE</Badge>
+                )}
+              </div>
               <p className="text-xs md:text-sm text-zinc-400 truncate">{team.name}</p>
             </div>
             {voted && (
@@ -140,20 +165,34 @@ export function TeamCard({ team }: TeamCardProps) {
               )}
             </div>
 
-            <div className="flex flex-col items-center gap-1">
-              {isAdmin && (
-                <DeleteButton onDelete={handleDelete} itemName={team.projectName} />
-              )}
-              {canEdit && (
-                <Link
-                  href={`/submit?teamId=${team.id}`}
-                  className="p-1.5 sm:p-2 rounded-md text-zinc-500 hover:text-accent hover:bg-accent/10 transition-all relative z-20"
-                  title="Edit submission"
-                  onClick={(e) => e.stopPropagation()}
+            <div className="flex flex-col items-center gap-2">
+              {isAdmin && event?.phase === 'review' && (
+                <button
+                  onClick={handlePushToStage}
+                  className={`px-3 py-1 rounded-full text-[10px] font-black transition-all relative z-20 ${
+                    isOnStage 
+                      ? 'bg-zinc-800 text-zinc-400 hover:text-white' 
+                      : 'bg-purple-500 text-white hover:bg-purple-600 shadow-lg shadow-purple-500/20'
+                  }`}
                 >
-                  <Edit2 size={16} />
-                </Link>
+                  {isOnStage ? 'REMOVE FROM STAGE' : 'PUSH TO STAGE'}
+                </button>
               )}
+              <div className="flex items-center gap-1">
+                {isAdmin && (
+                  <DeleteButton onDelete={handleDelete} itemName={team.projectName} />
+                )}
+                {canEdit && (
+                  <Link
+                    href={`/submit?teamId=${team.id}`}
+                    className="p-1.5 sm:p-2 rounded-md text-zinc-500 hover:text-accent hover:bg-accent/10 transition-all relative z-20"
+                    title="Edit submission"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Edit2 size={16} />
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         </div>

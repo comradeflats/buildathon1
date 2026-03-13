@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { 
   ArrowLeft, Calendar, Users, Loader2, Plus, Clock, 
   MapPin, Settings, Info, CheckCircle, AlertCircle,
-  Trophy, LayoutGrid, Sparkles, UserPlus, Activity, LogOut
+  Trophy, LayoutGrid, Sparkles, UserPlus, Activity, LogOut, ShieldCheck, LayoutPanelLeft
 } from 'lucide-react';
 
 import { Card } from '@/components/ui/Card';
@@ -19,16 +19,55 @@ import { useThemes } from '@/hooks/useThemes';
 import { useOrgPermissions } from '@/hooks/useOrgPermissions';
 import { useRegistration } from '@/hooks/useRegistration';
 import { getThemeEmoji } from '@/lib/themeIcons';
+import { getEventStatus } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { useVoting } from '@/context/VotingContext';
 import { RegisterModal } from '@/components/events/RegisterModal';
 import { SignInModal } from '@/components/auth/SignInModal';
 
+function ParticipantTimer({ event }: { event: any }) {
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+
+  useEffect(() => {
+    if (!event.timerEndTime || event.isTimerPaused) {
+      if (event.timerSecondsLeft) setTimeLeft(event.timerSecondsLeft);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const end = new Date(event.timerEndTime!).getTime();
+      const now = new Date().getTime();
+      const diff = Math.max(0, Math.floor((end - now) / 1000));
+      setTimeLeft(diff);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [event.timerEndTime, event.isTimerPaused, event.timerSecondsLeft]);
+
+  const formatTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  if (timeLeft === 0 && !event.isTimerPaused) return null;
+
+  return (
+    <div className={`flex flex-col items-center justify-center px-6 py-2 rounded-2xl border ${timeLeft < 300 ? 'border-red-500 bg-red-500/10' : 'border-emerald-500/20 bg-emerald-500/5'}`}>
+      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Time Remaining</span>
+      <div className={`text-3xl font-black tabular-nums tracking-tighter ${timeLeft < 300 ? 'text-red-500 animate-pulse' : 'text-emerald-400'}`}>
+        {formatTime(timeLeft)}
+      </div>
+    </div>
+  );
+}
+
 export default function EventBySlugPage() {
   const params = useParams();
   const router = useRouter();
   const slug = params.slug as string;
-  const { user, isAuthenticated, signInAnonymously } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { showToast } = useVoting();
 
   const { event, isLoading: isEventLoading, error } = useEventBySlug(slug);
@@ -88,7 +127,6 @@ export default function EventBySlugPage() {
   };
 
   const handleRegister = async () => {
-    // Legacy handler for backward compatibility within this file's logic if needed
     handleRegisterClick();
   };
 
@@ -130,331 +168,331 @@ export default function EventBySlugPage() {
     );
   }
 
+  const status = getEventStatus(event.startDate, event.endDate, event.themesGenerated, event.isLive);
   const dateRange = formatEventDates(event.startDate, event.endDate);
   const isApproved = registration?.status === 'approved';
-  const isWaitlisted = registration?.status === 'waitlisted';
-  const canSubmit = (event.status === 'active' || event.phase !== 'registration') && isApproved;
+  const canSubmit = (status === 'active' && event.phase === 'building') && isApproved;
+  const publishedThemes = eventThemes.filter(t => t.isPublished);
 
-  // 1. UPCOMING FLOW
-  if (event.status === 'upcoming') {
-    return (
-      <div className="space-y-8 max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-          <div className="space-y-4">
-            <Link href="/" className="inline-flex items-center gap-2 text-zinc-400 hover:text-white transition-colors">
-              <ArrowLeft size={16} />
-              Back to Events
-            </Link>
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-4xl font-black text-white tracking-tight">{event.name}</h1>
-                <Badge variant="default" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
-                  Upcoming
-                </Badge>
+  const renderContent = () => {
+    // 1. UPCOMING FLOW
+    if (status === 'upcoming') {
+      return (
+        <div className="space-y-16">
+          <div className="relative overflow-hidden rounded-[3rem] border border-zinc-800 bg-zinc-900/20">
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-yellow-500/5 via-transparent to-accent/5 -z-10" />
+            
+            <div className="px-8 py-16 md:px-16 md:py-24 flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
+              <div className="text-center md:text-left space-y-6 flex-1">
+                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                   <Badge variant="default" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20 font-black px-3 py-1 uppercase tracking-widest">Upcoming Event</Badge>
+                   <div className="flex items-center gap-2 text-zinc-500 text-xs font-bold uppercase tracking-widest">
+                     <Users size={14} />
+                     {event.currentRegistrations || 0} Joined
+                   </div>
+                 </div>
+                 
+                 <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-[0.9]">
+                   {event.name}
+                 </h1>
+                 
+                 <p className="text-xl text-zinc-400 max-w-2xl leading-relaxed">
+                   {event.description}
+                 </p>
+
+                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-8 pt-4">
+                    <div className="space-y-1">
+                      <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Location</p>
+                      <p className="text-lg font-bold text-white flex items-center gap-2">
+                        <MapPin size={18} className="text-emerald-500" />
+                        {event.location || 'TBA'}
+                      </p>
+                    </div>
+                    <div className="w-px h-10 bg-zinc-800 hidden md:block" />
+                    <div className="space-y-1">
+                      <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Date</p>
+                      <p className="text-lg font-bold text-white flex items-center gap-2">
+                        <Calendar size={18} className="text-accent" />
+                        {dateRange}
+                      </p>
+                    </div>
+                 </div>
               </div>
-              <p className="text-xl text-zinc-400 max-w-2xl">{event.description}</p>
+
+              <div className="w-full md:w-96 shrink-0">
+                <Card className="p-8 border-accent/20 bg-black/40 backdrop-blur-xl rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 blur-[50px] -z-10 group-hover:bg-accent/20 transition-colors" />
+                  
+                  <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
+                    <Sparkles size={24} className="text-accent" />
+                    Secure Your Spot
+                  </h3>
+                  
+                  {registration ? (
+                    <div className="space-y-6">
+                      <div className={`p-6 rounded-3xl border flex items-start gap-4 ${
+                        isApproved ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-yellow-500/5 border-yellow-500/20'
+                      }`}>
+                        <div className={`p-2 rounded-xl ${isApproved ? 'bg-emerald-500/10 text-emerald-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
+                          {isApproved ? <CheckCircle size={24} /> : <Clock size={24} />}
+                        </div>
+                        <div>
+                          <p className={`font-black text-lg ${isApproved ? 'text-emerald-400' : 'text-yellow-400'}`}>
+                            {isApproved ? 'You\'re In!' : 'Waitlisted'}
+                          </p>
+                          <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+                            {isApproved 
+                              ? "Registration confirmed. Prepare your tools for the kickoff!"
+                              : "The arena is at capacity. We'll notify you if a spot opens up."}
+                          </p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={handleWithdraw}
+                        disabled={isRegistering}
+                        className="w-full text-[10px] font-black text-zinc-600 hover:text-red-400 uppercase tracking-widest transition-colors"
+                      >
+                        Withdraw from Event
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <p className="text-sm text-zinc-400 leading-relaxed">
+                        Join the community of builders. Registrations are open for a limited time.
+                      </p>
+                      <Button 
+                        onClick={handleRegisterClick} 
+                        disabled={isRegistering || isJoining} 
+                        className="w-full h-16 text-xl font-black rounded-2xl shadow-xl shadow-accent/20"
+                      >
+                        {isRegistering || isJoining ? (
+                          <Loader2 size={24} className="animate-spin" />
+                        ) : (
+                          <>
+                            <UserPlus size={24} className="mr-2" />
+                            JOIN NOW
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </Card>
+              </div>
             </div>
+          </div>
 
-            <div className="flex flex-wrap gap-6 text-zinc-300">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-zinc-800 rounded-lg text-emerald-400">
-                  <MapPin size={20} />
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500 uppercase font-bold tracking-wider">Location</p>
-                  <p className="font-semibold">{event.location || 'To be announced'}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-zinc-800 rounded-lg text-accent">
-                  <Calendar size={20} />
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500 uppercase font-bold tracking-wider">Date</p>
-                  <p className="font-semibold">{dateRange}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-zinc-800 rounded-lg text-blue-400">
-                  <Users size={20} />
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500 uppercase font-bold tracking-wider">Availability</p>
-                  <p className="font-semibold text-sm">
-                    {event.currentRegistrations || 0} Joined 
-                    {event.maxParticipants ? ` (${event.maxParticipants - (event.currentRegistrations || 0)} left)` : ''}
+          {publishedThemes.length > 0 && (
+            <section className="space-y-12">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div className="space-y-4">
+                  <h2 className="text-4xl font-black text-white flex items-center gap-4 italic tracking-tighter">
+                    <Sparkles size={40} className="text-accent" />
+                    THEME LEAKS
+                  </h2>
+                  <p className="text-zinc-500 font-medium max-w-xl">
+                    Our intelligence suggests these themes will be featured. Full criteria remains classified until the arena goes live.
                   </p>
                 </div>
+                <Badge variant="outline" className="border-accent/30 text-accent bg-accent/5 px-4 py-2 rounded-full font-black text-xs uppercase tracking-widest">
+                  System Status: encrypted
+                </Badge>
               </div>
-            </div>
-          </div>
-
-          <Card className="p-6 md:w-80 border-accent/20 bg-accent/5 backdrop-blur-sm">
-            <h3 className="font-bold text-white mb-4 flex items-center gap-2">
-              <Sparkles size={18} className="text-accent" />
-              Join the Event
-            </h3>
-            
-            {registration ? (
-              <div className="space-y-4">
-                <div className={`p-4 rounded-xl border flex items-start gap-3 ${
-                  isApproved ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-yellow-500/10 border-yellow-500/20'
-                }`}>
-                  {isApproved ? (
-                    <CheckCircle className="text-emerald-500 shrink-0" size={20} />
-                  ) : (
-                    <Clock className="text-yellow-500 shrink-0" size={20} />
-                  )}
-                  <div>
-                    <p className={`font-bold text-sm ${isApproved ? 'text-emerald-400' : 'text-yellow-500'}`}>
-                      {isApproved ? 'Registration Approved' : 'On Waitlist'}
-                    </p>
-                    <p className="text-xs text-zinc-400 mt-1">
-                      {isApproved 
-                        ? "You're in! We'll notify you when themes are revealed."
-                        : "The event is currently full. We'll move you up if a spot opens."}
-                    </p>
+              
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {publishedThemes.map((theme) => (
+                  <div key={theme.id} className="p-10 rounded-[3rem] border border-zinc-800 bg-zinc-900/40 relative overflow-hidden group hover:bg-zinc-900/60 transition-all duration-500">
+                    <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                      <Sparkles size={80} className="text-accent" />
+                    </div>
+                    <div className="w-20 h-20 mb-8 rounded-2xl bg-zinc-800/50 flex items-center justify-center text-accent transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                      <LayoutPanelLeft size={40} />
+                    </div>
+                    <h3 className="text-2xl font-black text-white mb-4 tracking-tight">{theme.name}</h3>
+                    <div className="space-y-3 mb-8">
+                      <p className="text-sm text-zinc-500 italic blur-[4px] select-none leading-relaxed">
+                        {theme.concept || "Classified information. Encryption level: High."}
+                      </p>
+                      <div className="h-2 bg-zinc-800 rounded-full w-2/3 animate-pulse" />
+                    </div>
+                    <div className="inline-flex items-center gap-2 text-[10px] font-black text-accent uppercase tracking-[0.2em] bg-accent/10 px-3 py-1.5 rounded-full">
+                      <div className="w-1.5 h-1.5 rounded-full bg-accent animate-ping" />
+                      Intercepted Fragment
+                    </div>
                   </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+      );
+    }
+
+    // 2. ACTIVE FLOW
+    if (status === 'active') {
+      return (
+        <div className="space-y-8">
+          <div className="relative px-8 py-10 rounded-[2.5rem] bg-zinc-900/20 border border-zinc-800 overflow-hidden">
+            <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-emerald-500/5 to-transparent -z-10" />
+            <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="space-y-4 text-center md:text-left">
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                  <Badge variant="success" className="bg-emerald-500 text-zinc-950 font-black px-2 py-0.5 rounded-md animate-pulse">LIVE ARENA</Badge>
+                  <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter italic">{event.name}</h1>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleWithdraw}
-                  disabled={isRegistering}
-                  className="w-full text-zinc-500 hover:text-red-400 hover:bg-red-400/5 h-8 text-xs"
-                >
-                  Withdraw from Event
-                </Button>
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-zinc-400 text-sm font-medium uppercase tracking-widest">
+                  <span className="flex items-center gap-2"><MapPin size={14} className="text-emerald-500" /> {event.location}</span>
+                  <span className="flex items-center gap-2"><Clock size={14} className="text-accent" /> Ends {formatDateTime(event.endDate)}</span>
+                </div>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <p className="text-sm text-zinc-400">
-                  Register now to secure your spot. Themes and submission criteria will be revealed once the event starts.
-                </p>
-                <Button 
-                  onClick={handleRegisterClick} 
-                  disabled={isRegistering || isJoining} 
-                  className="w-full h-12 text-lg font-bold"
-                >
-                  {isRegistering || isJoining ? (
-                    <Loader2 size={20} className="animate-spin" />
-                  ) : (
-                    <>
-                      <UserPlus size={20} className="mr-2" />
-                      Register to Join
-                    </>
-                  )}
-                </Button>
+              <div className="flex flex-wrap items-center justify-center gap-4">
+                 <Link href={`/e/${slug}/gallery`}>
+                   <Button variant="secondary" className="h-14 px-8 rounded-2xl font-black border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800">
+                     <LayoutGrid size={20} className="mr-2" />
+                     VIEW GALLERY
+                   </Button>
+                 </Link>
+                 {canSubmit ? (
+                   <Link href={`/e/${slug}/submit`}>
+                     <Button size="lg" className="h-14 px-8 text-lg font-black shadow-xl shadow-accent/20 rounded-2xl bg-white text-zinc-950 hover:bg-zinc-200">
+                       <Plus size={20} className="mr-2" />
+                       SUBMIT PROJECT
+                     </Button>
+                   </Link>
+                 ) : !registration ? (
+                   <Button onClick={handleRegister} className="h-14 px-8 rounded-2xl font-black">
+                     JOIN EVENT
+                   </Button>
+                 ) : null}
               </div>
-            )}
-          </Card>
-        </div>
-
-        <RegisterModal 
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onConfirm={handleConfirmRegistration}
-          isWaitlist={(event.maxParticipants || 0) <= (event.currentRegistrations || 0)}
-        />
-
-        <SignInModal 
-          isOpen={isSignInModalOpen} 
-          onClose={() => setIsSignInModalOpen(false)}
-          title="Sign in to Register"
-          description="You need to be signed in to join the event. You can continue as a guest if you prefer."
-          hideGuest={false}
-        />
-
-        {isAdmin && <EventPhaseController event={event} />}
-      </div>
-    );
-  }
-
-  // 2. ACTIVE FLOW
-  if (event.status === 'active') {
-    return (
-      <div className="space-y-8 max-w-6xl mx-auto">
-        {/* Active Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-zinc-800 pb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-4xl font-black text-white tracking-tight">{event.name}</h1>
-              <Badge variant="success" className="animate-pulse">Live Now</Badge>
-            </div>
-            <div className="flex items-center gap-4 text-zinc-400 text-sm">
-              <span className="flex items-center gap-1.5"><MapPin size={14} className="text-emerald-400" /> {event.location}</span>
-              <span className="flex items-center gap-1.5"><Clock size={14} className="text-accent" /> Ends: {formatDateTime(event.endDate)}</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {canSubmit ? (
-              <Link href={`/e/${slug}/submit`}>
-                <Button size="lg" className="h-12 px-8 text-lg font-bold shadow-lg shadow-accent/20">
-                  <Plus size={20} className="mr-2" />
-                  Submit Project
-                </Button>
-              </Link>
-            ) : !registration ? (
-              <Button onClick={handleRegister} variant="secondary" className="h-12">
-                Join Event to Submit
-              </Button>
-            ) : isWaitlisted ? (
-              <Badge variant="secondary" className="px-4 py-2">On Waitlist</Badge>
-            ) : null}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+             <div className="p-4 rounded-2xl bg-zinc-900/30 border border-zinc-800/50 flex flex-col items-center justify-center text-center">
+                <p className="text-xl font-black text-white">{event.currentRegistrations || 0}</p>
+                <p className="text-[9px] text-zinc-500 uppercase font-black tracking-widest">Builders Joined</p>
+             </div>
+             <div className="p-4 rounded-2xl bg-zinc-900/30 border border-zinc-800/50 flex flex-col items-center justify-center text-center">
+                <p className="text-xl font-black text-white">{eventTeams.length}</p>
+                <p className="text-[9px] text-zinc-500 uppercase font-black tracking-widest">Projects Shipped</p>
+             </div>
+             {(event.phase === 'building' || event.phase === 'last_call') && (
+               <div className="col-span-2">
+                  <ParticipantTimer event={event} />
+               </div>
+             )}
           </div>
-        </div>
 
-        {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
-            {/* Themes */}
-            {eventThemes.length > 0 && (
-              <section className="space-y-4">
-                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <Sparkles size={24} className="text-accent" />
-                  Available Themes
+          <div className="rounded-[2.5rem] bg-zinc-900/20 border border-zinc-800 overflow-hidden">
+            <div className="grid lg:grid-cols-5 divide-y lg:divide-y-0 lg:divide-x divide-zinc-800">
+              <div className="lg:col-span-3 p-8 md:p-12 space-y-10">
+                <h2 className="text-3xl font-black text-white flex items-center gap-4 italic">
+                  <Sparkles size={32} className="text-emerald-400" />
+                  THE CHALLENGE
                 </h2>
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-6">
                   {eventThemes.map((theme) => (
-                    <Card key={theme.id} className="p-6 border-zinc-800 hover:border-accent/30 transition-all">
-                      <div className="text-4xl mb-4">{getThemeEmoji(theme)}</div>
-                      <h3 className="text-lg font-bold text-white mb-2">{theme.name}</h3>
-                      <p className="text-sm text-zinc-400 leading-relaxed">{theme.concept}</p>
-                    </Card>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Judging Criteria */}
-            {eventThemes[0]?.judgingCriteria && (
-              <Card className="p-8 bg-zinc-950 border-zinc-800">
-                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                  <Trophy size={20} className="text-yellow-500" />
-                  Judging Criteria
-                </h2>
-                <div className="space-y-4">
-                  {eventThemes[0].judgingCriteria.map((criterion, idx) => (
-                    <div key={idx} className="flex items-start gap-4 p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
-                      <div className="w-8 h-8 rounded-full bg-accent/10 text-accent flex items-center justify-center font-bold shrink-0">
-                        {idx + 1}
+                    <div key={theme.id} className="group p-8 rounded-3xl bg-black/20 border border-zinc-800/50 hover:border-emerald-500/30 transition-all duration-500">
+                      <div className="flex items-start gap-6">
+                        <div className="w-16 h-16 shrink-0 rounded-2xl bg-zinc-800 flex items-center justify-center text-emerald-400">
+                          <LayoutPanelLeft size={32} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-2xl font-black text-white mb-2 tracking-tight">{theme.name}</h3>
+                          <p className="text-zinc-400 leading-relaxed text-sm mb-6">{theme.concept}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {theme.judgingCriteria?.slice(0, 3).map((c, i) => (
+                              <Badge key={i} variant="outline" className="text-[10px] py-1 border-zinc-800 text-zinc-500 bg-black/40">{c.split(':')[0]}</Badge>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-zinc-300 font-medium">{criterion}</p>
                     </div>
                   ))}
                 </div>
-              </Card>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <Card className="p-6 border-zinc-800">
-              <h3 className="font-bold text-white mb-4 flex items-center gap-2">
-                <Activity size={18} className="text-blue-400" />
-                Live Activity
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center py-4 bg-zinc-900 rounded-xl border border-zinc-800">
-                  <p className="text-2xl font-black text-white">{event.currentRegistrations || 0}</p>
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Participants</p>
-                </div>
-                <div className="text-center py-4 bg-zinc-900 rounded-xl border border-zinc-800">
-                  <p className="text-2xl font-black text-white">{eventTeams.length}</p>
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Shipped</p>
-                </div>
               </div>
-              <div className="mt-4 pt-4 border-t border-zinc-800 space-y-3">
-                <Link href={`/e/${slug}/gallery`} className="block">
-                  <Button variant="secondary" className="w-full">
-                    View Live Gallery
-                  </Button>
-                </Link>
+              <div className="lg:col-span-2 p-8 md:p-12 bg-black/20">
+                <h2 className="text-3xl font-black text-white flex items-center gap-4 italic mb-10">
+                  <ShieldCheck size={32} className="text-yellow-500" />
+                  STANDARDS
+                </h2>
+                <div className="space-y-8">
+                  {eventThemes[0]?.judgingCriteria?.map((criterion, idx) => (
+                    <div key={idx} className="flex gap-5 group">
+                      <span className="text-2xl font-black text-zinc-800 group-hover:text-yellow-500/20 transition-colors">0{idx + 1}</span>
+                      <p className="text-zinc-400 text-sm leading-relaxed font-medium">{criterion}</p>
+                    </div>
+                  ))}
+                </div>
                 {registration && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={handleWithdraw}
-                    disabled={isRegistering}
-                    className="w-full text-zinc-600 hover:text-red-400 transition-colors h-8 text-xs"
-                  >
-                    <LogOut size={12} className="mr-2" />
-                    Withdraw from Event
-                  </Button>
+                  <div className="mt-12 pt-8 border-t border-zinc-800">
+                     <button onClick={handleWithdraw} className="text-[10px] font-black text-zinc-600 hover:text-red-400 uppercase tracking-[0.2em] transition-colors">Withdraw from Arena</button>
+                  </div>
                 )}
               </div>
-            </Card>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
-            {isAdmin && <EventPhaseController event={event} />}
+    // 3. ARCHIVED FLOW
+    return (
+      <div className="space-y-8 max-w-5xl mx-auto pb-20 relative">
+        <div className="text-center space-y-4 pb-8">
+          <Badge variant="secondary" className="mb-2">Completed</Badge>
+          <h1 className="text-5xl font-black text-white tracking-tight">{event.name}</h1>
+          <p className="text-xl text-zinc-400 max-w-2xl mx-auto">This event has concluded. Explore the amazing projects built by our community.</p>
+          <div className="flex items-center justify-center gap-4 pt-4">
+            <Link href={`/e/${slug}/gallery`}><Button size="lg" className="h-14 px-8 text-lg font-bold"><LayoutGrid size={20} className="mr-2" />Project Gallery</Button></Link>
+            <Link href={`/e/${slug}/leaderboard`}><Button variant="secondary" size="lg" className="h-14 px-8 text-lg font-bold"><Trophy size={20} className="mr-2" />Final Results</Button></Link>
+          </div>
+        </div>
+        <div className="grid md:grid-cols-2 gap-8 border-t border-zinc-800 pt-12">
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-white">Event Legacy</h2>
+            <p className="text-zinc-400 leading-relaxed">{event.description}</p>
+            <div className="flex gap-8 py-4">
+              <div><p className="text-2xl font-bold text-white">{eventTeams.length}</p><p className="text-sm text-zinc-500">Participants</p></div>
+              <div><p className="text-2xl font-bold text-white">{new Date(event.startDate).getFullYear()}</p><p className="text-sm text-zinc-500">Year</p></div>
+              <div><p className="text-2xl font-bold text-white">{event.location}</p><p className="text-sm text-zinc-500">Venue</p></div>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-white">The Challenge</h2>
+            <div className="space-y-2">
+              {eventThemes.map(theme => (
+                <div key={theme.id} className="flex items-center gap-3 p-3 rounded-lg bg-zinc-900 border border-zinc-800">
+                  <LayoutPanelLeft className="text-emerald-400" size={24} />
+                  <span className="font-semibold text-zinc-300">{theme.name}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
     );
-  }
+  };
 
-  // 3. ARCHIVED FLOW
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
-      <div className="text-center space-y-4 pb-8">
-        <Badge variant="secondary" className="mb-2">Completed</Badge>
-        <h1 className="text-5xl font-black text-white tracking-tight">{event.name}</h1>
-        <p className="text-xl text-zinc-400 max-w-2xl mx-auto">
-          This event has concluded. Explore the amazing projects built by our community.
-        </p>
-        <div className="flex items-center justify-center gap-4 pt-4">
-          <Link href={`/e/${slug}/gallery`}>
-            <Button size="lg" className="h-14 px-8 text-lg font-bold">
-              <LayoutGrid size={20} className="mr-2" />
-              Project Gallery
-            </Button>
-          </Link>
-          <Link href={`/e/${slug}/leaderboard`}>
-            <Button variant="secondary" size="lg" className="h-14 px-8 text-lg font-bold">
-              <Trophy size={20} className="mr-2" />
-              Final Results
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-8 border-t border-zinc-800 pt-12">
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-white">Event Legacy</h2>
-          <p className="text-zinc-400 leading-relaxed">
-            {event.description}
-          </p>
-          <div className="flex gap-8 py-4">
-            <div>
-              <p className="text-2xl font-bold text-white">{eventTeams.length}</p>
-              <p className="text-sm text-zinc-500">Participants</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-white">{new Date(event.startDate).getFullYear()}</p>
-              <p className="text-sm text-zinc-500">Year</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-white">{event.location}</p>
-              <p className="text-sm text-zinc-500">Venue</p>
-            </div>
-          </div>
-        </div>
-        
-        {/* Themes Showcase */}
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-white">The Challenge</h2>
-          <div className="space-y-2">
-            {eventThemes.map(theme => (
-              <div key={theme.id} className="flex items-center gap-3 p-3 rounded-lg bg-zinc-900 border border-zinc-800">
-                <span className="text-2xl">{getThemeEmoji(theme)}</span>
-                <span className="font-semibold text-zinc-300">{theme.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {renderContent()}
       
+      <RegisterModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={handleConfirmRegistration}
+        isWaitlist={(event.maxParticipants || 0) <= (event.currentRegistrations || 0)}
+      />
+
+      <SignInModal 
+        isOpen={isSignInModalOpen} 
+        onClose={() => setIsSignInModalOpen(false)}
+        title="Sign in to Register"
+        description="You need to be signed in to join the event. You can continue as a guest if you prefer."
+        hideGuest={false}
+      />
+
       {isAdmin && <EventPhaseController event={event} />}
     </div>
   );

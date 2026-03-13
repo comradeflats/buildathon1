@@ -282,6 +282,11 @@ async function createTestEvent(db: FirebaseFirestore.Firestore): Promise<string>
     submissionDeadline: endDate.toISOString().split('T')[0],
     createdAt: now.toISOString(),
     themesGenerated: true,
+    isLive: true,
+    visibility: 'public',
+    showVotes: true,
+    slug: eventId,
+    organizationId: 'org-mock',
     isMockData: true
   };
 

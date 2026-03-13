@@ -108,6 +108,7 @@ export async function POST(request: NextRequest) {
       keyboardsDownTime: keyboardsDownTime || null,
       createdAt: new Date().toISOString(),
       themesGenerated: false,
+      isLive: false,
       showVotes: true, // Default to true, organizers can hide later
       scoresRevealed: false,
       // Multi-tenant fields

@@ -120,7 +120,10 @@ async function seed() {
       updatedAt: now,
       slug: event.id,
       organizationId: 'org-global',
-      themesGenerated: true
+      themesGenerated: true,
+      isLive: event.status === 'active',
+      visibility: 'public',
+      showVotes: true
     });
     console.log(`   Created: ${event.name} in ${event.location}`);
   }

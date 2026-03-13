@@ -192,6 +192,7 @@ export default function NewEventPage() {
           submissionDeadline: submissionDeadline ? new Date(submissionDeadline).toISOString() : undefined,
           maxParticipants: parseInt(maxParticipants) || 50,
           isRegistrationOpen: true,
+          isLive: false,
           votingModel,
           visibility,
           status: 'upcoming',

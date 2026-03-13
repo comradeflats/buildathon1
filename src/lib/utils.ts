@@ -9,15 +9,19 @@ export function generateSubmissionCode(length: number = 6): string {
 
 export type EventStatus = 'upcoming' | 'active' | 'archived';
 
-export function getEventStatus(startDate: string, endDate: string): EventStatus {
+export function getEventStatus(startDate: string, endDate: string, hasThemes: boolean = true, isLive: boolean = false): EventStatus {
   const now = new Date();
   const start = new Date(startDate);
   const end = new Date(endDate);
 
+  // Manual override takes precedence
+  if (isLive) return 'active';
+
   if (now < start) {
     return 'upcoming';
   } else if (now >= start && now <= end) {
-    return 'active';
+    // Safety Rail: Only active if themes are ready
+    return hasThemes ? 'active' : 'upcoming';
   } else {
     return 'archived';
   }
