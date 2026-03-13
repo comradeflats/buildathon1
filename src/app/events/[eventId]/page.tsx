@@ -1,48 +1,37 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useMemo, Suspense, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, Users, Loader2, Plus, Clock, UserPlus, CheckCircle } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import { ChevronLeft, Loader2, LayoutGrid, Trophy, Calendar, MapPin, Share2, UserPlus, Send, CheckCircle, Clock } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { TeamGallery } from '@/components/gallery/TeamGallery';
+import { LeaderboardTable } from '@/components/leaderboard/LeaderboardTable';
 import { useEvents } from '@/hooks/useEvents';
-import { useTeams } from '@/hooks/useTeams';
-import { useThemes } from '@/hooks/useThemes';
-import { useRegistration } from '@/hooks/useRegistration';
 import { useAuth } from '@/context/AuthContext';
+import { useRegistration } from '@/hooks/useRegistration';
 import { useVoting } from '@/context/VotingContext';
-import { getThemeEmoji } from '@/lib/themeIcons';
-import { RegisterModal } from '@/components/events/RegisterModal';
 import { SignInModal } from '@/components/auth/SignInModal';
+import { RegisterModal } from '@/components/events/RegisterModal';
+import { getEventStatus } from '@/lib/utils';
 
-export default function EventPage() {
-  const params = useParams();
+function EventArenaPage() {
+  const { eventId } = useParams();
   const router = useRouter();
-  const eventId = params.eventId as string;
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { showToast } = useVoting();
-
-  const { events, isLoading: isEventsLoading, getEventById } = useEvents();
-  const { teams, isLoading: isTeamsLoading } = useTeams();
-  const { themes, isLoading: isThemesLoading } = useThemes();
-  const { registration, isRegistering, register, isLoading: isRegLoading } = useRegistration(eventId);
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { getEventById, isLoading: isEventsLoading } = useEvents();
+  const { registration, isRegistering, register, isLoading: isRegLoading } = useRegistration(eventId as string);
+  
+  const [activeTab, setActiveTab] = useState<'gallery' | 'leaderboard'>('gallery');
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
 
-  // Automatically open registration modal after signing in if we were in the middle of joining
-  useEffect(() => {
-    if (isAuthenticated && isSignInModalOpen) {
-      setIsSignInModalOpen(false);
-      setIsModalOpen(true);
-    }
-  }, [isAuthenticated, isSignInModalOpen]);
-
-  const isLoading = isEventsLoading || isTeamsLoading || isThemesLoading || isRegLoading;
-
-  const event = getEventById(eventId);
+  const event = useMemo(() => 
+    typeof eventId === 'string' ? getEventById(eventId) : undefined
+  , [eventId, getEventById]);
 
   // Redirect to new vanity URL if event has a slug
   useEffect(() => {
@@ -51,46 +40,15 @@ export default function EventPage() {
     }
   }, [event, router]);
 
-  const eventTeams = teams.filter((team) => team.eventId === eventId);
-  const eventThemes = themes.filter((theme) => theme.eventId === eventId);
-
-  const formatEventDates = (startDate?: string, endDate?: string) => {
-    if (!startDate || !endDate) return null;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    return `${start.toLocaleDateString('en-GB')} – ${end.toLocaleDateString('en-GB')}`;
-  };
-
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const dateStr = date.toLocaleDateString('en-GB');
-    const timeStr = date.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true });
-    return `${dateStr}, ${timeStr}`;
-  };
-
-  const handleRegisterClick = () => {
-    if (!isAuthenticated) {
-      setIsSignInModalOpen(true);
-      return;
+  // Automatically open registration modal after signing in if we were in the middle of joining
+  useEffect(() => {
+    if (isAuthenticated && isSignInModalOpen) {
+      setIsSignInModalOpen(false);
+      setIsRegisterModalOpen(true);
     }
-    setIsModalOpen(true);
-  };
+  }, [isAuthenticated, isSignInModalOpen]);
 
-  const handleConfirmRegistration = async (metadata: { skillLevel: string; teamIntent: string }) => {
-    try {
-      const result = await register(metadata);
-      showToast(result.message, result.status === 'approved' ? 'success' : 'info');
-    } catch (err: any) {
-      console.error('Registration failed:', err);
-      showToast(err.message || 'Registration failed', 'error');
-    } finally {
-      setIsModalOpen(false);
-    }
-  };
-
-  const isApproved = registration?.status === 'approved';
-  const isWaitlisted = registration?.status === 'waitlisted';
-  const canSubmit = event?.status === 'active' && isApproved;
+  const isLoading = isEventsLoading || isRegLoading;
 
   if (isLoading) {
     return (
@@ -102,183 +60,194 @@ export default function EventPage() {
 
   if (!event) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center">
-        <Calendar size={48} className="text-zinc-600 mb-4" />
-        <h2 className="text-xl font-semibold text-white mb-2">Event Not Found</h2>
-        <p className="text-zinc-400 mb-6">
-          The event you&apos;re looking for doesn&apos;t exist.
-        </p>
-        <Link
-          href="/"
-          className="text-accent hover:underline flex items-center gap-2"
-        >
-          <ArrowLeft size={16} />
-          Back to Events
+      <Card className="p-12 text-center max-w-2xl mx-auto mt-20 border-zinc-800 bg-zinc-950">
+        <h2 className="text-2xl font-bold text-white mb-4">Arena Not Found</h2>
+        <p className="text-zinc-500 mb-8">This arena may have been moved or archived.</p>
+        <Link href="/events">
+          <Button className="bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold px-8">
+            BACK TO GLOBAL DISCOVERY
+          </Button>
         </Link>
-      </div>
+      </Card>
     );
   }
 
-  const dateRange = formatEventDates(event.startDate, event.endDate);
+  const status = getEventStatus(event.startDate, event.endDate);
+  const isRegistrationOpen = status === 'upcoming' || status === 'active';
+  const isApproved = registration?.status === 'approved';
+  const isWaitlisted = registration?.status === 'waitlisted';
+
+  const handleRegisterClick = () => {
+    if (!isAuthenticated) {
+      setIsSignInModalOpen(true);
+      return;
+    }
+    setIsRegisterModalOpen(true);
+  };
+
+  const handleConfirmRegistration = async (metadata: { skillLevel: string; teamIntent: string }) => {
+    try {
+      const result = await register(metadata);
+      showToast(result.message, result.status === 'approved' ? 'success' : 'info');
+    } catch (err: any) {
+      console.error('Registration failed:', err);
+      showToast(err.message || 'Registration failed', 'error');
+    } finally {
+      setIsRegisterModalOpen(false);
+    }
+  };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-zinc-400 hover:text-white transition-colors mb-4"
+    <div className="space-y-8 pb-20">
+      {/* Back Link & Navigation */}
+      <div className="flex items-center justify-between">
+        <Link 
+          href="/events" 
+          className="group flex items-center gap-2 text-zinc-500 hover:text-white transition-colors"
         >
-          <ArrowLeft size={16} />
-          Back to Events
+          <div className="p-1.5 rounded-lg bg-zinc-900 border border-zinc-800 group-hover:border-zinc-700">
+            <ChevronLeft size={16} />
+          </div>
+          <span className="text-sm font-medium">Global Discovery</span>
         </Link>
-
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-white">{event.name}</h1>
-              <Badge
-                variant={
-                  event.status === 'active'
-                    ? 'success'
-                    : event.status === 'upcoming'
-                    ? 'default'
-                    : 'secondary'
-                }
-                className="capitalize"
-              >
-                {event.status}
-              </Badge>
-            </div>
-            {event.description && (
-              <p className="text-zinc-400 mb-2">{event.description}</p>
-            )}
-            <div className="text-zinc-400 flex flex-wrap items-center gap-4 text-sm">
-              {dateRange && (
-                <span className="flex items-center gap-1">
-                  <Calendar size={14} />
-                  {dateRange}
-                </span>
-              )}
-              {event.submissionDeadline && (
-                <span className="flex items-center gap-1">
-                  <Clock size={14} />
-                  Submissions due: {formatDateTime(event.submissionDeadline)}
-                </span>
-              )}
-              <span className="flex items-center gap-1">
-                <Users size={14} />
-                {eventTeams.length} {eventTeams.length === 1 ? 'project' : 'projects'}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {canSubmit ? (
-              <Link href={`/submit?eventId=${eventId}`}>
-                <Button size="lg" className="shrink-0">
-                  <Plus size={18} className="mr-2" />
-                  Submit Project
-                </Button>
-              </Link>
-            ) : event.status === 'active' || event.status === 'upcoming' ? (
-              !registration ? (
-                <Button onClick={handleRegisterClick} size="lg" className="shrink-0">
-                  <UserPlus size={18} className="mr-2" />
-                  {event.status === 'active' ? 'Join Event to Submit' : 'Register for Event'}
-                </Button>
-              ) : isWaitlisted ? (
-                <Badge variant="secondary" className="px-4 py-2 h-10 flex items-center gap-2">
-                  <Clock size={16} />
-                  On Waitlist
-                </Badge>
-              ) : isApproved && event.status === 'upcoming' ? (
-                <Badge variant="success" className="px-4 py-2 h-10 flex items-center gap-2">
-                  <CheckCircle size={16} />
-                  Registered
-                </Badge>
-              ) : null
-            ) : null}
-          </div>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-white">
+            <Share2 size={16} className="mr-2" />
+            Share Arena
+          </Button>
         </div>
       </div>
 
-      {/* Themes for this event */}
-      {eventThemes.length > 0 && (
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">Themes</h2>
-            <span className="text-sm text-zinc-500">{eventThemes.length} themes available</span>
-          </div>
-
-          {/* Shared Judging Criteria Section */}
-          {eventThemes[0]?.judgingCriteria && eventThemes[0].judgingCriteria.length > 0 && (
-            <div className="mb-6 p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/30">
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
-                Judging Criteria
-              </p>
-              <div className="flex flex-col gap-2">
-                {eventThemes[0].judgingCriteria.map((criterion, index) => (
-                  <span key={index} className="text-sm text-zinc-300 flex items-center gap-1.5">
-                    <span className="text-accent font-medium">{index + 1}.</span>
-                    {criterion}
-                  </span>
-                ))}
+      {/* Arena Header Card */}
+      <Card className="p-8 border-zinc-800 bg-zinc-900/40 relative overflow-hidden backdrop-blur-sm">
+        {/* Glow effect */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[100px] -z-10" />
+        
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-8">
+          <div className="space-y-4 flex-1">
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className={`
+                ${status === 'active' ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5' : 
+                  status === 'upcoming' ? 'border-violet-500/30 text-violet-400 bg-violet-500/5' : 
+                  'border-zinc-700 text-zinc-500'}
+              `}>
+                {status === 'active' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse mr-1.5" />}
+                {status.toUpperCase()} ARENA
+              </Badge>
+              <div className="flex items-center gap-1.5 text-zinc-400 text-sm font-medium">
+                <MapPin size={14} className="text-emerald-400" />
+                {event.location}
               </div>
             </div>
-          )}
-
-          {/* Theme Cards Grid */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {eventThemes.map((theme) => (
-              <div
-                key={theme.id}
-                className="p-5 bg-zinc-800/50 rounded-lg border border-zinc-700/50 hover:border-zinc-600 hover:bg-zinc-800/70 transition-all text-center flex flex-col"
-              >
-                <div className="text-4xl mb-3">
-                  {getThemeEmoji(theme)}
-                </div>
-                <h3 className="font-semibold text-white mb-2">{theme.name}</h3>
-                <p className="text-sm text-zinc-400 mb-4 flex-1">{theme.concept}</p>
-
-                {canSubmit ? (
-                  <Link href={`/submit?eventId=${eventId}&themeId=${theme.id}`} className="block">
-                    <Button variant="secondary" size="sm" className="w-full">
-                      Submit
-                    </Button>
-                  </Link>
-                ) : event.status === 'active' || event.status === 'upcoming' ? (
-                  !registration && (
-                    <Button 
-                      variant="secondary" 
-                      size="sm" 
-                      className="w-full"
-                      onClick={handleRegisterClick}
-                    >
-                      Join to Submit
-                    </Button>
-                  )
-                ) : null}
-              </div>
-            ))}
+            
+            <h1 className="text-4xl font-black text-white tracking-tight">{event.name}</h1>
+            <p className="text-zinc-400 max-w-2xl leading-relaxed">{event.description}</p>
+            
+            <div className="flex items-center gap-6 pt-2">
+               <div className="flex items-center gap-2 text-zinc-300 text-sm">
+                  <Calendar size={16} className="text-emerald-400" />
+                  {new Date(event.startDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
+               </div>
+            </div>
           </div>
-        </Card>
-      )}
 
-      {/* View Submissions Link */}
-      {eventTeams.length > 0 && (
-        <div className="flex justify-center">
-          <Link href={`/gallery?eventId=${eventId}`}>
-            <Button variant="secondary" size="lg">
-              View Submissions in Gallery
-            </Button>
-          </Link>
+          {/* Action Center */}
+          <div className="flex flex-col gap-3 min-w-[240px]">
+            {isRegistrationOpen && !registration && (
+              <Button 
+                size="lg"
+                onClick={handleRegisterClick}
+                className="w-full bg-white text-zinc-950 hover:bg-zinc-200 font-black rounded-xl h-14 transition-all active:scale-95"
+              >
+                <UserPlus size={20} className="mr-2" />
+                REGISTER TO BUILD
+              </Button>
+            )}
+
+            {isApproved && (
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3 mb-1">
+                <CheckCircle className="text-emerald-500" size={20} />
+                <span className="text-sm font-bold text-emerald-400 uppercase tracking-wider">Registered</span>
+              </div>
+            )}
+
+            {isWaitlisted && (
+              <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center gap-3 mb-1">
+                <Clock className="text-yellow-500" size={20} />
+                <span className="text-sm font-bold text-yellow-500 uppercase tracking-wider">On Waitlist</span>
+              </div>
+            )}
+
+            {status === 'active' && isApproved ? (
+              <Link href={`/submit?eventId=${event.id}`}>
+                <Button 
+                  size="lg"
+                  variant="secondary"
+                  className="w-full border-emerald-500/30 text-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 font-bold rounded-xl h-14 transition-all active:scale-95"
+                >
+                  <Send size={20} className="mr-2" />
+                  SUBMIT PROJECT
+                </Button>
+              </Link>
+            ) : status === 'active' && !registration ? (
+              <Button 
+                size="lg"
+                variant="secondary"
+                onClick={handleRegisterClick}
+                className="w-full border-zinc-700 text-zinc-400 bg-zinc-900 hover:bg-zinc-800 font-bold rounded-xl h-14 transition-all active:scale-95"
+              >
+                <UserPlus size={20} className="mr-2" />
+                JOIN TO SUBMIT
+              </Button>
+            ) : status === 'upcoming' ? (
+              <div className="p-4 rounded-xl bg-zinc-950/50 border border-zinc-800 text-center">
+                <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest leading-relaxed">Submissions open when<br/>arena goes live</p>
+              </div>
+            ) : null}
+          </div>
         </div>
-      )}
+      </Card>
+
+      {/* Custom Tab Navigation */}
+      <div className="flex p-1 bg-zinc-900 border border-zinc-800 rounded-xl w-fit">
+        <button
+          onClick={() => setActiveTab('gallery')}
+          className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${
+            activeTab === 'gallery' 
+              ? 'bg-zinc-800 text-white shadow-lg' 
+              : 'text-zinc-500 hover:text-zinc-300'
+          }`}
+        >
+          <LayoutGrid size={18} className={activeTab === 'gallery' ? 'text-emerald-400' : ''} />
+          Project Gallery
+        </button>
+        <button
+          onClick={() => setActiveTab('leaderboard')}
+          className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${
+            activeTab === 'leaderboard' 
+              ? 'bg-zinc-800 text-white shadow-lg' 
+              : 'text-zinc-500 hover:text-zinc-300'
+          }`}
+        >
+          <Trophy size={18} className={activeTab === 'leaderboard' ? 'text-yellow-400' : ''} />
+          Wall of Fame
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+        {activeTab === 'gallery' ? (
+          <TeamGallery eventId={typeof eventId === 'string' ? eventId : undefined} />
+        ) : (
+          <div className="max-w-4xl">
+            <LeaderboardTable eventId={typeof eventId === 'string' ? eventId : undefined} />
+          </div>
+        )}
+      </div>
 
       <RegisterModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
         onConfirm={handleConfirmRegistration}
         isWaitlist={(event.maxParticipants || 0) <= (event.currentRegistrations || 0)}
       />
@@ -286,9 +255,21 @@ export default function EventPage() {
       <SignInModal 
         isOpen={isSignInModalOpen} 
         onClose={() => setIsSignInModalOpen(false)}
-        title="Sign in to Register"
-        description="You need to be signed in to join the event. You can continue as a guest if you prefer."
+        title={`Register for ${event.name}`}
+        description="Create an account or sign in to register for this buildathon and get live updates."
       />
     </div>
+  );
+}
+
+export default function EventsEventPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-zinc-400" />
+      </div>
+    }>
+      <EventArenaPage />
+    </Suspense>
   );
 }

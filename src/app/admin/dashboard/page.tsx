@@ -584,7 +584,7 @@ export default function AdminDashboardPage() {
             </div>
           </Card>
         </Link>
-        <Link href="/gallery">
+        <Link href="/events">
           <Card className="p-4 hover:border-zinc-700 transition-colors cursor-pointer group">
             <div className="flex items-center justify-between">
               <div>

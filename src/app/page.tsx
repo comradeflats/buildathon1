@@ -136,7 +136,7 @@ export default function HomePage() {
          </div>
 
          <div className="mt-12 pt-8 border-t border-zinc-900/50 flex flex-wrap items-center justify-center gap-8 text-zinc-500 font-medium">
-            <Link href="/gallery" className="hover:text-emerald-400 transition-colors flex items-center gap-2">
+            <Link href="/events" className="hover:text-emerald-400 transition-colors flex items-center gap-2">
               <Globe size={18} />
               Explore the Arenas
             </Link>

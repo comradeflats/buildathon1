@@ -63,6 +63,7 @@ export default function NewEventPage() {
   const [eventSlug, setEventSlug] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [region, setRegion] = useState('');
   const [address, setAddress] = useState('');
   const [lat, setLat] = useState('');
   const [lng, setLng] = useState('');
@@ -159,6 +160,7 @@ export default function NewEventPage() {
           slug: eventSlug.trim(),
           description: description.trim() || undefined,
           location: location.trim() || undefined,
+          region: region || undefined,
           address: address.trim() || undefined,
           coordinates: lat && lng ? { lat: parseFloat(lat), lng: parseFloat(lng) } : undefined,
           organizationId: org.id,
@@ -300,19 +302,45 @@ export default function NewEventPage() {
               </Button>
             </div>
             
-            <div>
-              <label htmlFor="location" className="block text-sm font-medium text-zinc-300 mb-2">
-                City / Venue Name
-              </label>
-              <input
-                id="location"
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g. Da Nang, Enouvo Space"
-                className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:border-accent transition-colors"
-                disabled={isCreating}
-              />
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="location" className="block text-sm font-medium text-zinc-300 mb-2">
+                  City / Venue Name
+                </label>
+                <input
+                  id="location"
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="e.g. Da Nang, Enouvo Space"
+                  className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:border-accent transition-colors"
+                  disabled={isCreating}
+                />
+              </div>
+              <div>
+                <label htmlFor="region" className="block text-sm font-medium text-zinc-300 mb-2">
+                  Global Region
+                </label>
+                <select
+                  id="region"
+                  value={region}
+                  onChange={(e) => setRegion(e.target.value)}
+                  className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-accent transition-colors"
+                  disabled={isCreating}
+                >
+                  <option value="">Select a region...</option>
+                  <option value="SE Asia">SE Asia</option>
+                  <option value="East Asia">East Asia</option>
+                  <option value="South Asia">South Asia</option>
+                  <option value="Europe">Europe</option>
+                  <option value="North America">North America</option>
+                  <option value="South America">South America</option>
+                  <option value="Africa">Africa</option>
+                  <option value="Oceania">Oceania</option>
+                  <option value="Middle East">Middle East</option>
+                  <option value="Remote">Remote / Global</option>
+                </select>
+              </div>
             </div>
 
             <div>

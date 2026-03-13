@@ -309,7 +309,7 @@ export function ProjectSubmissionForm({ initialTeam, preselectedEventId, presele
         showToast(`${teamData.projectName} added to competition!`, 'success');
       }
       // Redirect to event gallery instead of home
-      router.push(`/gallery/${selectedEventId}`);
+      router.push(`/events/${selectedEventId}`);
     } catch (err) {
       showToast('Failed to save project. Please try again.', 'error');
     } finally {

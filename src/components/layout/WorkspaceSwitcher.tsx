@@ -5,13 +5,10 @@ import { useRouter, usePathname } from 'next/navigation';
 import { 
   Building2, 
   ChevronDown, 
-  LayoutGrid, 
-  Plus, 
   Check, 
   Trophy,
   User,
-  Settings,
-  Calendar
+  Plus
 } from 'lucide-react';
 import { useOrg } from '@/context/OrgContext';
 import { useAuth } from '@/context/AuthContext';
@@ -25,7 +22,6 @@ export function WorkspaceSwitcher() {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Determine if we are in "Participant View" or "Organization View"
   const isOrgView = pathname.startsWith('/dashboard/') && currentOrg;
   const isGlobalDashboard = pathname === '/dashboard';
 
@@ -56,32 +52,25 @@ export function WorkspaceSwitcher() {
     <div className="relative" ref={containerRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${
+        className={`flex items-center gap-2 p-1.5 rounded-xl border transition-all ${
           isOrgView 
             ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
-            : 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:text-white'
+            : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:text-white'
         }`}
+        title={isOrgView ? `Org: ${currentOrg?.name}` : 'Participant View'}
       >
-        <div className="flex items-center gap-2">
+        <div className="w-6 h-6 flex items-center justify-center shrink-0">
           {isOrgView ? (
-            <>
-              <Building2 size={16} />
-              <span className="text-sm font-bold truncate max-w-[120px]">
-                {currentOrg?.name}
-              </span>
-            </>
+            <Building2 size={16} />
           ) : (
-            <>
-              <User size={16} />
-              <span className="text-sm font-bold">Participant View</span>
-            </>
+            <Trophy size={16} />
           )}
         </div>
-        <ChevronDown size={14} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={14} className={`mr-0.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 mt-2 w-64 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+        <div className="absolute right-0 mt-2 w-64 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
           <div className="p-2 border-b border-zinc-800 bg-zinc-900/50">
             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-3 py-1">
               Personal
@@ -89,14 +78,14 @@ export function WorkspaceSwitcher() {
             <button
               onClick={handleParticipantView}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
-                isGlobalDashboard || !isOrgView ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
+                !isOrgView ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
               }`}
             >
               <div className="flex items-center gap-2">
-                <Trophy size={16} className={isGlobalDashboard || !isOrgView ? 'text-emerald-400' : ''} />
-                My Submissions & Events
+                <Trophy size={16} className={!isOrgView ? 'text-emerald-400' : ''} />
+                Participant View
               </div>
-              {(isGlobalDashboard || !isOrgView) && <Check size={14} className="text-emerald-400" />}
+              {!isOrgView && <Check size={14} className="text-emerald-400" />}
             </button>
           </div>
 

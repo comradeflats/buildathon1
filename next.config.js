@@ -15,6 +15,11 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: '/gallery/:eventId',
+        destination: '/events/:eventId',
+        permanent: true,
+      },
+      {
         source: '/leaderboard',
         destination: '/events',
         permanent: true,

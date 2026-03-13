@@ -16,13 +16,16 @@ import {
   Save,
   Trash2,
   Building2,
-  Info
+  Info,
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import { useOrganizations } from '@/hooks/useOrganizations';
 import { useOrgPermissions } from '@/hooks/useOrgPermissions';
+import { createSlug, validateSlug, checkOrgSlugExists } from '@/lib/slugs';
 
 export default function OrgSettingsPage() {
   const params = useParams();
@@ -35,10 +38,12 @@ export default function OrgSettingsPage() {
   const [activeTab, setActiveTab] = useState<'general' | 'branding' | 'access'>('general');
   const [isSaving, setIsSaving] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [slugStatus, setSlugStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
 
   // Form states
   const [formData, setFormData] = useState({
     name: '',
+    slug: '',
     description: '',
     websiteUrl: '',
     logoUrl: '',
@@ -64,6 +69,7 @@ export default function OrgSettingsPage() {
         setOrg(foundOrg);
         setFormData({
           name: foundOrg.name || '',
+          slug: foundOrg.slug || '',
           description: foundOrg.description || '',
           websiteUrl: foundOrg.websiteUrl || '',
           logoUrl: foundOrg.logoUrl || '',
@@ -76,7 +82,7 @@ export default function OrgSettingsPage() {
             accessControl: {
               inviteLinkEnabled: foundOrg.settings?.accessControl?.inviteLinkEnabled || false,
               inviteLinkCode: foundOrg.settings?.accessControl?.inviteLinkCode || '',
-              defaultRole: foundOrg.settings?.accessControl?.defaultRole || 'member'
+              defaultRole: (foundOrg.settings?.accessControl?.defaultRole || 'member') as 'admin' | 'member' | 'judge'
             }
           }
         });
@@ -92,15 +98,71 @@ export default function OrgSettingsPage() {
 
   const handleSave = async () => {
     if (!org) return;
+    
+    // Validate slug before saving if it changed
+    if (formData.slug !== org.slug) {
+      if (!validateSlug(formData.slug)) {
+        setSlugStatus('invalid');
+        return;
+      }
+      
+      const exists = await checkOrgSlugExists(formData.slug, org.id);
+      if (exists) {
+        setSlugStatus('taken');
+        return;
+      }
+    }
+
     setIsSaving(true);
     try {
       await updateOrganization(org.id, formData);
-      // In a real app we'd show a success toast
+      
+      // If slug changed, we need to redirect to the new URL
+      if (formData.slug !== org.slug) {
+        router.replace(`/dashboard/${formData.slug}/settings`);
+      }
     } catch (error) {
       console.error('Failed to save settings:', error);
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const syncSlugWithName = () => {
+    const newSlug = createSlug(formData.name);
+    setFormData({ ...formData, slug: newSlug });
+    validateNewSlug(newSlug);
+  };
+
+  const validateNewSlug = async (newSlug: string) => {
+    if (!newSlug) {
+      setSlugStatus('idle');
+      return;
+    }
+    
+    if (!validateSlug(newSlug)) {
+      setSlugStatus('invalid');
+      return;
+    }
+    
+    if (newSlug === org?.slug) {
+      setSlugStatus('available');
+      return;
+    }
+
+    setSlugStatus('checking');
+    try {
+      const exists = await checkOrgSlugExists(newSlug, org?.id);
+      setSlugStatus(exists ? 'taken' : 'available');
+    } catch (error) {
+      setSlugStatus('idle');
+    }
+  };
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    setFormData({ ...formData, slug: val });
+    validateNewSlug(val);
   };
 
   const generateInviteCode = () => {
@@ -208,6 +270,44 @@ export default function OrgSettingsPage() {
                       placeholder="Acme Hackathons"
                     />
                   </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between ml-1">
+                      <label className="text-xs font-black uppercase tracking-widest text-zinc-500">Organization Slug</label>
+                      <button 
+                        onClick={syncSlugWithName}
+                        className="text-[10px] font-bold text-emerald-500 hover:text-emerald-400 flex items-center gap-1 transition-colors"
+                      >
+                        <RefreshCw size={10} />
+                        Sync with Name
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={formData.slug}
+                        onChange={handleSlugChange}
+                        className={`w-full bg-zinc-950 border rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-1 transition-all pr-10 ${
+                          slugStatus === 'taken' || slugStatus === 'invalid' 
+                            ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20' 
+                            : 'border-zinc-800 focus:border-emerald-500/50 focus:ring-emerald-500/20'
+                        }`}
+                        placeholder="acme-hackathons"
+                      />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        {slugStatus === 'checking' && <Loader2 size={16} className="animate-spin text-zinc-500" />}
+                        {slugStatus === 'available' && <Check size={16} className="text-emerald-500" />}
+                        {(slugStatus === 'taken' || slugStatus === 'invalid') && <AlertCircle size={16} className="text-red-500" />}
+                      </div>
+                    </div>
+                    {slugStatus === 'taken' && <p className="text-[10px] text-red-500 font-bold ml-1">This slug is already taken</p>}
+                    {slugStatus === 'invalid' && <p className="text-[10px] text-red-500 font-bold ml-1">Invalid slug format (use lowercase letters, numbers, and hyphens)</p>}
+                    <p className="text-[10px] text-zinc-600 font-medium ml-1">
+                      Your dashboard: <span className="text-zinc-400">buildathon.live/dashboard/{formData.slug || '...'}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-black uppercase tracking-widest text-zinc-500 ml-1">Website URL</label>
                     <input

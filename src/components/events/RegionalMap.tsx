@@ -238,7 +238,7 @@ function EventPopup({ event }: { event: any }) {
       </div>
 
       <Link 
-        href={`/gallery/${event.id}`}
+        href={`/events/${event.id}`}
         className="flex items-center justify-between w-full bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 text-[11px] font-bold py-2 px-3 rounded-lg transition-colors group"
       >
         EXPLORE ARENA

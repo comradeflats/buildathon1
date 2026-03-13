@@ -8,7 +8,7 @@ export default function LeaderboardRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/gallery');
+    router.replace('/events');
   }, [router]);
 
   return (

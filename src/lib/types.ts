@@ -64,6 +64,7 @@ export interface Event {
   name: string;
   description?: string;
   location?: string;              // City or venue name
+  region?: string;                // World region (e.g., "SE Asia", "Europe", "North America")
   coordinates?: {                 // Lat/Long for map discovery
     lat: number;
     lng: number;
