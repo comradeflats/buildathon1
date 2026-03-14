@@ -37,6 +37,7 @@ import { ThemeManager } from '@/components/admin/ThemeManager';
 import { EventPhaseController } from '@/components/admin/EventPhaseController';
 import { geocodeLocation } from '@/lib/utils';
 import { EventPhase } from '@/lib/types';
+import { REGIONS } from '@/lib/constants';
 
 const PHASE_CONFIG: Record<EventPhase, { color: string, glow: string }> = {
   registration: { color: 'emerald', glow: 'shadow-emerald-500/20 bg-emerald-500/5' },
@@ -192,6 +193,7 @@ export default function ManageEventPage() {
     endDate: '',
     submissionDeadline: '',
     location: '',
+    region: '',
     status: 'upcoming',
     lat: '',
     lng: '',
@@ -213,7 +215,8 @@ export default function ManageEventPage() {
         setEditForm(prev => ({
           ...prev,
           lat: result.lat.toString(),
-          lng: result.lng.toString()
+          lng: result.lng.toString(),
+          region: result.region || prev.region
         }));
       } else {
         alert('Could not find coordinates for this location. Try adding a city or country.');
@@ -253,6 +256,7 @@ export default function ManageEventPage() {
             endDate: foundEvent.endDate ? new Date(foundEvent.endDate).toISOString().slice(0, 16) : '',
             submissionDeadline: foundEvent.submissionDeadline ? new Date(foundEvent.submissionDeadline).toISOString().slice(0, 16) : '',
             location: foundEvent.location || '',
+            region: foundEvent.region || '',
             status: foundEvent.status || 'upcoming',
             lat: foundEvent.coordinates?.lat?.toString() || '',
             lng: foundEvent.coordinates?.lng?.toString() || '',
@@ -296,6 +300,7 @@ export default function ManageEventPage() {
       await updateEvent({
         ...event,
         ...formData,
+        region: editForm.region || undefined,
         startDate: new Date(editForm.startDate).toISOString(),
         endDate: new Date(editForm.endDate).toISOString(),
         submissionDeadline: editForm.submissionDeadline ? new Date(editForm.submissionDeadline).toISOString() : undefined,
@@ -458,31 +463,47 @@ export default function ManageEventPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-bold text-zinc-400 uppercase tracking-wider">Location (City or Virtual)</label>
-                <Button 
-                  type="button" 
-                  variant="secondary" 
-                  size="sm" 
-                  onClick={lookupCoordinates}
-                  disabled={isGeocoding || !editForm.location}
-                  className="text-xs h-8 border-violet-500/30 hover:border-violet-500 hover:bg-violet-500/10 text-violet-400"
-                >
-                  {isGeocoding ? (
-                    <Loader2 size={12} className="mr-2 animate-spin" />
-                  ) : (
-                    <MapIcon size={12} className="mr-2" />
-                  )}
-                  Find on Map
-                </Button>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-bold text-zinc-400 uppercase tracking-wider">Location (City or Virtual)</label>
+                  <Button 
+                    type="button" 
+                    variant="secondary" 
+                    size="sm" 
+                    onClick={lookupCoordinates}
+                    disabled={isGeocoding || !editForm.location}
+                    className="text-xs h-8 border-violet-500/30 hover:border-violet-500 hover:bg-violet-500/10 text-violet-400"
+                  >
+                    {isGeocoding ? (
+                      <Loader2 size={12} className="mr-2 animate-spin" />
+                    ) : (
+                      <MapIcon size={12} className="mr-2" />
+                    )}
+                    Find on Map
+                  </Button>
+                </div>
+                <input 
+                  type="text" 
+                  value={editForm.location}
+                  onChange={(e) => setEditForm({...editForm, location: e.target.value})}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent"
+                />
               </div>
-              <input 
-                type="text" 
-                value={editForm.location}
-                onChange={(e) => setEditForm({...editForm, location: e.target.value})}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent"
-              />
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-zinc-400 uppercase tracking-wider">Global Region</label>
+                <select 
+                  value={editForm.region}
+                  onChange={(e) => setEditForm({...editForm, region: e.target.value})}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent"
+                >
+                  <option value="">Select a region...</option>
+                  {REGIONS.map(r => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">

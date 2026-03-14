@@ -11,6 +11,7 @@ import { useOrganizations } from '@/hooks/useOrganizations';
 import { useOrgPermissions } from '@/hooks/useOrgPermissions';
 import { createSlug, validateSlug } from '@/lib/slugs';
 import { geocodeLocation } from '@/lib/utils';
+import { REGIONS } from '@/lib/constants';
 
 export default function NewEventPage() {
   const params = useParams();
@@ -73,6 +74,9 @@ export default function NewEventPage() {
       if (result) {
         setLat(result.lat.toString());
         setLng(result.lng.toString());
+        if (result.region) {
+          setRegion(result.region);
+        }
       } else {
         setError('Could not find coordinates for this location. Try adding a city or country.');
       }
@@ -370,16 +374,9 @@ export default function NewEventPage() {
                   disabled={isCreating}
                 >
                   <option value="">Select a region...</option>
-                  <option value="SE Asia">SE Asia</option>
-                  <option value="East Asia">East Asia</option>
-                  <option value="South Asia">South Asia</option>
-                  <option value="Europe">Europe</option>
-                  <option value="North America">North America</option>
-                  <option value="South America">South America</option>
-                  <option value="Africa">Africa</option>
-                  <option value="Oceania">Oceania</option>
-                  <option value="Middle East">Middle East</option>
-                  <option value="Remote">Remote / Global</option>
+                  {REGIONS.map(r => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
                 </select>
               </div>
             </div>

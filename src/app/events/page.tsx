@@ -33,18 +33,11 @@ const RegionalMap = dynamic(() => import('@/components/events/RegionalMap'), {
   )
 });
 
+import { REGIONS as CENTRAL_REGIONS } from '@/lib/constants';
+
 const REGIONS = [
   'All Regions',
-  'SE Asia',
-  'East Asia',
-  'South Asia',
-  'Europe',
-  'North America',
-  'South America',
-  'Africa',
-  'Oceania',
-  'Middle East',
-  'Remote'
+  ...CENTRAL_REGIONS
 ];
 
 const REGION_BOUNDS: Record<string, { center: [number, number], zoom: number }> = {
@@ -119,16 +112,16 @@ function ExploreArenas() {
       <div className="flex flex-col space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <h1 className="text-5xl font-black text-white tracking-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight break-words-safe">
               Arena <span className="text-emerald-400">Explorer</span>
             </h1>
-            <p className="text-zinc-500 font-medium">
+            <p className="text-sm sm:text-base text-zinc-500 font-medium">
               Discover and join live building experiences across global locations.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative min-w-[180px]">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <div className="relative w-full sm:min-w-[180px]">
               <Filter size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
               <select
                 value={selectedRegion}

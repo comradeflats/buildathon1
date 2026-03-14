@@ -28,6 +28,7 @@ import { useEvents } from '@/hooks/useEvents';
 import { useVoting } from '@/context/VotingContext';
 import { Event } from '@/lib/types';
 import { generateSubmissionCode } from '@/lib/utils';
+import { REGIONS } from '@/lib/constants';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -39,6 +40,7 @@ export default function AdminDashboardPage() {
   const [newEventName, setNewEventName] = useState('');
   const [newEventDescription, setNewEventDescription] = useState('');
   const [newEventStatus, setNewEventStatus] = useState<'upcoming' | 'active' | 'archived'>('upcoming');
+  const [newEventRegion, setNewEventRegion] = useState('');
   const [newEventStartDate, setNewEventStartDate] = useState('');
   const [newEventEndDate, setNewEventEndDate] = useState('');
   const [newEventSubmissionDeadline, setNewEventSubmissionDeadline] = useState('');
@@ -52,6 +54,7 @@ export default function AdminDashboardPage() {
   const [editEventName, setEditEventName] = useState('');
   const [editEventDescription, setEditEventDescription] = useState('');
   const [editEventStatus, setEditEventStatus] = useState<'upcoming' | 'active' | 'archived'>('upcoming');
+  const [editEventRegion, setEditEventRegion] = useState('');
   const [editEventStartDate, setEditEventStartDate] = useState('');
   const [editEventEndDate, setEditEventEndDate] = useState('');
   const [editEventSubmissionDeadline, setEditEventSubmissionDeadline] = useState('');
@@ -86,6 +89,7 @@ export default function AdminDashboardPage() {
         description: newEventDescription.trim() || undefined,
         isActive: newEventStatus === 'active',
         status: newEventStatus,
+        region: newEventRegion || undefined,
         phase: 'registration',
         votingModel: 'peer',
         startDate: newEventStartDate,
@@ -107,6 +111,7 @@ export default function AdminDashboardPage() {
       setNewEventName('');
       setNewEventDescription('');
       setNewEventStatus('upcoming');
+      setNewEventRegion('');
       setNewEventStartDate('');
       setNewEventEndDate('');
       setNewEventSubmissionDeadline('');
@@ -239,6 +244,7 @@ export default function AdminDashboardPage() {
     setEditEventName(event.name);
     setEditEventDescription(event.description || '');
     setEditEventStatus(event.status || 'upcoming');
+    setEditEventRegion(event.region || '');
     // Convert ISO date strings to datetime-local format
     setEditEventStartDate(event.startDate ? event.startDate.slice(0, 16) : '');
     setEditEventEndDate(event.endDate ? event.endDate.slice(0, 16) : '');
@@ -253,6 +259,7 @@ export default function AdminDashboardPage() {
     setEditEventName('');
     setEditEventDescription('');
     setEditEventStatus('upcoming');
+    setEditEventRegion('');
     setEditEventStartDate('');
     setEditEventEndDate('');
     setEditEventSubmissionDeadline('');
@@ -276,6 +283,7 @@ export default function AdminDashboardPage() {
         name: editEventName.trim(),
         description: editEventDescription.trim() || undefined,
         status: editEventStatus,
+        region: editEventRegion || undefined,
         isActive: editEventStatus === 'active',
         startDate: editEventStartDate,
         endDate: editEventEndDate,
@@ -411,18 +419,34 @@ export default function AdminDashboardPage() {
                   />
                   <p className="text-xs text-zinc-500 mt-1">When coding must stop - commits after this time will be flagged</p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-zinc-400 mb-2">Status</label>
-                  <select
-                    value={newEventStatus}
-                    onChange={(e) => setNewEventStatus(e.target.value as any)}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent"
-                  >
-                    <option value="upcoming">Upcoming</option>
-                    <option value="active">Active</option>
-                    <option value="archived">Archived</option>
-                  </select>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-zinc-400">Status</label>
+                    <select
+                      value={newEventStatus}
+                      onChange={(e) => setNewEventStatus(e.target.value as any)}
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-accent"
+                    >
+                      <option value="upcoming">Upcoming</option>
+                      <option value="active">Active</option>
+                      <option value="archived">Archived</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-zinc-400">Region</label>
+                    <select
+                      value={newEventRegion}
+                      onChange={(e) => setNewEventRegion(e.target.value)}
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-accent"
+                    >
+                      <option value="">Select a region...</option>
+                      {REGIONS.map(r => (
+                        <option key={r} value={r}>{r}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
+
                 <div className="flex gap-2 pt-2">
                   <Button type="submit" size="sm" disabled={!newEventName.trim() || !newEventStartDate || !newEventEndDate || isCreating}>
                     Create Event
@@ -505,17 +529,32 @@ export default function AdminDashboardPage() {
                           />
                           <p className="text-xs text-zinc-500 mt-1">When coding must stop - commits after this time will be flagged</p>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-zinc-400 mb-2">Status</label>
-                          <select
-                            value={editEventStatus}
-                            onChange={(e) => setEditEventStatus(e.target.value as any)}
-                            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent"
-                          >
-                            <option value="upcoming">Upcoming</option>
-                            <option value="active">Active</option>
-                            <option value="archived">Archived</option>
-                          </select>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="block text-sm font-medium text-zinc-400 mb-2">Status</label>
+                            <select
+                              value={editEventStatus}
+                              onChange={(e) => setEditEventStatus(e.target.value as any)}
+                              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent"
+                            >
+                              <option value="upcoming">Upcoming</option>
+                              <option value="active">Active</option>
+                              <option value="archived">Archived</option>
+                            </select>
+                          </div>
+                          <div className="space-y-1">
+                            <label className="block text-sm font-medium text-zinc-400 mb-2">Region</label>
+                            <select
+                              value={editEventRegion}
+                              onChange={(e) => setEditEventRegion(e.target.value)}
+                              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent"
+                            >
+                              <option value="">Select a region...</option>
+                              {REGIONS.map(r => (
+                                <option key={r} value={r}>{r}</option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-zinc-400 mb-2">Submission Code (revealed at event)</label>

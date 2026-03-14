@@ -45,3 +45,19 @@ export const DEFAULT_THEME_ID = 'micro-helper';
 
 // Event name constant
 export const EVENT_NAME = 'Buildathon Leaderboard';
+
+// Global Regions for Events
+export const REGIONS = [
+  'SE Asia',
+  'East Asia',
+  'South Asia',
+  'Europe',
+  'North America',
+  'South America',
+  'Africa',
+  'Oceania',
+  'Middle East',
+  'Remote'
+] as const;
+
+export type Region = typeof REGIONS[number];

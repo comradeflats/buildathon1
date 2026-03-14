@@ -27,28 +27,74 @@ export function getEventStatus(startDate: string, endDate: string, hasThemes: bo
   }
 }
 
-export async function geocodeLocation(query: string): Promise<{ lat: number; lng: number } | null> {
+import { REGIONS, Region } from './constants';
+
+export async function geocodeLocation(query: string): Promise<{ lat: number; lng: number, region?: Region } | null> {
   if (!query || query.trim().length < 3) return null;
 
   const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  console.log('[GEO] googleApiKey present:', !!googleApiKey && googleApiKey !== 'placeholder-key');
+  
+  // Helper to map country to region
+  const getRegionFromCountry = (country: string, countryCode?: string): Region | undefined => {
+    const c = country.toLowerCase();
+    const code = countryCode?.toUpperCase();
 
-  // Try Google Maps first if API key is present
+    // SE Asia
+    if (['vietnam', 'thailand', 'indonesia', 'malaysia', 'singapore', 'philippines', 'cambodia', 'laos', 'myanmar', 'brunei', 'timor-leste'].includes(c) || 
+        ['VN', 'TH', 'ID', 'MY', 'SG', 'PH', 'KH', 'LA', 'MM', 'BN', 'TL'].includes(code || '')) return 'SE Asia';
+    
+    // East Asia
+    if (['china', 'japan', 'south korea', 'north korea', 'taiwan', 'mongolia'].includes(c) ||
+        ['CN', 'JP', 'KR', 'KP', 'TW', 'MN'].includes(code || '')) return 'East Asia';
+    
+    // South Asia
+    if (['india', 'pakistan', 'bangladesh', 'sri lanka', 'nepal', 'bhutan', 'maldives'].includes(c) ||
+        ['IN', 'PK', 'BD', 'LK', 'NP', 'BT', 'MV'].includes(code || '')) return 'South Asia';
+    
+    // North America
+    if (['usa', 'united states', 'canada', 'mexico'].includes(c) ||
+        ['US', 'CA', 'MX'].includes(code || '')) return 'North America';
+    
+    // South America
+    if (['brazil', 'argentina', 'chile', 'colombia', 'peru', 'ecuador', 'bolivia', 'paraguay', 'uruguay', 'venezuela', 'guyana', 'suriname'].includes(c) ||
+        ['BR', 'AR', 'CL', 'CO', 'PE', 'EC', 'BO', 'PY', 'UY', 'VE', 'GY', 'SR'].includes(code || '')) return 'South America';
+
+    // Oceania
+    if (['australia', 'new zealand', 'fiji', 'papua new guinea'].includes(c) ||
+        ['AU', 'NZ', 'FJ', 'PG'].includes(code || '')) return 'Oceania';
+    
+    // Middle East
+    if (['uae', 'united arab emirates', 'saudi arabia', 'qatar', 'kuwait', 'bahrain', 'oman', 'israel', 'jordan', 'lebanon', 'turkey'].includes(c) ||
+        ['AE', 'SA', 'QA', 'KW', 'BH', 'OM', 'IL', 'JO', 'LB', 'TR'].includes(code || '')) return 'Middle East';
+
+    // Europe (broad check)
+    if (['uk', 'united kingdom', 'france', 'germany', 'italy', 'spain', 'netherlands', 'belgium', 'switzerland', 'austria', 'portugal', 'greece', 'poland', 'sweden', 'norway', 'denmark', 'finland', 'ireland'].includes(c) ||
+        ['GB', 'FR', 'DE', 'IT', 'ES', 'NL', 'BE', 'CH', 'AT', 'PT', 'GR', 'PL', 'SE', 'NO', 'DK', 'FI', 'IE'].includes(code || '')) return 'Europe';
+
+    // Africa (broad check)
+    if (['nigeria', 'egypt', 'south africa', 'kenya', 'ethiopia', 'ghana', 'morocco', 'algeria', 'tunisia', 'uganda', 'tanzania'].includes(c) ||
+        ['NG', 'EG', 'ZA', 'KE', 'ET', 'GH', 'MA', 'DZ', 'TN', 'UG', 'TZ'].includes(code || '')) return 'Africa';
+
+    return undefined;
+  };
+
+  // Try Google Maps first
   if (googleApiKey && googleApiKey !== 'placeholder-key') {
     try {
-      console.log('[GEO] Attempting Google Maps Geocoding...');
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${googleApiKey}`
       );
       const data = await response.json();
       
-      if (data.status === 'OK' && data.results?.[0]?.geometry?.location) {
+      if (data.status === 'OK' && data.results?.[0]) {
+        const result = data.results[0];
+        const countryComp = result.address_components.find((c: any) => c.types.includes('country'));
         return {
-          lat: data.results[0].geometry.location.lat,
-          lng: data.results[0].geometry.location.lng
+          lat: result.geometry.location.lat,
+          lng: result.geometry.location.lng,
+          region: countryComp ? getRegionFromCountry(countryComp.long_name, countryComp.short_name) : undefined
         };
       }
-      console.warn('[GEO] Google Maps Geocoding failed or returned no results:', data.status);
     } catch (error) {
       console.error('[GEO] Google Maps Geocoding error:', error);
     }
@@ -56,9 +102,8 @@ export async function geocodeLocation(query: string): Promise<{ lat: number; lng
 
   // Fallback to Nominatim (OSM)
   try {
-    console.log('[GEO] Falling back to Nominatim...');
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=1`,
       {
         headers: {
           'Accept-Language': 'en',
@@ -69,9 +114,11 @@ export async function geocodeLocation(query: string): Promise<{ lat: number; lng
 
     const data = await response.json();
     if (data && data.length > 0) {
+      const result = data[0];
       return {
-        lat: parseFloat(data[0].lat),
-        lng: parseFloat(data[0].lon)
+        lat: parseFloat(result.lat),
+        lng: parseFloat(result.lon),
+        region: result.address?.country ? getRegionFromCountry(result.address.country, result.address.country_code) : undefined
       };
     }
     return null;

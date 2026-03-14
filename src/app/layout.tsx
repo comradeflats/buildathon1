@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { ThemeProvider } from '@/context/ThemeContext';
 import { TeamProvider } from '@/context/TeamContext';
 import { VotingProvider } from '@/context/VotingContext';
 import { AdminProvider } from '@/context/AdminContext';
@@ -24,22 +25,24 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-background text-foreground">
-        <AuthProvider>
-          <OrgProvider>
-            <AdminProvider>
-              <TeamProvider>
-                <VotingProvider>
-                  <Navbar />
+        <ThemeProvider>
+          <AuthProvider>
+            <OrgProvider>
+              <AdminProvider>
+                <TeamProvider>
+                  <VotingProvider>
+                    <Navbar />
 
-                  <main className="container mx-auto px-4 py-8 max-w-5xl">
-                    {children}
-                  </main>
-                  <Toast />
-                </VotingProvider>
-              </TeamProvider>
-            </AdminProvider>
-          </OrgProvider>
-        </AuthProvider>
+                    <main className="container mx-auto px-4 py-8 max-w-5xl">
+                      {children}
+                    </main>
+                    <Toast />
+                  </VotingProvider>
+                </TeamProvider>
+              </AdminProvider>
+            </OrgProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

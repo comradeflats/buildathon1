@@ -2,8 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+/* Dark Theme (default) */
+:root, html.dark {
   --background: #0a0a0f;
+  --foreground: #fafafa;
   --card: #1a1a24;
   --card-hover: #252532;
   --accent: #6366f1;
@@ -12,13 +14,41 @@
   --winner: #fbbf24;
 }
 
+/* Light Theme */
+html.light {
+  --background: #ffffff;
+  --foreground: #0a0a0f;
+  --card: #f4f4f5;
+  --card-hover: #e4e4e7;
+  --accent: #6366f1;
+  --accent-hover: #4f46e5;
+  --success: #16a34a;
+  --winner: #ea580c;
+}
+
+/* Colorblind Mode (deuteranopia/protanopia friendly) */
+html.colorblind {
+  --background: #0a0a0f;
+  --foreground: #fafafa;
+  --card: #1a1a24;
+  --card-hover: #252532;
+  --accent: #0ea5e9;
+  --accent-hover: #38bdf8;
+  --success: #0ea5e9;
+  --winner: #f59e0b;
+}
+
 html {
   color-scheme: dark;
 }
 
+html.light {
+  color-scheme: light;
+}
+
 html, body {
   background-color: var(--background);
-  color: #fafafa;
+  color: var(--foreground);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     'Helvetica Neue', Arial, sans-serif;
   overflow-x: hidden;
@@ -31,6 +61,13 @@ html, body {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  .break-words-safe {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
   }
 }
 

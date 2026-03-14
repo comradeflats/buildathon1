@@ -123,10 +123,10 @@ export function VotingForm({ team }: VotingFormProps) {
   const canVote = event?.phase === 'judging' || isAdmin;
 
   return (
-    <div className="max-w-2xl lg:max-w-4xl mx-auto">
+    <div className="max-w-2xl lg:max-w-4xl mx-auto px-4 sm:px-6">
       <Link
         href={event?.slug ? `/e/${event.slug}/gallery` : (event?.id ? `/events/${event.id}` : "/events")}
-        className="inline-flex items-center gap-2 text-zinc-400 hover:text-white transition-colors mb-6"
+        className="inline-flex items-center gap-2 text-sm sm:text-base text-zinc-400 hover:text-white transition-colors mb-6"
       >
         <ArrowLeft size={20} />
         Back to Projects
@@ -144,11 +144,11 @@ export function VotingForm({ team }: VotingFormProps) {
 
       <Card className="p-6">
         <div className="flex items-start justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-white mb-1">
+          <div className="flex-1 min-w-0 mr-4">
+            <h1 className="text-xl sm:text-2xl font-bold text-white mb-1 break-words-safe">
               {team.projectName}
             </h1>
-            <p className="text-zinc-400">{team.name}</p>
+            <p className="text-sm sm:text-base text-zinc-400 break-words-safe">{team.name}</p>
           </div>
           {alreadyVoted && (
             <Badge variant="success">

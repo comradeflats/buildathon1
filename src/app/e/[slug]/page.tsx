@@ -189,98 +189,98 @@ export default function EventBySlugPage() {
     // 1. UPCOMING FLOW
     if (status === 'upcoming') {
       return (
-        <div className="space-y-16">
-          <div className="relative overflow-hidden rounded-[3rem] border border-zinc-800 bg-zinc-900/20">
+        <div className="space-y-8">
+          <div className="relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/20">
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-yellow-500/5 via-transparent to-accent/5 -z-10" />
-            
-            <div className="px-8 py-16 md:px-16 md:py-24 flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
-              <div className="text-center md:text-left space-y-6 flex-1">
-                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                   <Badge variant="default" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20 font-black px-3 py-1 uppercase tracking-widest">Upcoming Event</Badge>
-                   <div className="flex items-center gap-2 text-zinc-500 text-xs font-bold uppercase tracking-widest">
-                     <Users size={14} />
+
+            <div className="px-6 py-8 md:px-8 md:py-10 flex flex-col md:flex-row items-start justify-between gap-6 relative z-10">
+              <div className="text-left space-y-4 flex-1">
+                 <div className="flex flex-wrap items-center gap-2">
+                   <Badge variant="default" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20 font-bold px-2 py-0.5 text-[10px] uppercase tracking-wider">Upcoming</Badge>
+                   <div className="flex items-center gap-1.5 text-zinc-500 text-[10px] font-bold uppercase tracking-wider">
+                     <Users size={12} />
                      {event.currentRegistrations || 0} Joined
                    </div>
                  </div>
-                 
-                 <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-[0.9]">
+
+                 <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-[0.95]">
                    {event.name}
                  </h1>
-                 
-                 <p className="text-xl text-zinc-400 max-w-2xl leading-relaxed">
+
+                 <p className="text-base text-zinc-400 max-w-xl leading-snug">
                    {event.description}
                  </p>
 
-                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-8 pt-4">
-                    <div className="space-y-1">
-                      <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Location</p>
-                      <p className="text-lg font-bold text-white flex items-center gap-2">
-                        <MapPin size={18} className="text-emerald-500" />
+                 <div className="flex flex-wrap items-center gap-6 pt-2">
+                    <div className="space-y-0.5">
+                      <p className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Location</p>
+                      <p className="text-sm font-bold text-white flex items-center gap-1.5">
+                        <MapPin size={14} className="text-emerald-500" />
                         {event.location || 'TBA'}
                       </p>
                     </div>
-                    <div className="w-px h-10 bg-zinc-800 hidden md:block" />
-                    <div className="space-y-1">
-                      <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Date</p>
-                      <p className="text-lg font-bold text-white flex items-center gap-2">
-                        <Calendar size={18} className="text-accent" />
+                    <div className="w-px h-8 bg-zinc-800 hidden md:block" />
+                    <div className="space-y-0.5">
+                      <p className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Date</p>
+                      <p className="text-sm font-bold text-white flex items-center gap-1.5">
+                        <Calendar size={14} className="text-accent" />
                         {dateRange}
                       </p>
                     </div>
                  </div>
               </div>
 
-              <div className="w-full md:w-96 shrink-0">
-                <Card className="p-8 border-accent/20 bg-black/40 backdrop-blur-xl rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 blur-[50px] -z-10 group-hover:bg-accent/20 transition-colors" />
-                  
-                  <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
-                    <Sparkles size={24} className="text-accent" />
+              <div className="w-full md:w-80 shrink-0">
+                <Card className="p-5 border-accent/20 bg-black/40 backdrop-blur-xl rounded-xl shadow-xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-accent/10 blur-[40px] -z-10 group-hover:bg-accent/20 transition-colors" />
+
+                  <h3 className="text-lg font-black text-white mb-4 flex items-center gap-2">
+                    <Sparkles size={18} className="text-accent" />
                     Secure Your Spot
                   </h3>
-                  
+
                   {registration ? (
-                    <div className="space-y-6">
-                      <div className={`p-6 rounded-3xl border flex items-start gap-4 ${
+                    <div className="space-y-4">
+                      <div className={`p-4 rounded-xl border flex items-start gap-3 ${
                         isApproved ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-yellow-500/5 border-yellow-500/20'
                       }`}>
-                        <div className={`p-2 rounded-xl ${isApproved ? 'bg-emerald-500/10 text-emerald-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
-                          {isApproved ? <CheckCircle size={24} /> : <Clock size={24} />}
+                        <div className={`p-1.5 rounded-lg ${isApproved ? 'bg-emerald-500/10 text-emerald-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
+                          {isApproved ? <CheckCircle size={18} /> : <Clock size={18} />}
                         </div>
                         <div>
-                          <p className={`font-black text-lg ${isApproved ? 'text-emerald-400' : 'text-yellow-400'}`}>
+                          <p className={`font-black text-base ${isApproved ? 'text-emerald-400' : 'text-yellow-400'}`}>
                             {isApproved ? 'You\'re In!' : 'Waitlisted'}
                           </p>
-                          <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
-                            {isApproved 
-                              ? "Registration confirmed. Prepare your tools for the kickoff!"
-                              : "The arena is at capacity. We'll notify you if a spot opens up."}
+                          <p className="text-xs text-zinc-500 mt-0.5 leading-snug">
+                            {isApproved
+                              ? "Registration confirmed. Prepare your tools!"
+                              : "At capacity. You'll be notified if a spot opens."}
                           </p>
                         </div>
                       </div>
-                      <button 
+                      <button
                         onClick={handleWithdraw}
                         disabled={isRegistering}
-                        className="w-full text-[10px] font-black text-zinc-600 hover:text-red-400 uppercase tracking-widest transition-colors"
+                        className="w-full text-[9px] font-black text-zinc-600 hover:text-red-400 uppercase tracking-wider transition-colors"
                       >
-                        Withdraw from Event
+                        Withdraw
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-6">
-                      <p className="text-sm text-zinc-400 leading-relaxed">
-                        Join the community of builders. Registrations are open for a limited time.
+                    <div className="space-y-4">
+                      <p className="text-xs text-zinc-400 leading-snug">
+                        Join the community of builders. Limited spots available.
                       </p>
-                      <Button 
-                        onClick={handleRegisterClick} 
-                        disabled={isRegistering || isJoining} 
-                        className="w-full h-16 text-xl font-black rounded-2xl shadow-xl shadow-accent/20"
+                      <Button
+                        onClick={handleRegisterClick}
+                        disabled={isRegistering || isJoining}
+                        className="w-full h-12 text-base font-black rounded-xl shadow-lg shadow-accent/20"
                       >
                         {isRegistering || isJoining ? (
-                          <Loader2 size={24} className="animate-spin" />
+                          <Loader2 size={18} className="animate-spin" />
                         ) : (
                           <>
-                            <UserPlus size={24} className="mr-2" />
+                            <UserPlus size={18} className="mr-2" />
                             JOIN NOW
                           </>
                         )}
@@ -293,41 +293,41 @@ export default function EventBySlugPage() {
           </div>
 
           {publishedThemes.length > 0 && (
-            <section className="space-y-12">
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="space-y-4">
-                  <h2 className="text-4xl font-black text-white flex items-center gap-4 italic tracking-tighter">
-                    <Sparkles size={40} className="text-accent" />
+            <section className="space-y-6">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-black text-white flex items-center gap-3 italic tracking-tighter">
+                    <Sparkles size={24} className="text-accent" />
                     THEME LEAKS
                   </h2>
-                  <p className="text-zinc-500 font-medium max-w-xl">
+                  <p className="text-sm text-zinc-500 font-medium max-w-xl leading-snug">
                     Our intelligence suggests these themes will be featured. Full criteria remains classified until the arena goes live.
                   </p>
                 </div>
-                <Badge variant="outline" className="border-accent/30 text-accent bg-accent/5 px-4 py-2 rounded-full font-black text-xs uppercase tracking-widest">
+                <Badge variant="outline" className="border-accent/30 text-accent bg-accent/5 px-3 py-1 rounded-full font-bold text-[10px] uppercase tracking-wider">
                   System Status: encrypted
                 </Badge>
               </div>
-              
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {publishedThemes.map((theme) => (
-                  <div key={theme.id} className="p-10 rounded-[3rem] border border-zinc-800 bg-zinc-900/40 relative overflow-hidden group hover:bg-zinc-900/60 transition-all duration-500">
-                    <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                      <Sparkles size={80} className="text-accent" />
+                  <div key={theme.id} className="p-5 rounded-xl border border-zinc-800 bg-zinc-900/40 relative overflow-hidden group hover:bg-zinc-900/60 transition-all duration-300">
+                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                      <Sparkles size={48} className="text-accent" />
                     </div>
-                    <div className="w-20 h-20 mb-8 rounded-2xl bg-zinc-800/50 flex items-center justify-center text-accent transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                      <LayoutPanelLeft size={40} />
+                    <div className="w-12 h-12 mb-4 rounded-lg bg-zinc-800/50 flex items-center justify-center text-accent transform group-hover:scale-105 transition-transform duration-300">
+                      <LayoutPanelLeft size={24} />
                     </div>
-                    <h3 className="text-2xl font-black text-white mb-4 tracking-tight">{theme.name}</h3>
-                    <div className="space-y-3 mb-8">
-                      <p className="text-sm text-zinc-500 italic blur-[4px] select-none leading-relaxed">
+                    <h3 className="text-lg font-black text-white mb-2 tracking-tight">{theme.name}</h3>
+                    <div className="space-y-2 mb-4">
+                      <p className="text-xs text-zinc-500 italic blur-[3px] select-none leading-snug line-clamp-2">
                         {theme.concept || "Classified information. Encryption level: High."}
                       </p>
-                      <div className="h-2 bg-zinc-800 rounded-full w-2/3 animate-pulse" />
+                      <div className="h-1.5 bg-zinc-800 rounded-full w-2/3 animate-pulse" />
                     </div>
-                    <div className="inline-flex items-center gap-2 text-[10px] font-black text-accent uppercase tracking-[0.2em] bg-accent/10 px-3 py-1.5 rounded-full">
-                      <div className="w-1.5 h-1.5 rounded-full bg-accent animate-ping" />
-                      Intercepted Fragment
+                    <div className="inline-flex items-center gap-1.5 text-[9px] font-black text-accent uppercase tracking-wider bg-accent/10 px-2.5 py-1 rounded-full">
+                      <div className="w-1 h-1 rounded-full bg-accent animate-ping" />
+                      Intercepted
                     </div>
                   </div>
                 ))}
