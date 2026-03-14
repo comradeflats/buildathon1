@@ -23,19 +23,37 @@ const fixLeafletIcons = () => {
 
 interface RegionalMapProps {
   events: Event[];
+  selectedRegion?: string;
+  regionBounds?: Record<string, { center: [number, number], zoom: number }>;
 }
 
 // Custom component to handle map bounds and resizing
-function MapController({ events }: { events: any[] }) {
+function MapController({
+  events,
+  selectedRegion,
+  regionBounds
+}: {
+  events: any[],
+  selectedRegion?: string,
+  regionBounds?: Record<string, { center: [number, number], zoom: number }>
+}) {
   const map = useMap();
 
   useEffect(() => {
+    // Prioritize region-based zoom if region is selected and bounds are provided
+    if (selectedRegion && regionBounds && regionBounds[selectedRegion]) {
+      const { center, zoom } = regionBounds[selectedRegion];
+      map.setView(center, zoom, { animate: true, duration: 1 });
+      return;
+    }
+
+    // Fallback to event-based bounds
     if (!events || events.length === 0) return;
 
     // Filter for events that have valid coordinates
-    const relevantEvents = events.filter(e => 
-      e.coordinates && 
-      typeof e.coordinates.lat === 'number' && 
+    const relevantEvents = events.filter(e =>
+      e.coordinates &&
+      typeof e.coordinates.lat === 'number' &&
       typeof e.coordinates.lng === 'number'
     );
 
@@ -47,19 +65,19 @@ function MapController({ events }: { events: any[] }) {
         map.setView(coords[0], 12, { animate: true });
       } else {
         const bounds = L.latLngBounds(coords);
-        map.fitBounds(bounds, { 
-          padding: [70, 70], 
-          maxZoom: 10, 
-          animate: true 
+        map.fitBounds(bounds, {
+          padding: [70, 70],
+          maxZoom: 10,
+          animate: true
         });
       }
     }
-  }, [events, map]);
+  }, [events, map, selectedRegion, regionBounds]);
 
   return null;
 }
 
-export default function RegionalMap({ events }: RegionalMapProps) {
+export default function RegionalMap({ events, selectedRegion, regionBounds }: RegionalMapProps) {
   const [activeFilter, setActiveFilter] = useState<string[]>(['active', 'preparing', 'upcoming', 'archived']);
 
   useEffect(() => {
@@ -160,7 +178,7 @@ export default function RegionalMap({ events }: RegionalMapProps) {
           noWrap={false}
         />
         
-        <MapController events={processedEvents} />
+        <MapController events={processedEvents} selectedRegion={selectedRegion} regionBounds={regionBounds} />
 
         {markers.map(event => (
           <Marker 

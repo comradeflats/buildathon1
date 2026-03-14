@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Send, CheckCircle, ExternalLink, Heart, AlertTriangle, Clock, Loader2, Edit3, Globe, Link as LinkIcon } from 'lucide-react';
+import { ArrowLeft, Send, CheckCircle, ExternalLink, Heart, Clock, Loader2, Edit3, Globe, Link as LinkIcon } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -13,7 +13,7 @@ import { useVoting } from '@/context/VotingContext';
 import { useEvents } from '@/hooks/useEvents';
 import { useAuth } from '@/context/AuthContext';
 import { useOrgPermissions } from '@/hooks/useOrgPermissions';
-import { ensureAbsoluteUrl, fetchLatestCommitDateFromUrl } from '@/lib/github';
+import { ensureAbsoluteUrl } from '@/lib/github';
 import { Team, Scores } from '@/lib/types';
 import { getUrlLinkText } from '@/lib/urls';
 import { getThemeIcon, getThemeIconColor } from '@/lib/themeIcons';
@@ -31,7 +31,6 @@ export function VotingForm({ team }: VotingFormProps) {
     getThemeById,
     getThemeCriteria,
     isFavorite: checkIsFavorite,
-    favoriteTeamId,
     getVoteForTeam,
     updateVote,
   } = useVoting();
@@ -44,8 +43,6 @@ export function VotingForm({ team }: VotingFormProps) {
   const criteria = getThemeCriteria(team.themeId);
   const event = getEventById(team.eventId);
 
-  const hasOtherFavorite = favoriteTeamId && favoriteTeamId !== team.id;
-
   const { isAdmin } = useOrgPermissions(event?.organizationId || null);
 
   // Initialize scores based on number of criteria
@@ -53,41 +50,7 @@ export function VotingForm({ team }: VotingFormProps) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-
-  // Commit checking state
-  const [latestCommitDate, setLatestCommitDate] = useState<string | null>(null);
-  const [isCheckingCommit, setIsCheckingCommit] = useState(false);
-  const [commitCheckError, setCommitCheckError] = useState<string | null>(null);
-
-  // Check if this is a GitHub submission
-  const isGitHubSubmission = team.urlType === 'github' || !!team.githubUrl;
-  const githubUrl = team.githubUrl || (team.urlType === 'github' ? team.primaryUrl : undefined);
-
-  // Fetch latest commit date if team has GitHub URL
-  useEffect(() => {
-    async function checkCommitDate() {
-      if (!githubUrl) return;
-
-      setIsCheckingCommit(true);
-      setCommitCheckError(null);
-
-      try {
-        const commitDate = await fetchLatestCommitDateFromUrl(githubUrl);
-        setLatestCommitDate(commitDate);
-      } catch (err) {
-        setCommitCheckError('Failed to fetch commit info');
-      } finally {
-        setIsCheckingCommit(false);
-      }
-    }
-
-    checkCommitDate();
-  }, [githubUrl]);
-
-  // Determine if commit is late
-  const isLateCommit = latestCommitDate && event?.keyboardsDownTime
-    ? new Date(latestCommitDate) > new Date(event.keyboardsDownTime)
-    : false;
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
   // Initialize scores when criteria are loaded
   useEffect(() => {
@@ -112,11 +75,22 @@ export function VotingForm({ team }: VotingFormProps) {
     setScores((prev) => ({ ...prev, [index]: value }));
   };
 
+  const handleResetScores = () => {
+    const resetScores: Scores = {};
+    criteria.forEach((_, index) => {
+      resetScores[index] = 0;
+    });
+    setScores(resetScores);
+    setAttemptedSubmit(false);
+    showToast('Ratings cleared', 'info');
+  };
+
   const isValid = criteria.length > 0 &&
     criteria.every((_, index) => scores[index] > 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAttemptedSubmit(true);
     if (!isValid || isSubmitting) return;
 
     if (!isAuthenticated) {
@@ -151,7 +125,7 @@ export function VotingForm({ team }: VotingFormProps) {
   return (
     <div className="max-w-2xl lg:max-w-4xl mx-auto">
       <Link
-        href="/"
+        href={event?.slug ? `/e/${event.slug}/gallery` : (event?.id ? `/events/${event.id}` : "/events")}
         className="inline-flex items-center gap-2 text-zinc-400 hover:text-white transition-colors mb-6"
       >
         <ArrowLeft size={20} />
@@ -250,65 +224,6 @@ export function VotingForm({ team }: VotingFormProps) {
           )}
         </div>
 
-        {/* Commit Status Display (GitHub submissions only) */}
-        {isGitHubSubmission && event?.keyboardsDownTime && (
-          <div className={`p-4 rounded-lg border mb-6 ${
-            isLateCommit
-              ? 'bg-red-500/10 border-red-500/30'
-              : latestCommitDate
-                ? 'bg-emerald-500/10 border-emerald-500/30'
-                : 'bg-zinc-800/50 border-zinc-700'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {isCheckingCommit ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin text-zinc-400" />
-                    <span className="text-sm text-zinc-400">Checking commit history...</span>
-                  </>
-                ) : commitCheckError ? (
-                  <>
-                    <AlertTriangle size={16} className="text-yellow-400" />
-                    <span className="text-sm text-yellow-400">{commitCheckError}</span>
-                  </>
-                ) : latestCommitDate ? (
-                  <>
-                    <Clock size={16} className={isLateCommit ? 'text-red-400' : 'text-emerald-400'} />
-                    <span className="text-sm text-zinc-300">
-                      Last Commit: {new Date(latestCommitDate).toLocaleString()}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <Clock size={16} className="text-zinc-400" />
-                    <span className="text-sm text-zinc-400">No commit data available</span>
-                  </>
-                )}
-              </div>
-
-              {isLateCommit && (
-                <Badge variant="destructive" className="bg-red-500/20 text-red-400 border-red-500/50">
-                  <AlertTriangle size={12} className="mr-1" />
-                  DISQUALIFIED - Late Commit
-                </Badge>
-              )}
-
-              {!isCheckingCommit && !commitCheckError && latestCommitDate && !isLateCommit && (
-                <Badge variant="success" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">
-                  <CheckCircle size={12} className="mr-1" />
-                  On Time
-                </Badge>
-              )}
-            </div>
-
-            {event.keyboardsDownTime && (
-              <p className="text-xs text-zinc-500 mt-2">
-                Keyboards Down: {new Date(event.keyboardsDownTime).toLocaleString()}
-              </p>
-            )}
-          </div>
-        )}
-
         <div className="flex items-center gap-2 text-sm text-zinc-400 mb-8">
           <span>Team:</span>
           <span className="text-white">
@@ -336,9 +251,22 @@ export function VotingForm({ team }: VotingFormProps) {
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <h2 className="text-lg font-semibold text-white mb-4">
-              Rate This Project
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-white">
+                Rate This Project
+              </h2>
+              {criteria.length > 0 && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleResetScores}
+                  className="text-xs"
+                >
+                  Reset All Ratings
+                </Button>
+              )}
+            </div>
 
             {criteria.length === 0 ? (
               <div className="text-zinc-400 text-center py-8">
@@ -356,6 +284,7 @@ export function VotingForm({ team }: VotingFormProps) {
                     }}
                     value={scores[index] || 0}
                     onChange={(value) => handleScoreChange(index, value)}
+                    showValidation={attemptedSubmit}
                   />
                 ))}
               </div>
@@ -372,11 +301,6 @@ export function VotingForm({ team }: VotingFormProps) {
                   isActive={isFavorite}
                   onChange={setIsFavorite}
                 />
-                {hasOtherFavorite && !isFavorite && (
-                  <p className="text-[10px] text-zinc-500 italic">
-                    Note: This will replace your current favorite project.
-                  </p>
-                )}
               </div>
             </div>
 
@@ -385,10 +309,15 @@ export function VotingForm({ team }: VotingFormProps) {
                 type="submit"
                 size="lg"
                 disabled={!isValid || isSubmitting}
-                className="w-full py-6 text-lg font-bold shadow-lg shadow-accent/20"
+                className={`w-full py-6 text-lg font-bold shadow-lg shadow-accent/20 ${
+                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
                 {isSubmitting ? (
-                  'Saving...'
+                  <div className="flex items-center justify-center gap-3">
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>Saving your vote...</span>
+                  </div>
                 ) : isEditing ? (
                   <>
                     <Send size={18} className="mr-2" />

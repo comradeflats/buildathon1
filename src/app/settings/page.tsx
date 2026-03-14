@@ -19,6 +19,8 @@ export default function SettingsPage() {
   const [bio, setBio] = useState('');
   const [role, setRole] = useState<'developer' | 'designer' | 'product' | 'other'>('developer');
   const [experienceLevel, setExperienceLevel] = useState<'beginner' | 'intermediate' | 'expert'>('intermediate');
+  const [githubUsername, setGithubUsername] = useState('');
+  const [websiteUrl, setWebsiteUrl] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +31,8 @@ export default function SettingsPage() {
       setBio(userProfile.bio || '');
       setRole(userProfile.role || 'developer');
       setExperienceLevel(userProfile.experienceLevel || 'intermediate');
+      setGithubUsername(userProfile.githubUsername || '');
+      setWebsiteUrl(userProfile.websiteUrl || '');
     }
   }, [userProfile, user]);
 
@@ -51,6 +55,8 @@ export default function SettingsPage() {
         bio: bio.trim(),
         role,
         experienceLevel,
+        githubUsername: githubUsername.trim(),
+        websiteUrl: websiteUrl.trim(),
         profileCompleted: true,
         updatedAt: new Date().toISOString(),
       };
@@ -220,21 +226,68 @@ export default function SettingsPage() {
         </Card>
       </form>
       
-      {/* Integration placeholders */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="p-4 opacity-50 cursor-not-allowed border-zinc-800">
-          <div className="flex items-center gap-3">
-            <Github size={20} className="text-zinc-500" />
-            <span className="text-sm font-bold text-zinc-400">GitHub Linked</span>
+      {/* Social Links */}
+      <Card className="p-6 space-y-6">
+        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+          <Globe size={20} className="text-emerald-400" />
+          Social Links
+        </h3>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-zinc-400 mb-2">
+              GitHub Username
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 text-sm">
+                github.com/
+              </span>
+              <input
+                type="text"
+                value={githubUsername}
+                onChange={(e) => setGithubUsername(e.target.value)}
+                placeholder="yourusername"
+                className="w-full pl-24 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500 transition-all"
+              />
+            </div>
+            {githubUsername && (
+              <a
+                href={`https://github.com/${githubUsername}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-emerald-400 hover:text-emerald-300 mt-2 inline-flex items-center gap-1"
+              >
+                <Github size={12} />
+                View profile
+              </a>
+            )}
           </div>
-        </Card>
-        <Card className="p-4 opacity-50 cursor-not-allowed border-zinc-800">
-          <div className="flex items-center gap-3">
-            <Globe size={20} className="text-zinc-500" />
-            <span className="text-sm font-bold text-zinc-400">Personal Site</span>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-400 mb-2">
+              Personal Website
+            </label>
+            <input
+              type="url"
+              value={websiteUrl}
+              onChange={(e) => setWebsiteUrl(e.target.value)}
+              placeholder="https://yourwebsite.com"
+              className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500 transition-all"
+            />
+            {websiteUrl && (
+              <a
+                href={websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-emerald-400 hover:text-emerald-300 mt-2 inline-flex items-center gap-1"
+              >
+                <Globe size={12} />
+                Visit website
+              </a>
+            )}
           </div>
-        </Card>
-      </div>
+        </div>
+      </Card>
     </div>
   );
 }

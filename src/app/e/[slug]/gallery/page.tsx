@@ -78,7 +78,7 @@ function GalleryBySlugContent() {
           The event you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
         <Link
-          href="/"
+          href="/events"
           className="text-accent hover:underline flex items-center gap-2"
         >
           <ArrowLeft size={16} />

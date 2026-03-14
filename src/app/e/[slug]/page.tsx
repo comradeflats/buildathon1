@@ -171,7 +171,7 @@ export default function EventBySlugPage() {
         <p className="text-zinc-400 mb-6">
           The event you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
-        <Link href="/" className="text-accent hover:underline flex items-center gap-2">
+        <Link href="/events" className="text-accent hover:underline flex items-center gap-2">
           <ArrowLeft size={16} />
           Back to Events
         </Link>
@@ -394,20 +394,7 @@ export default function EventBySlugPage() {
 
           {/* Dynamic Content based on Phase */}
           <div className="space-y-12">
-            {/* 1. Live Stage Tracker (Review Phase) */}
-            {isReviewPhase && (
-              <section className="animate-in slide-in-from-top-4 duration-700">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 border border-purple-500/20">
-                    <Activity size={20} />
-                  </div>
-                  <h2 className="text-2xl font-black text-white italic tracking-tight">LIVE ON STAGE</h2>
-                </div>
-                <LiveStageTracker event={event} teams={eventTeams} />
-              </section>
-            )}
-
-            {/* 2. Stats & Timer */}
+            {/* 1. Stats & Timer */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 rounded-2xl bg-zinc-900/30 border border-zinc-800/50 flex flex-col items-center justify-center text-center">
                   <p className="text-xl font-black text-white">{event.currentRegistrations || 0}</p>
@@ -424,29 +411,7 @@ export default function EventBySlugPage() {
               )}
             </div>
 
-            {/* 3. Leaderboard (Judging & Results) */}
-            {showLeaderboard && (
-              <section className="animate-in fade-in slide-in-from-bottom-4 duration-1000">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-400 border border-yellow-500/20">
-                      <Trophy size={20} />
-                    </div>
-                    <h2 className="text-2xl font-black text-white italic tracking-tight">WALL OF FAME</h2>
-                  </div>
-                  {isJudgingPhase && (
-                    <Badge variant="outline" className="border-zinc-800 text-zinc-500 px-4 py-1.5 rounded-full">
-                      CALCULATING RESULTS...
-                    </Badge>
-                  )}
-                </div>
-                <div className="max-w-4xl">
-                  <LeaderboardTable eventId={event.id} />
-                </div>
-              </section>
-            )}
-
-            {/* 4. The Challenge (Themes) - Hidden in Results if too noisy, but keeping for context */}
+            {/* 2. The Challenge (Themes) */}
             {!isResultsPhase && (
               <div className="rounded-[2.5rem] bg-zinc-900/20 border border-zinc-800 overflow-hidden">
                 <div className="grid lg:grid-cols-5 divide-y lg:divide-y-0 lg:divide-x divide-zinc-800">
@@ -515,21 +480,8 @@ export default function EventBySlugPage() {
               </div>
             )}
             
-            {/* 5. Full Gallery (Brief overview) */}
-            <section className="pt-8 border-t border-zinc-900">
-               <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
-                      <LayoutGrid size={20} />
-                    </div>
-                    <h2 className="text-2xl font-black text-white italic tracking-tight">COMMUNITY PROJECTS</h2>
-                  </div>
-                  <Link href={`/e/${slug}/gallery`}>
-                    <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-white">
-                      VIEW ALL PROJECTS <ChevronRight size={16} className="ml-1" />
-                    </Button>
-                  </Link>
-               </div>
+            {/* 3. Community Hub (Gallery & Leaderboard) */}
+            <section className="pt-8 border-t border-zinc-900 animate-in fade-in slide-in-from-bottom-4 duration-1000">
                <TeamGallery eventId={event.id} />
             </section>
           </div>

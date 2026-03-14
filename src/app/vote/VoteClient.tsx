@@ -103,7 +103,7 @@ export default function VotePage() {
                 This event uses an expert judging model. Only designated judges from the organization can vote.
               </p>
               <Link
-                href={eventId ? `/vote?event=${eventId}` : "/"}
+                href={event?.slug ? `/e/${event.slug}/gallery` : (eventId ? `/events/${eventId}` : "/events")}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-accent hover:bg-accent-hover text-white font-medium rounded-lg transition-colors"
               >
                 Browse Projects
@@ -135,7 +135,7 @@ export default function VotePage() {
                 You submitted "{team.projectName}", so you cannot vote on it.
               </p>
               <Link
-                href={eventId ? `/vote?event=${eventId}` : "/"}
+                href={event?.slug ? `/e/${event.slug}/gallery` : (eventId ? `/events/${eventId}` : "/events")}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-accent hover:bg-accent-hover text-white font-medium rounded-lg transition-colors"
               >
                 Browse Other Projects

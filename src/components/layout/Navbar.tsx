@@ -27,7 +27,7 @@ export function Navbar() {
             <span className="text-emerald-400">live</span>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - with text labels */}
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => {
               const Icon = link.icon;
@@ -37,8 +37,8 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    isActive 
-                      ? 'bg-emerald-500/10 text-emerald-400' 
+                    isActive
+                      ? 'bg-emerald-500/10 text-emerald-400'
                       : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
                   }`}
                 >
@@ -48,6 +48,28 @@ export function Navbar() {
               );
             })}
           </div>
+        </div>
+
+        {/* Mobile Navigation - icons only */}
+        <div className="flex md:hidden items-center gap-1">
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+            const isActive = pathname === link.href || (link.href === '/events' && pathname.startsWith('/events'));
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`flex items-center justify-center w-11 h-11 rounded-full transition-colors ${
+                  isActive
+                    ? 'bg-emerald-500/10 text-emerald-400'
+                    : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                }`}
+                aria-label={link.label}
+              >
+                <Icon size={18} />
+              </Link>
+            );
+          })}
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">

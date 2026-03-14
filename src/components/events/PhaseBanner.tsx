@@ -64,7 +64,7 @@ const PHASE_CONFIG: Record<EventPhase, {
     bg: 'bg-pink-500/5',
     border: 'border-pink-500/20',
     description: 'Organizers are finalizing votes and calculating final scores.',
-    nextStep: 'The Wall of Fame will be revealed shortly.'
+    nextStep: 'Watch the leaderboard as the rankings stabilize.'
   },
   results: {
     label: 'Winners Announced',

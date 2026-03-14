@@ -20,7 +20,6 @@ export function useVotes() {
   const [votes, setVotes] = useState<Vote[]>([]);
   const [userVotes, setUserVotes] = useState<Vote[]>([]);
   const [judgeId, setJudgeId] = useState<string | null>(null);
-  const [favoriteTeamId, setFavoriteTeam] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // 1. Listen for Auth State (no auto sign-in - user must explicitly sign in to vote)
@@ -54,28 +53,16 @@ export function useVotes() {
     return () => unsubscribe();
   }, []);
 
-  // 3. Track current user's specific state (favorites and voted IDs)
+  // 3. Track current user's specific state
   useEffect(() => {
     if (!judgeId || votes.length === 0) return;
-    
+
     const myVotes = votes.filter(v => v.judgeId === judgeId);
     setUserVotes(myVotes);
-    
-    const fav = myVotes.find(v => v.isFavorite);
-    if (fav) setFavoriteTeam(fav.teamId);
   }, [votes, judgeId]);
 
   const submitVote = useCallback(async (teamId: string, scores: Scores, isFavorite: boolean = false): Promise<void> => {
     if (!judgeId) throw new Error("Must be logged in to vote");
-
-    // If this is a new favorite, we need to un-favorite previous ones for this user
-    if (isFavorite) {
-      const myVotes = votes.filter(v => v.judgeId === judgeId && v.isFavorite);
-      for (const oldVote of myVotes) {
-        const voteRef = doc(db, 'votes', oldVote.id);
-        await setDoc(voteRef, { isFavorite: false }, { merge: true });
-      }
-    }
 
     const voteData = {
       teamId,
@@ -102,16 +89,10 @@ export function useVotes() {
 
   const toggleFavorite = useCallback(async (teamId: string) => {
     if (!judgeId) return;
-    
+
     // In Firebase, we update the specific vote document
     const myVote = userVotes.find(v => v.teamId === teamId);
     if (!myVote) return;
-
-    // Remove other favorites first
-    const otherFavs = userVotes.filter(v => v.isFavorite && v.teamId !== teamId);
-    for (const fav of otherFavs) {
-      await setDoc(doc(db, 'votes', fav.id), { isFavorite: false }, { merge: true });
-    }
 
     const voteRef = doc(db, 'votes', myVote.id);
     await setDoc(voteRef, { isFavorite: !myVote.isFavorite }, { merge: true });
@@ -138,14 +119,6 @@ export function useVotes() {
   ): Promise<void> => {
     if (!judgeId) throw new Error("Must be logged in to update vote");
 
-    // Handle favorite logic - remove old favorite if setting new one
-    if (isFavorite) {
-      const otherFavs = userVotes.filter(v => v.isFavorite && v.id !== voteId);
-      for (const fav of otherFavs) {
-        await setDoc(doc(db, 'votes', fav.id), { isFavorite: false }, { merge: true });
-      }
-    }
-
     const voteRef = doc(db, 'votes', voteId);
     await setDoc(voteRef, {
       scores,
@@ -155,6 +128,7 @@ export function useVotes() {
   }, [judgeId, userVotes]);
 
   const votedTeamIds = userVotes.map(v => v.teamId);
+  const favoriteTeamId = userVotes.find(v => v.isFavorite)?.teamId || null;
 
   return {
     votes,

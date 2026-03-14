@@ -46,6 +46,7 @@ export interface User {
   displayName?: string;
   photoUrl?: string;
   githubUsername?: string;
+  websiteUrl?: string;
   bio?: string;
   role?: 'developer' | 'designer' | 'product' | 'other';
   experienceLevel?: 'beginner' | 'intermediate' | 'expert';

@@ -36,7 +36,7 @@ function SubmitBySlugContent() {
         <p className="text-zinc-400 mb-6">
           The event you&apos;re trying to submit to doesn&apos;t exist.
         </p>
-        <Link href="/" className="text-accent hover:underline">
+        <Link href="/events" className="text-accent hover:underline">
           Back to Events
         </Link>
       </div>

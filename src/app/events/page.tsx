@@ -3,19 +3,20 @@
 import dynamic from 'next/dynamic';
 import { useState, useMemo, Suspense } from 'react';
 import Link from 'next/link';
-import { 
-  Loader2, 
-  Search, 
-  Map as MapIcon, 
-  Activity, 
-  Zap, 
-  History, 
-  Filter, 
-  ChevronDown, 
-  MapPin, 
+import {
+  Loader2,
+  Map as MapIcon,
+  Activity,
+  Zap,
+  History,
+  Filter,
+  ChevronDown,
+  MapPin,
   ArrowRight,
   Users,
-  Trophy
+  Trophy,
+  List,
+  LayoutList
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -46,10 +47,24 @@ const REGIONS = [
   'Remote'
 ];
 
+const REGION_BOUNDS: Record<string, { center: [number, number], zoom: number }> = {
+  'All Regions': { center: [20, 0], zoom: 2 },
+  'SE Asia': { center: [13.7563, 100.5018], zoom: 5 },
+  'East Asia': { center: [35.6762, 139.6503], zoom: 4 },
+  'South Asia': { center: [28.6139, 77.2090], zoom: 4 },
+  'Europe': { center: [50.1109, 8.6821], zoom: 4 },
+  'North America': { center: [39.8283, -98.5795], zoom: 4 },
+  'South America': { center: [-15.5989, -56.0949], zoom: 4 },
+  'Africa': { center: [1.2921, 36.8219], zoom: 4 },
+  'Oceania': { center: [-25.2744, 133.7751], zoom: 4 },
+  'Middle East': { center: [29.3117, 47.4818], zoom: 5 },
+  'Remote': { center: [20, 0], zoom: 2 },
+};
+
 function ExploreArenas() {
   const { events, isLoading } = useEvents();
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('All Regions');
+  const [viewMode, setViewMode] = useState<'both' | 'map' | 'list'>('both');
   const [expandedSections, setExpandedSections] = useState({
     active: true,
     upcoming: true,
@@ -60,18 +75,13 @@ function ExploreArenas() {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
-  // Filter events based on search query and region
+  // Filter events based on region
   const filteredEvents = useMemo(() => {
     return events.filter(e => {
-      const matchesSearch = !searchQuery || 
-        e.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        e.location?.toLowerCase().includes(searchQuery.toLowerCase());
-      
       const matchesRegion = selectedRegion === 'All Regions' || e.region === selectedRegion;
-      
-      return matchesSearch && matchesRegion;
+      return matchesRegion;
     });
-  }, [events, searchQuery, selectedRegion]);
+  }, [events, selectedRegion]);
 
   // Categorize filtered events using derived status
   const categorized = useMemo(() => {
@@ -118,17 +128,6 @@ function ExploreArenas() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative min-w-[240px]">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-              <input
-                type="text"
-                placeholder="Search city or event..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500 transition-all"
-              />
-            </div>
-            
             <div className="relative min-w-[180px]">
               <Filter size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
               <select
@@ -143,7 +142,47 @@ function ExploreArenas() {
           </div>
         </div>
 
+        {/* View Mode Toggle */}
+        <div className="flex justify-end">
+          <div className="inline-flex bg-zinc-900 rounded-xl border border-zinc-800 p-1">
+            <button
+              onClick={() => setViewMode('both')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                viewMode === 'both'
+                  ? 'bg-emerald-500/10 text-emerald-400'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+              }`}
+            >
+              <LayoutList size={16} />
+              <span className="hidden sm:inline">Map + List</span>
+            </button>
+            <button
+              onClick={() => setViewMode('map')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                viewMode === 'map'
+                  ? 'bg-emerald-500/10 text-emerald-400'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+              }`}
+            >
+              <MapIcon size={16} />
+              <span className="hidden sm:inline">Map</span>
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                viewMode === 'list'
+                  ? 'bg-emerald-500/10 text-emerald-400'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+              }`}
+            >
+              <List size={16} />
+              <span className="hidden sm:inline">List</span>
+            </button>
+          </div>
+        </div>
+
         {/* Map View - Secondary Visual */}
+        {viewMode !== 'list' && (
         <section className="relative group overflow-hidden rounded-[2.5rem] border border-zinc-800 bg-zinc-950 shadow-2xl">
           <div className="absolute top-4 left-4 z-10">
             <Badge className="bg-zinc-900/80 backdrop-blur-md border-zinc-700 text-zinc-400 py-1.5 px-4 flex items-center gap-2">
@@ -167,12 +206,14 @@ function ExploreArenas() {
             </Badge>
           </div>
           <div className="h-[400px]">
-            <RegionalMap events={mapEvents} />
+            <RegionalMap events={mapEvents} selectedRegion={selectedRegion} regionBounds={REGION_BOUNDS} />
           </div>
         </section>
+        )}
       </div>
 
       {/* Grouped Content */}
+      {viewMode !== 'map' && (
       <div className="space-y-16">
         {/* 1. LIVE NOW */}
         <section className="space-y-6">
@@ -198,7 +239,7 @@ function ExploreArenas() {
           {expandedSections.active && (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 animate-in fade-in slide-in-from-top-4">
               {categorized.active.length === 0 ? (
-                <EmptyState message="No live arenas in this region right now." />
+                <EmptyState message="No live arenas in this region right now." region={selectedRegion} />
               ) : (
                 categorized.active.map(event => <EventCard key={event.id} event={event} />)
               )}
@@ -230,7 +271,7 @@ function ExploreArenas() {
           {expandedSections.upcoming && (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 animate-in fade-in slide-in-from-top-4">
               {categorized.upcoming.length === 0 ? (
-                <EmptyState message="No upcoming sprints scheduled here yet." />
+                <EmptyState message="No upcoming sprints scheduled here yet." region={selectedRegion} />
               ) : (
                 categorized.upcoming.map(event => <EventCard key={event.id} event={event} />)
               )}
@@ -262,7 +303,7 @@ function ExploreArenas() {
           {expandedSections.archived && (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 animate-in fade-in slide-in-from-top-4">
               {categorized.archived.length === 0 ? (
-                <EmptyState message="No history found for this selection." />
+                <EmptyState message="No history found for this selection." region={selectedRegion} />
               ) : (
                 categorized.archived.map(event => <EventCard key={event.id} event={event} />)
               )}
@@ -270,14 +311,31 @@ function ExploreArenas() {
           )}
         </section>
       </div>
+      )}
     </div>
   );
 }
 
-function EmptyState({ message }: { message: string }) {
+function EmptyState({ message, region }: { message: string; region?: string }) {
+  const isRegionFiltered = region && region !== 'All Regions';
+
   return (
     <div className="col-span-full py-16 text-center border-2 border-dashed border-zinc-900 rounded-[2rem] bg-zinc-950/30">
       <p className="text-zinc-600 font-bold uppercase tracking-widest text-xs">{message}</p>
+      {isRegionFiltered && (
+        <div className="mt-6">
+          <p className="text-zinc-500 text-sm mb-3">
+            Want to host your own buildathon in {region}?
+          </p>
+          <Link
+            href="/signup"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-xl font-semibold text-sm transition-colors border border-emerald-500/20"
+          >
+            Sign up now
+            <ArrowRight size={16} />
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
@@ -286,9 +344,10 @@ function EventCard({ event }: { event: any }) {
   const status = getEventStatus(event.startDate, event.endDate);
   const isUpcoming = status === 'upcoming';
   const isActive = status === 'active';
-  
+
   return (
-    <Card className="p-6 hover:border-emerald-500/30 transition-all group flex flex-col h-full bg-zinc-900/20 backdrop-blur-sm border-zinc-800/50 rounded-[2rem]">
+    <Link href={`/events/${event.id}`} className="block">
+      <Card className="p-6 hover:border-emerald-500/30 transition-all group flex flex-col h-full bg-zinc-900/20 backdrop-blur-sm border-zinc-800/50 rounded-[2rem] cursor-pointer">
       <div className="flex items-start justify-between mb-4">
         <div className="flex flex-col gap-2">
           <Badge variant="outline" className={`
@@ -347,13 +406,12 @@ function EventCard({ event }: { event: any }) {
           </div>
           <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest ml-5">{event.region}</span>
         </div>
-        <Link href={`/events/${event.id}`}>
-          <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center text-zinc-500 group-hover:bg-emerald-500 group-hover:text-zinc-950 transition-all shadow-lg">
-            <ArrowRight size={18} />
-          </div>
-        </Link>
+        <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center text-zinc-500 group-hover:bg-emerald-500 group-hover:text-zinc-950 transition-all shadow-lg">
+          <ArrowRight size={18} />
+        </div>
       </div>
     </Card>
+    </Link>
   );
 }
 
