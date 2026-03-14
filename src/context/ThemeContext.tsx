@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-type Theme = 'dark' | 'light' | 'colorblind';
+type Theme = 'dark' | 'colorblind';
 
 interface ThemeContextType {
   theme: Theme;
@@ -17,15 +17,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    const saved = localStorage.getItem('theme') as Theme;
-    if (saved && ['dark', 'light', 'colorblind'].includes(saved)) {
-      setThemeState(saved);
+    const saved = localStorage.getItem('theme');
+    // Convert legacy 'light' to 'dark'
+    if (saved === 'light') {
+      setThemeState('dark');
+    } else if (saved && ['dark', 'colorblind'].includes(saved)) {
+      setThemeState(saved as Theme);
     }
   }, []);
 
   useEffect(() => {
     if (!mounted) return;
-    document.documentElement.classList.remove('dark', 'light', 'colorblind');
+    document.documentElement.classList.remove('dark', 'colorblind');
     document.documentElement.classList.add(theme);
     localStorage.setItem('theme', theme);
   }, [theme, mounted]);

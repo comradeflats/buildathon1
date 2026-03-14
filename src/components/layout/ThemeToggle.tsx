@@ -1,7 +1,7 @@
 'use client';
 
 import { useTheme } from '@/context/ThemeContext';
-import { Sun, Moon, Palette } from 'lucide-react';
+import { Moon, Palette } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
 export function ThemeToggle() {
@@ -14,7 +14,6 @@ export function ThemeToggle() {
 
   const themes = [
     { value: 'dark' as const, label: 'Dark', icon: Moon },
-    { value: 'light' as const, label: 'Light', icon: Sun },
     { value: 'colorblind' as const, label: 'Colorblind', icon: Palette },
   ];
 
