@@ -12,6 +12,8 @@
   --accent-hover: #818cf8;
   --success: #22c55e;
   --winner: #fbbf24;
+  --builder-accent: #10b981;
+  --organizer-accent: #a78bfa;
 }
 
 /* Colorblind Mode (deuteranopia/protanopia friendly) */

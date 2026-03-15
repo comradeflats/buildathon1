@@ -2,10 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ChevronRight, ArrowRight, MapPin, Users2, Sparkles, Clock, Zap, Trophy, Globe, LayoutGrid, Search, PlayCircle, Star, Beer, ChevronDown, Calendar } from 'lucide-react';
+import { ChevronRight, ArrowRight, MapPin, Users2, Sparkles, Clock, Zap, Trophy, Globe, Search, PlayCircle, Star, Beer, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/context/AuthContext';
 import { SignInModal } from '@/components/auth/SignInModal';
 
@@ -25,21 +24,21 @@ export default function HomePage() {
       {/* Hero Section - The Pitch */}
       <section className="relative pt-20 pb-12 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-emerald-500/10 blur-[120px] rounded-full -z-10 opacity-60" />
-        
+
         <div className="text-center max-w-4xl mx-auto space-y-8 px-6">
           <Badge variant="outline" className="py-1.5 px-5 border-emerald-500/30 text-emerald-400 bg-emerald-500/5 animate-in fade-in slide-in-from-top-4 duration-700">
             <Sparkles size={14} className="mr-2 fill-emerald-400" />
             Your Portal to Live Innovation
           </Badge>
-          
+
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-white tracking-tight leading-[1.1] animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100 break-words">
             buildathon.<span className="text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text">live</span>
           </h1>
-          
+
           <p className="text-xl md:text-2xl text-zinc-300 max-w-3xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 font-medium">
             A dedicated portal for connecting builders to <span className="text-white underline decoration-emerald-500 underline-offset-4 font-bold">Live, In-Person</span> hackathon events.
           </p>
-          
+
           <p className="text-zinc-500 max-w-2xl mx-auto animate-in fade-in duration-1000 delay-500">
             We provide the infrastructure for high-energy building sessions where strangers become co-founders in a single afternoon.
           </p>
@@ -65,8 +64,8 @@ export default function HomePage() {
             { step: '4. Win & Celebrate', desc: 'From beers to crypto—the best ideas take the prize.', icon: Trophy, color: 'text-yellow-500', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' }
           ].map((item, i) => (
             <div key={i} className="space-y-4 text-center group transition-transform hover:-translate-y-1">
-              <div className={`w-16 h-16 ${item.bg} rounded-2xl flex items-center justify-center mx-auto border ${item.border}`}>
-                <item.icon className={item.color} size={28} />
+              <div className={`w-20 h-20 ${item.bg} rounded-2xl flex items-center justify-center mx-auto border ${item.border}`}>
+                <item.icon className={item.color} size={40} />
               </div>
               <h3 className="font-bold text-white">{item.step}</h3>
               <p className="text-sm text-zinc-500 leading-relaxed">{item.desc}</p>
@@ -75,52 +74,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 2. Concrete Examples: The Arena Experience */}
-      <section className="max-w-5xl mx-auto px-4 space-y-12">
-        <div className="text-center">
-          <h2 className="text-3xl font-black text-white mb-4">The Arena Experience</h2>
-          <p className="text-zinc-400">Real events, real projects, real winners.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Event Snippet */}
-          <Card className="p-6 border-zinc-800 bg-zinc-900/40 relative overflow-hidden group">
-             <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-100 transition-opacity">
-                <Calendar size={24} className="text-emerald-400" />
-             </div>
-             <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 mb-4">UPCOMING</Badge>
-             <h3 className="text-lg font-bold text-white mb-2">Da Nang Sprint #4</h3>
-             <p className="text-sm text-zinc-500">Join 40+ builders at The Workshop this Friday. Theme: "Local Commerce".</p>
-          </Card>
-
-          {/* Gallery Snippet */}
-          <Card className="p-6 border-zinc-800 bg-zinc-900/40 relative overflow-hidden group">
-             <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-100 transition-opacity">
-                <LayoutGrid size={24} className="text-cyan-400" />
-             </div>
-             <Badge className="bg-cyan-500/10 text-cyan-400 border-cyan-500/20 mb-4">FEATURED PROJECT</Badge>
-             <h3 className="text-lg font-bold text-white mb-2">AI Prep Buddy</h3>
-             <p className="text-sm text-zinc-500">A meal-prep assistant built in 4 hours using GPT-4o. 12 votes received.</p>
-          </Card>
-
-          {/* Leaderboard Snippet */}
-          <Card className="p-6 border-zinc-800 bg-zinc-900/40 relative overflow-hidden group">
-             <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-100 transition-opacity">
-                <Trophy size={24} className="text-yellow-400" />
-             </div>
-             <Badge className="bg-yellow-500/10 text-yellow-400 border-yellow-500/20 mb-4">RECENT WINNER</Badge>
-             <h3 className="text-lg font-bold text-white mb-2">Team Zenith</h3>
-             <p className="text-sm text-zinc-500">Scored 9.8/10 in UX and Innovation. Took home the $200 prize.</p>
-          </Card>
-        </div>
-      </section>
-
-      {/* 3. The Action: Ready to enter? */}
+      {/* 2. The Action: Ready to enter? */}
       <section className="text-center py-24 border-t border-zinc-900 relative">
          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-zinc-800 to-transparent" />
          <h2 className="text-4xl font-black text-white mb-6 leading-tight">Ready to enter the arena?</h2>
          <p className="text-zinc-400 mb-10 text-lg max-w-xl mx-auto">Sign up to discover upcoming events or get the tools to host your own live buildathon.</p>
-         
+
          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/events" className="w-full sm:w-auto">
               <Button size="lg" className="w-full sm:px-12 rounded-full bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-black h-14 text-lg shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95">
@@ -143,8 +102,8 @@ export default function HomePage() {
          </div>
       </section>
 
-      <SignInModal 
-        isOpen={isSignInModalOpen} 
+      <SignInModal
+        isOpen={isSignInModalOpen}
         onClose={() => setIsSignInModalOpen(false)}
         title="Host a Buildathon"
         description="Sign in to your account to start creating and managing live events in your city."
