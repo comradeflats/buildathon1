@@ -211,20 +211,20 @@ export default function EventBySlugPage() {
                    {event.description}
                  </p>
 
-                 <div className="flex flex-wrap items-center gap-6 pt-2">
-                    <div className="space-y-0.5">
+                 <div className="flex flex-wrap items-start gap-6 pt-2">
+                    <div className="space-y-0.5 max-w-md">
                       <p className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Location</p>
-                      <p className="text-sm font-bold text-white flex items-center gap-1.5">
-                        <MapPin size={14} className="text-emerald-500" />
-                        {event.location || 'TBA'}
+                      <p className="text-sm font-bold text-white flex items-start gap-1.5">
+                        <MapPin size={14} className="text-emerald-500 mt-0.5 shrink-0" />
+                        <span className="leading-snug">{event.location || 'TBA'}</span>
                       </p>
                     </div>
                     <div className="w-px h-8 bg-zinc-800 hidden md:block" />
                     <div className="space-y-0.5">
-                      <p className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Date</p>
+                      <p className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Date & Time</p>
                       <p className="text-sm font-bold text-white flex items-center gap-1.5">
                         <Calendar size={14} className="text-accent" />
-                        {dateRange}
+                        {formatDateTime(event.startDate)}
                       </p>
                     </div>
                  </div>
@@ -357,8 +357,8 @@ export default function EventBySlugPage() {
                   <Badge variant="success" className="bg-emerald-500 text-zinc-950 font-black px-2 py-0.5 rounded-md animate-pulse">LIVE ARENA</Badge>
                   <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter italic">{event.name}</h1>
                 </div>
-                <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-zinc-400 text-sm font-medium uppercase tracking-widest">
-                  <span className="flex items-center gap-2"><MapPin size={14} className="text-emerald-500" /> {event.location}</span>
+                <div className="flex flex-wrap items-start justify-center md:justify-start gap-6 text-zinc-400 text-sm font-medium uppercase tracking-widest">
+                  <span className="flex items-start gap-2"><MapPin size={14} className="text-emerald-500 mt-0.5 shrink-0" /> <span className="normal-case">{event.location}</span></span>
                   <span className="flex items-center gap-2"><Clock size={14} className="text-accent" /> Ends {formatDateTime(event.endDate)}</span>
                 </div>
               </div>

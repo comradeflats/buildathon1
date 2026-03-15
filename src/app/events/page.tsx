@@ -59,8 +59,8 @@ function ExploreArenas() {
   const [selectedRegion, setSelectedRegion] = useState('All Regions');
   const [viewMode, setViewMode] = useState<'both' | 'map' | 'list'>('both');
   const [expandedSections, setExpandedSections] = useState({
-    active: true,
-    upcoming: true,
+    active: false,
+    upcoming: false,
     archived: false
   });
 
