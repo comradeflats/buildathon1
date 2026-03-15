@@ -39,15 +39,6 @@ const PHASE_CONFIG: Record<EventPhase, {
     description: 'The arena is live! Full themes are revealed and submissions are open.',
     nextStep: 'Hurry! Check the timer and ship your project.'
   },
-  last_call: {
-    label: 'Last Call',
-    icon: Clock,
-    color: 'text-amber-400',
-    bg: 'bg-amber-500/5',
-    border: 'border-amber-500/20',
-    description: 'Coding time is almost up. Final push before keyboards down!',
-    nextStep: 'Ensure your submission link is valid.'
-  },
   review: {
     label: 'Live Demos',
     icon: MousePointer2,

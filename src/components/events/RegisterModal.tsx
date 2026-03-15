@@ -1,22 +1,24 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  X, CheckCircle, AlertCircle, Loader2, 
+import {
+  X, CheckCircle, AlertCircle, Loader2,
   User, Code, Users, Star, ArrowRight, Sparkles, Mail
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/context/AuthContext';
+import { executeRecaptcha } from '@/lib/recaptcha';
 
 interface RegisterModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (data: { 
-    skillLevel: string; 
+  onConfirm: (data: {
+    skillLevel: string;
     teamIntent: string;
     displayName?: string;
     email?: string;
+    recaptchaToken?: string;
   }) => Promise<void>;
   isWaitlist: boolean;
   eventDate?: string;
@@ -56,11 +58,15 @@ export function RegisterModal({ isOpen, onClose, onConfirm, isWaitlist, eventDat
 
     setIsSubmitting(true);
     try {
-      await onConfirm({ 
-        skillLevel, 
+      // Generate reCAPTCHA token for spam prevention
+      const recaptchaToken = await executeRecaptcha('register');
+
+      await onConfirm({
+        skillLevel,
         teamIntent,
         displayName: isAnonymous ? displayName : undefined,
-        email: isAnonymous ? email : undefined
+        email: isAnonymous ? email : undefined,
+        recaptchaToken: recaptchaToken || undefined,
       });
       onClose();
     } catch (err: any) {

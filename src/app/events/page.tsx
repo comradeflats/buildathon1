@@ -338,14 +338,31 @@ function EventCard({ event }: { event: any }) {
   const isUpcoming = status === 'upcoming';
   const isActive = status === 'active';
 
+  // Calculate capacity status
+  const currentCount = event.currentRegistrations || 0;
+  const maxCapacity = event.maxParticipants || null;
+  const spotsRemaining = maxCapacity ? maxCapacity - currentCount : null;
+  const isFull = maxCapacity && currentCount >= maxCapacity;
+  const isNearCapacity = spotsRemaining !== null && spotsRemaining > 0 && spotsRemaining < 10;
+
+  // Determine capacity status
+  let capacityStatus: 'open' | 'waitlist' | 'full' | null = null;
+  if (maxCapacity) {
+    if (isFull) {
+      capacityStatus = event.isRegistrationOpen ? 'waitlist' : 'full';
+    } else if (isNearCapacity) {
+      capacityStatus = 'open';
+    }
+  }
+
   return (
     <Link href={`/events/${event.id}`} className="block">
       <Card className="p-6 hover:border-emerald-500/30 transition-all group flex flex-col h-full bg-zinc-900/20 backdrop-blur-sm border-zinc-800/50 rounded-[2rem] cursor-pointer">
       <div className="flex items-start justify-between mb-4">
         <div className="flex flex-col gap-2">
           <Badge variant="outline" className={`
-            ${isActive ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5' : 
-              isUpcoming ? 'border-violet-500/30 text-violet-400 bg-violet-500/5' : 
+            ${isActive ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5' :
+              isUpcoming ? 'border-violet-500/30 text-violet-400 bg-violet-500/5' :
               'border-zinc-700 text-zinc-500'}
           `}>
             {isActive && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse mr-1.5" />}
@@ -378,14 +395,44 @@ function EventCard({ event }: { event: any }) {
 
         {/* Feature Tags */}
         <div className="flex flex-wrap gap-2 mt-4">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900/50 border border-zinc-800 text-[10px] font-bold text-zinc-400">
-             <Users size={12} className="text-emerald-500/50" />
-             {event.currentRegistrations || 0} {event.maxParticipants ? `/ ${event.maxParticipants}` : 'Joined'}
+          {/* Capacity Badge */}
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-bold ${
+            capacityStatus === 'waitlist'
+              ? 'bg-red-500/10 border-red-500/30 text-red-400'
+              : isNearCapacity
+                ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
+                : 'bg-zinc-900/50 border-zinc-800 text-zinc-400'
+          }`}>
+            <Users size={12} className={
+              capacityStatus === 'waitlist'
+                ? 'text-red-500/70'
+                : isNearCapacity
+                  ? 'text-yellow-500/70'
+                  : 'text-emerald-500/50'
+            } />
+            {isNearCapacity && spotsRemaining !== null ? (
+              <span>{spotsRemaining} {spotsRemaining === 1 ? 'spot' : 'spots'} left</span>
+            ) : (
+              <span>{currentCount} {maxCapacity ? `/ ${maxCapacity}` : 'Joined'}</span>
+            )}
           </div>
-          {event.isRegistrationOpen && (
+
+          {/* Status Badge */}
+          {capacityStatus === 'waitlist' && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-[10px] font-bold text-red-400">
+              <div className="w-1 h-1 rounded-full bg-red-400" />
+              WAITLIST
+            </div>
+          )}
+          {capacityStatus === 'full' && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-800 border border-zinc-700 text-[10px] font-bold text-zinc-500">
+              FULL
+            </div>
+          )}
+          {!capacityStatus && event.isRegistrationOpen && (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/5 border border-emerald-500/10 text-[10px] font-bold text-emerald-400">
-               <div className="w-1 h-1 rounded-full bg-emerald-400 animate-ping" />
-               OPEN
+              <div className="w-1 h-1 rounded-full bg-emerald-400 animate-ping" />
+              OPEN
             </div>
           )}
         </div>

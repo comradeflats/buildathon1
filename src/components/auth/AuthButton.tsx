@@ -13,7 +13,7 @@ interface AuthButtonProps {
 }
 
 export function AuthButton({ className, variant = 'primary', size = 'md', iconOnly = false }: AuthButtonProps) {
-  const { signInWithGitHub, isLoading: authLoading } = useAuth();
+  const { signInWithGitHub, isLoading: authLoading, isRedirecting } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   const handleSignIn = async () => {
@@ -26,12 +26,13 @@ export function AuthButton({ className, variant = 'primary', size = 'md', iconOn
       console.error('[AUTH] AuthButton: Sign-in failed:', error);
       console.error('[AUTH] AuthButton: Error code:', error?.code);
       console.error('[AUTH] AuthButton: Error message:', error?.message);
-    } finally {
       setIsSigningIn(false);
     }
+    // Note: Don't set isSigningIn(false) in finally on mobile,
+    // because the page will redirect and component will unmount
   };
 
-  const isLoading = authLoading || isSigningIn;
+  const isLoading = authLoading || isSigningIn || isRedirecting;
 
   return (
     <Button
@@ -46,7 +47,7 @@ export function AuthButton({ className, variant = 'primary', size = 'md', iconOn
       ) : (
         <Github size={18} className={iconOnly ? '' : 'mr-2'} />
       )}
-      {!iconOnly && 'Sign in with GitHub'}
+      {!iconOnly && (isRedirecting ? 'Redirecting...' : 'Sign in with GitHub')}
     </Button>
   );
 }

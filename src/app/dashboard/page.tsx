@@ -3,29 +3,51 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  Loader2, Building2, Plus, ArrowRight, Settings, LayoutGrid, Calendar, 
-  User as UserIcon, Trophy, Zap, AlertCircle, CheckCircle, Lock, Sparkles 
+import {
+  Loader2, Building2, Plus, ArrowRight, Settings, LayoutGrid, Calendar,
+  User as UserIcon, Trophy, Zap, AlertCircle, CheckCircle, Lock, Sparkles, Clock, LogOut, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { ParticipantSetupWizard } from '@/components/auth/ParticipantSetupWizard';
+import { VerificationBanner } from '@/components/auth/VerificationBanner';
 import { useAuth } from '@/context/AuthContext';
 import { useOrganizations } from '@/hooks/useOrganizations';
 import { useTeams } from '@/hooks/useTeams';
 import { useEvents } from '@/hooks/useEvents';
+import { useUserRegistrations } from '@/hooks/useUserRegistrations';
+import { getEventStatus } from '@/lib/utils';
+import { WithdrawModal } from '@/components/events/WithdrawModal';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, userProfile, isLoading: authLoading, signInWithGitHub, signInWithGoogle } = useAuth();
+  const { user, userProfile, isLoading: authLoading, getFirebaseToken, migrateGuestData } = useAuth();
   const { organizations, isLoading: orgsLoading } = useOrganizations();
   const { teams, isLoading: teamsLoading } = useTeams();
   const { events, isLoading: eventsLoading } = useEvents();
+  const { registrations, isLoading: regsLoading, refresh: refreshRegistrations } = useUserRegistrations();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'events' | 'submissions'>('overview');
+  const [withdrawModal, setWithdrawModal] = useState<{
+    isOpen: boolean;
+    eventId: string;
+    eventName: string;
+    eventDate: string;
+    registrationStatus: 'approved' | 'waitlisted';
+  }>({
+    isOpen: false,
+    eventId: '',
+    eventName: '',
+    eventDate: '',
+    registrationStatus: 'approved'
+  });
+  const [migrationMessage, setMigrationMessage] = useState<{
+    show: boolean;
+    summary?: { registrations: number; submissions: number; votes: number };
+  }>({ show: false });
 
-  const isLoading = authLoading || orgsLoading || teamsLoading || eventsLoading;
+  const isLoading = authLoading || orgsLoading || teamsLoading || eventsLoading || regsLoading;
   const isGuest = user?.isAnonymous;
 
   // Redirect only if not authenticated at all
@@ -34,6 +56,77 @@ export default function DashboardPage() {
       router.push('/signup');
     }
   }, [user, authLoading, router]);
+
+  // Attempt guest data migration when user is authenticated and not anonymous
+  useEffect(() => {
+    if (!user || user.isAnonymous || authLoading) {
+      return;
+    }
+
+    // Check if there's a pending migration
+    const guestUid = localStorage.getItem('guestUidForMigration');
+    if (!guestUid) {
+      return;
+    }
+
+    // Trigger migration
+    console.log('[DASHBOARD] Triggering guest data migration...');
+    migrateGuestData().then((result) => {
+      if (result.success && result.summary) {
+        const total =
+          (result.summary.registrations || 0) +
+          (result.summary.submissions || 0) +
+          (result.summary.votes || 0);
+
+        if (total > 0) {
+          setMigrationMessage({ show: true, summary: result.summary });
+          refreshRegistrations(); // Refresh to show migrated registrations
+        }
+      }
+    });
+  }, [user, authLoading, migrateGuestData, refreshRegistrations]);
+
+  const openWithdrawModal = (
+    eventId: string,
+    eventName: string,
+    eventDate: string,
+    status: 'approved' | 'waitlisted'
+  ) => {
+    setWithdrawModal({
+      isOpen: true,
+      eventId,
+      eventName,
+      eventDate,
+      registrationStatus: status
+    });
+  };
+
+  const closeWithdrawModal = () => {
+    setWithdrawModal(prev => ({ ...prev, isOpen: false }));
+  };
+
+  const handleWithdraw = async () => {
+    const token = await getFirebaseToken();
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    const response = await fetch(`/api/events/${withdrawModal.eventId}/register`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to withdraw');
+    }
+
+    // Refresh registrations list
+    await refreshRegistrations();
+  };
 
   if (isLoading) {
     return (
@@ -66,6 +159,37 @@ export default function DashboardPage() {
               Save My Progress
             </Button>
           </Link>
+        </div>
+      )}
+
+      {/* Email Verification Banner */}
+      <VerificationBanner />
+
+      {/* Migration Success Banner */}
+      {migrationMessage.show && migrationMessage.summary && (
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3 flex-1">
+            <div className="p-2 bg-emerald-500/20 rounded-lg text-emerald-500 shrink-0">
+              <CheckCircle size={20} />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-white mb-1">Welcome! Your data has been migrated</p>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                {migrationMessage.summary.registrations > 0 && `${migrationMessage.summary.registrations} registration${migrationMessage.summary.registrations === 1 ? '' : 's'}`}
+                {migrationMessage.summary.registrations > 0 && migrationMessage.summary.submissions > 0 && ', '}
+                {migrationMessage.summary.submissions > 0 && `${migrationMessage.summary.submissions} submission${migrationMessage.summary.submissions === 1 ? '' : 's'}`}
+                {(migrationMessage.summary.registrations > 0 || migrationMessage.summary.submissions > 0) && migrationMessage.summary.votes > 0 && ', and '}
+                {migrationMessage.summary.votes > 0 && `${migrationMessage.summary.votes} vote${migrationMessage.summary.votes === 1 ? '' : 's'}`}
+                {' '}have been linked to your new account.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setMigrationMessage({ show: false })}
+            className="p-1 text-zinc-500 hover:text-white transition-colors shrink-0"
+          >
+            <X size={16} />
+          </button>
         </div>
       )}
 
@@ -245,8 +369,8 @@ export default function DashboardPage() {
 
         {activeTab === 'events' && (
           <div className="space-y-4">
-            <h2 className="text-xl font-black text-white">Participating Events</h2>
-            {myEvents.length === 0 ? (
+            <h2 className="text-xl font-black text-white">My Registrations</h2>
+            {registrations.length === 0 ? (
               <Card className="p-12 text-center space-y-4">
                 <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto">
                   <Calendar size={32} className="text-zinc-600" />
@@ -261,24 +385,106 @@ export default function DashboardPage() {
               </Card>
             ) : (
               <div className="grid gap-4">
-                {myEvents.map(event => (
-                  <Card key={event.id} className="p-4 hover:border-zinc-600 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-zinc-800 rounded-xl flex items-center justify-center">
-                          <Calendar className="text-accent" size={24} />
+                {registrations.map(reg => {
+                  const event = reg.event;
+                  if (!event) return null;
+
+                  const eventStatus = getEventStatus(event.startDate, event.endDate);
+                  const isApproved = reg.status === 'approved';
+                  const isWaitlisted = reg.status === 'waitlisted';
+
+                  return (
+                    <Card key={reg.id} className="p-5 hover:border-zinc-600 transition-colors">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-4 flex-1 min-w-0">
+                          <div className="w-12 h-12 bg-zinc-800 rounded-xl flex items-center justify-center shrink-0">
+                            <Calendar className="text-accent" size={24} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <h3 className="font-bold text-white truncate">{event.name}</h3>
+                              <Badge variant="outline" className={`text-[9px] px-1.5 py-0.5 shrink-0 ${
+                                eventStatus === 'active'
+                                  ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5'
+                                  : eventStatus === 'upcoming'
+                                    ? 'border-violet-500/30 text-violet-400 bg-violet-500/5'
+                                    : 'border-zinc-700 text-zinc-500'
+                              }`}>
+                                {eventStatus.toUpperCase()}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-zinc-500 mb-3">
+                              {new Date(event.startDate).toLocaleDateString()}
+                            </p>
+
+                            {/* Registration Status */}
+                            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border ${
+                              isApproved
+                                ? 'bg-emerald-500/5 border-emerald-500/20'
+                                : isWaitlisted
+                                  ? 'bg-yellow-500/5 border-yellow-500/20'
+                                  : 'bg-zinc-800 border-zinc-700'
+                            }`}>
+                              <div className={`p-1 rounded ${
+                                isApproved
+                                  ? 'bg-emerald-500/10 text-emerald-500'
+                                  : isWaitlisted
+                                    ? 'bg-yellow-500/10 text-yellow-500'
+                                    : 'bg-zinc-700 text-zinc-400'
+                              }`}>
+                                {isApproved ? (
+                                  <CheckCircle size={14} />
+                                ) : isWaitlisted ? (
+                                  <Clock size={14} />
+                                ) : (
+                                  <AlertCircle size={14} />
+                                )}
+                              </div>
+                              <div>
+                                <p className={`text-xs font-bold ${
+                                  isApproved
+                                    ? 'text-emerald-400'
+                                    : isWaitlisted
+                                      ? 'text-yellow-400'
+                                      : 'text-zinc-400'
+                                }`}>
+                                  {isApproved ? 'Registered' : isWaitlisted ? 'Waitlisted' : reg.status}
+                                </p>
+                                {isWaitlisted && reg.waitlistPosition && (
+                                  <p className="text-[10px] text-zinc-500">
+                                    Position #{reg.waitlistPosition}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-bold text-white">{event.name}</h3>
-                          <p className="text-sm text-zinc-500">{new Date(event.startDate).toLocaleDateString()}</p>
+
+                        <div className="flex flex-col gap-2 shrink-0">
+                          <Link href={`/e/${event.slug || event.id}`}>
+                            <Button variant="secondary" size="sm" className="h-9 px-4">
+                              View Event
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openWithdrawModal(
+                              event.id,
+                              event.name,
+                              new Date(event.startDate).toLocaleDateString(),
+                              reg.status as 'approved' | 'waitlisted'
+                            )}
+                            className="h-9 px-4 text-zinc-500 hover:text-red-400 hover:bg-red-500/5 border border-transparent hover:border-red-500/20"
+                          >
+                            <LogOut size={14} className="mr-1.5" />
+                            Withdraw
+                          </Button>
                         </div>
                       </div>
-                      <Link href={`/events/${event.id}`}>
-                        <Button variant="ghost">View Details</Button>
-                      </Link>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -347,6 +553,16 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Withdraw Modal */}
+      <WithdrawModal
+        isOpen={withdrawModal.isOpen}
+        onClose={closeWithdrawModal}
+        onConfirm={handleWithdraw}
+        eventName={withdrawModal.eventName}
+        eventDate={withdrawModal.eventDate}
+        registrationStatus={withdrawModal.registrationStatus}
+      />
     </div>
   );
 }

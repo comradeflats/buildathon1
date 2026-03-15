@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { ThemeToggle } from './ThemeToggle';
-import { Globe, LayoutGrid } from 'lucide-react';
+import { Globe, LayoutGrid, MessageSquare } from 'lucide-react';
 
 import { useAuth } from '@/context/AuthContext';
 
@@ -16,6 +16,7 @@ export function Navbar() {
   const navLinks = [
     ...(user ? [{ href: '/dashboard', label: 'Dashboard', icon: LayoutGrid }] : []),
     { href: '/events', label: 'Explore', icon: Globe },
+    { href: '/contact', label: 'Contact', icon: MessageSquare },
   ];
 
   return (

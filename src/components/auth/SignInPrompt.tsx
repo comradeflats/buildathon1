@@ -5,6 +5,7 @@ import { Github, UserCircle, Loader2, Vote, Mail, Chrome } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useAuth } from '@/context/AuthContext';
+import Link from 'next/link';
 
 interface SignInPromptProps {
   title?: string;
@@ -19,7 +20,7 @@ export function SignInPrompt({
   onComplete,
   hideGuest = false,
 }: SignInPromptProps) {
-  const { signInWithGitHub, signInWithGoogle, signInWithEmail, signUpWithEmail, signInAnonymously } = useAuth();
+  const { signInWithGitHub, signInWithGoogle, signInWithEmail, signUpWithEmail, signInAnonymously, isRedirecting } = useAuth();
   const [isSigningInGitHub, setIsSigningInGitHub] = useState(false);
   const [isSigningInGoogle, setIsSigningInGoogle] = useState(false);
   const [isSigningInAnon, setIsSigningInAnon] = useState(false);
@@ -140,6 +141,14 @@ export function SignInPrompt({
         <p className="text-zinc-400 text-sm">{description}</p>
       </div>
 
+      {isRedirecting && (
+        <div className="mb-4 p-4 bg-accent/10 border border-accent/30 rounded-lg text-white text-sm text-center">
+          <Loader2 size={20} className="animate-spin mx-auto mb-2" />
+          <p className="font-medium">Redirecting to authentication...</p>
+          <p className="text-xs text-zinc-400 mt-1">Please wait while we redirect you to sign in securely.</p>
+        </div>
+      )}
+
       {error && (
         <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm text-center">
           {error}
@@ -183,21 +192,28 @@ export function SignInPrompt({
             )}
             {isSignUp ? 'Create Account' : 'Sign In'}
           </Button>
-          <div className="flex justify-between items-center text-xs">
-            <button
-              type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-accent hover:underline"
-            >
-              {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowEmailForm(false)}
-              className="text-zinc-400 hover:text-white"
-            >
-              Back to options
-            </button>
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center text-xs">
+              <button
+                type="button"
+                onClick={() => setIsSignUp(!isSignUp)}
+                className="text-accent hover:underline"
+              >
+                {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowEmailForm(false)}
+                className="text-zinc-400 hover:text-white"
+              >
+                Back to options
+              </button>
+            </div>
+            {!isSignUp && (
+              <Link href="/reset-password" className="text-xs text-center text-zinc-500 hover:text-accent transition-colors">
+                Forgot your password?
+              </Link>
+            )}
           </div>
         </form>
       ) : (

@@ -7,6 +7,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { OrgProvider } from '@/context/OrgContext';
 import { Navbar } from '@/components/layout/Navbar';
 import { Toast } from '@/components/ui/Toast';
+import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -22,27 +23,40 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+
   return (
     <html lang="en">
+      <head>
+        {recaptchaSiteKey && (
+          <script
+            src={`https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`}
+            async
+            defer
+          />
+        )}
+      </head>
       <body className="min-h-screen bg-background text-foreground">
-        <ThemeProvider>
-          <AuthProvider>
-            <OrgProvider>
-              <AdminProvider>
-                <TeamProvider>
-                  <VotingProvider>
-                    <Navbar />
+        <ErrorBoundary>
+          <ThemeProvider>
+            <AuthProvider>
+              <OrgProvider>
+                <AdminProvider>
+                  <TeamProvider>
+                    <VotingProvider>
+                      <Navbar />
 
-                    <main className="container mx-auto px-4 py-8 max-w-5xl">
-                      {children}
-                    </main>
-                    <Toast />
-                  </VotingProvider>
-                </TeamProvider>
-              </AdminProvider>
-            </OrgProvider>
-          </AuthProvider>
-        </ThemeProvider>
+                      <main className="container mx-auto px-4 py-8 max-w-5xl">
+                        {children}
+                      </main>
+                      <Toast />
+                    </VotingProvider>
+                  </TeamProvider>
+                </AdminProvider>
+              </OrgProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

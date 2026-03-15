@@ -13,20 +13,32 @@ const firebaseConfig = {
 
 // Debug config availability on client
 if (typeof window !== 'undefined') {
-  console.log('[FIREBASE] Config present:', {
-    apiKey: firebaseConfig.apiKey !== "placeholder-key",
-    authDomain: firebaseConfig.authDomain,
-    projectId: firebaseConfig.projectId,
-    appId: firebaseConfig.appId,
-    currentHost: window.location.hostname
+  console.log('[FIREBASE] Configuration:', {
+    apiKey: firebaseConfig.apiKey !== "placeholder-key" ? '✓ Present' : '✗ Missing',
+    authDomain: firebaseConfig.authDomain || '✗ Missing',
+    projectId: firebaseConfig.projectId || '✗ Missing',
+    appId: firebaseConfig.appId ? '✓ Present' : '✗ Missing',
+    currentHost: window.location.hostname,
+    protocol: window.location.protocol
   });
-  
-  // Warning for common mobile auth failure cause
-  if (firebaseConfig.authDomain && !window.location.hostname.includes(firebaseConfig.authDomain.split('.')[0])) {
-    if (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
-      console.warn('[FIREBASE] AUTH DOMAIN MISMATCH: Your authDomain does not match your current host. ' +
-        'Mobile redirects will likely fail due to browser security policies (ITP). ' +
-        'Fix: Use a custom auth domain (e.g., auth.buildathon.live) in Firebase Console.');
+
+  // Critical: Check authorized domains for OAuth
+  if (firebaseConfig.authDomain) {
+    const currentHost = window.location.hostname;
+    const isLocalhost = currentHost.includes('localhost') || currentHost.includes('127.0.0.1');
+
+    if (!isLocalhost) {
+      console.log('[FIREBASE] 🔐 OAuth Authorized Domains Check:');
+      console.log('  Current domain:', currentHost);
+      console.log('  Auth domain:', firebaseConfig.authDomain);
+      console.log('  ⚠️  IMPORTANT: Ensure the following domains are added to Firebase Console:');
+      console.log('     → Firebase Console → Authentication → Settings → Authorized domains');
+      console.log('     Required domains:');
+      console.log('       • buildathon.live');
+      console.log('       • www.buildathon.live');
+      console.log('       • ' + firebaseConfig.authDomain);
+      console.log('  ');
+      console.log('  Mobile OAuth requires these domains to be whitelisted or auth will fail!');
     }
   }
 }

@@ -57,7 +57,7 @@ export interface User {
   organizationIds: string[];
 }
 
-export type EventPhase = 'registration' | 'building' | 'last_call' | 'review' | 'judging' | 'results';
+export type EventPhase = 'registration' | 'building' | 'review' | 'judging' | 'results';
 export type VotingModel = 'peer' | 'expert';
 
 export interface Event {

@@ -1,3 +1,5 @@
+const { withSentryConfig } = require('@sentry/nextjs');
+
 /** @type {import('next').NextConfig} */
 // Only apply the prefix if we're deploying to GitHub Actions
 const isGithubActions = process.env.GITHUB_ACTIONS === 'true';
@@ -63,4 +65,34 @@ const nextConfig = {
   }
 };
 
-module.exports = nextConfig;
+// Sentry configuration options
+const sentryWebpackPluginOptions = {
+  // For all available options, see:
+  // https://github.com/getsentry/sentry-webpack-plugin#options
+
+  // Suppresses source map uploading logs during build
+  silent: true,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+
+  // For all available options, see:
+  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+
+  // Upload source maps to Sentry
+  widenClientFileUpload: true,
+
+  // Automatically tree-shake Sentry logger statements
+  disableLogger: true,
+
+  // Hides source maps from generated client bundles
+  hideSourceMaps: true,
+
+  // Automatically annotate React components to show in breadcrumbs
+  reactComponentAnnotation: {
+    enabled: true,
+  },
+};
+
+// Export with Sentry config
+module.exports = withSentryConfig(nextConfig, sentryWebpackPluginOptions);

@@ -27,6 +27,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useVoting } from '@/context/VotingContext';
 import { RegisterModal } from '@/components/events/RegisterModal';
 import { SignInModal } from '@/components/auth/SignInModal';
+import { WithdrawModal } from '@/components/events/WithdrawModal';
 
 function ParticipantTimer({ event }: { event: any }) {
   const [timeLeft, setTimeLeft] = useState<number>(0);
@@ -83,6 +84,7 @@ export default function EventBySlugPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
 
   // Automatically open registration modal after signing in if we were in the middle of joining
   useEffect(() => {
@@ -125,15 +127,13 @@ export default function EventBySlugPage() {
   };
 
   const handleWithdraw = async () => {
-    if (!confirm('Are you sure you want to withdraw? This will free up your spot for someone on the waitlist.')) {
-      return;
-    }
-
     try {
       await withdraw();
       showToast('Successfully withdrawn from event', 'info');
+      setIsWithdrawModalOpen(false);
     } catch (err: any) {
       showToast(err.message || 'Failed to withdraw', 'error');
+      throw err; // Re-throw so modal can show error
     }
   };
 
@@ -239,6 +239,49 @@ export default function EventBySlugPage() {
                     Secure Your Spot
                   </h3>
 
+                  {/* Capacity Display */}
+                  {event.maxParticipants && (
+                    <div className="mb-4 p-3 rounded-lg bg-zinc-900/50 border border-zinc-800">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Capacity</span>
+                        {(() => {
+                          const current = event.currentRegistrations || 0;
+                          const max = event.maxParticipants;
+                          const remaining = max - current;
+                          const isFull = current >= max;
+                          const isNearCapacity = remaining > 0 && remaining < 10;
+
+                          return (
+                            <Badge className={`text-[8px] px-1.5 py-0.5 ${
+                              isFull
+                                ? 'bg-red-500/10 text-red-400 border-red-500/30'
+                                : isNearCapacity
+                                  ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
+                                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                            }`}>
+                              {isFull ? 'WAITLIST' : isNearCapacity ? 'FILLING UP' : 'OPEN'}
+                            </Badge>
+                          );
+                        })()}
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-black text-white">{event.currentRegistrations || 0}</span>
+                        <span className="text-sm text-zinc-500 font-bold">/ {event.maxParticipants}</span>
+                      </div>
+                      {(() => {
+                        const remaining = (event.maxParticipants || 0) - (event.currentRegistrations || 0);
+                        if (remaining > 0 && remaining < 10) {
+                          return (
+                            <p className="text-[10px] text-yellow-500 font-bold mt-1">
+                              Only {remaining} {remaining === 1 ? 'spot' : 'spots'} remaining!
+                            </p>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+                  )}
+
                   {registration ? (
                     <div className="space-y-4">
                       <div className={`p-4 rounded-xl border flex items-start gap-3 ${
@@ -259,7 +302,7 @@ export default function EventBySlugPage() {
                         </div>
                       </div>
                       <button
-                        onClick={handleWithdraw}
+                        onClick={() => setIsWithdrawModalOpen(true)}
                         disabled={isRegistering}
                         className="w-full text-[9px] font-black text-zinc-600 hover:text-red-400 uppercase tracking-wider transition-colors"
                       >
@@ -269,7 +312,7 @@ export default function EventBySlugPage() {
                   ) : (
                     <div className="space-y-4">
                       <p className="text-xs text-zinc-400 leading-snug">
-                        Join the community of builders. Limited spots available.
+                        Join the community of builders.{event.maxParticipants ? ` ${(event.maxParticipants || 0) - (event.currentRegistrations || 0)} spots available.` : ' Limited spots available.'}
                       </p>
                       <Button
                         onClick={handleRegisterClick}
@@ -404,7 +447,7 @@ export default function EventBySlugPage() {
                   <p className="text-xl font-black text-white">{eventTeams.length}</p>
                   <p className="text-[9px] text-zinc-500 uppercase font-black tracking-widest">Projects Shipped</p>
               </div>
-              {(event.phase === 'building' || event.phase === 'last_call') && (
+              {event.phase === 'building' && (
                 <div className="col-span-2">
                     <ParticipantTimer event={event} />
                 </div>
@@ -472,7 +515,7 @@ export default function EventBySlugPage() {
                     </div>
                     {registration && (
                       <div className="mt-12 pt-8 border-t border-zinc-800">
-                        <button onClick={handleWithdraw} className="text-[10px] font-black text-zinc-600 hover:text-red-400 uppercase tracking-[0.2em] transition-colors">Withdraw from Arena</button>
+                        <button onClick={() => setIsWithdrawModalOpen(true)} className="text-[10px] font-black text-zinc-600 hover:text-red-400 uppercase tracking-[0.2em] transition-colors">Withdraw from Arena</button>
                       </div>
                     )}
                   </div>
@@ -538,13 +581,24 @@ export default function EventBySlugPage() {
         isWaitlist={(event.maxParticipants || 0) <= (event.currentRegistrations || 0)}
       />
 
-      <SignInModal 
-        isOpen={isSignInModalOpen} 
+      <SignInModal
+        isOpen={isSignInModalOpen}
         onClose={() => setIsSignInModalOpen(false)}
         title="Sign in to Register"
         description="You need to be signed in to join the event. You can continue as a guest if you prefer."
         hideGuest={false}
       />
+
+      {registration && (
+        <WithdrawModal
+          isOpen={isWithdrawModalOpen}
+          onClose={() => setIsWithdrawModalOpen(false)}
+          onConfirm={handleWithdraw}
+          eventName={event.name}
+          eventDate={formatDateTime(event.startDate)}
+          registrationStatus={registration.status as 'approved' | 'waitlisted'}
+        />
+      )}
 
       {isAdmin && <EventPhaseController event={event} />}
       </div>

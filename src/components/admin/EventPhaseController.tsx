@@ -23,47 +23,40 @@ interface EventPhaseControllerProps {
 }
 
 const PHASES: { id: EventPhase; label: string; icon: any; color: string; description: string }[] = [
-  { 
-    id: 'registration', 
-    label: 'Registration', 
-    icon: Users, 
-    color: 'text-blue-400', 
-    description: 'Participants are joining. Themes are hidden or in preview.' 
+  {
+    id: 'registration',
+    label: 'Registration',
+    icon: Users,
+    color: 'text-blue-400',
+    description: 'Participants are joining. Themes are hidden or in preview.'
   },
-  { 
-    id: 'building', 
-    label: 'Building', 
-    icon: Play, 
-    color: 'text-emerald-400', 
-    description: 'Active buildathon! Full themes revealed and submissions open.' 
+  {
+    id: 'building',
+    label: 'Building',
+    icon: Play,
+    color: 'text-emerald-400',
+    description: 'Active buildathon! Full themes revealed and submissions open.'
   },
-  { 
-    id: 'last_call', 
-    label: 'Last Call', 
-    icon: Clock, 
-    color: 'text-amber-400', 
-    description: 'Coding time almost up. Final push before keyboards down!' 
+  {
+    id: 'review',
+    label: 'Live Demos',
+    icon: MousePointer2,
+    color: 'text-purple-400',
+    description: 'Submissions locked. One-by-one demos and live voting.'
   },
-  { 
-    id: 'review', 
-    label: 'Live Demos', 
-    icon: MousePointer2, 
-    color: 'text-purple-400', 
-    description: 'Submissions locked. One-by-one demos and live voting.' 
+  {
+    id: 'judging',
+    label: 'Judging',
+    icon: Zap,
+    color: 'text-pink-400',
+    description: 'Finalizing votes and calculating scores.'
   },
-  { 
-    id: 'judging', 
-    label: 'Judging', 
-    icon: Zap, 
-    color: 'text-pink-400', 
-    description: 'Finalizing votes and calculating scores.' 
-  },
-  { 
-    id: 'results', 
-    label: 'Results', 
-    icon: Trophy, 
-    color: 'text-yellow-400', 
-    description: 'Event concluded. Winners announced!' 
+  {
+    id: 'results',
+    label: 'Results',
+    icon: Trophy,
+    color: 'text-yellow-400',
+    description: 'Event concluded. Winners announced!'
   },
 ];
 
@@ -330,7 +323,7 @@ export function EventPhaseController({ event, variant = 'drawer' }: EventPhaseCo
           </div>
         </div>
 
-        {(event.phase === 'building' || event.phase === 'last_call') && (
+        {event.phase === 'building' && (
           <div className="space-y-3">
             <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Live Clock</label>
             <LiveTimer event={event} onUpdate={updateEvent} />

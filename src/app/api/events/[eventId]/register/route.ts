@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestoreAdmin, getFirebaseAdmin } from '@/lib/firebase-admin';
 import { verifyFirebaseToken, handleAuthError } from '@/lib/auth-helpers';
 import { RegistrationStatus } from '@/lib/types';
+import { verifyRecaptcha } from '@/lib/recaptcha';
 
 /**
  * POST /api/events/[eventId]/register
@@ -14,7 +15,23 @@ export async function POST(
   try {
     const eventId = params.eventId;
     const body = await request.json();
-    const { skillLevel, teamIntent, displayName, email } = body;
+    const { skillLevel, teamIntent, displayName, email, recaptchaToken } = body;
+
+    // Verify reCAPTCHA token (spam prevention)
+    if (recaptchaToken) {
+      const recaptchaResult = await verifyRecaptcha(recaptchaToken, 'register', 0.5);
+      if (!recaptchaResult.success) {
+        console.warn('[REGISTER] reCAPTCHA verification failed:', recaptchaResult.error);
+        return NextResponse.json(
+          { error: 'Spam detection triggered. Please try again or contact support.' },
+          { status: 400 }
+        );
+      }
+      console.log('[REGISTER] reCAPTCHA verified. Score:', recaptchaResult.score);
+    } else {
+      console.warn('[REGISTER] No reCAPTCHA token provided (may be disabled)');
+    }
+
     const user = await verifyFirebaseToken(request);
     
     const db = getFirestoreAdmin();

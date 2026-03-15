@@ -3,15 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  Loader2, 
-  ArrowLeft, 
-  ExternalLink, 
-  Users, 
-  BarChart3, 
-  Calendar, 
-  Save, 
-  AlertCircle, 
+import {
+  Loader2,
+  ArrowLeft,
+  ExternalLink,
+  Users,
+  BarChart3,
+  Calendar,
+  Save,
+  AlertCircle,
   Map as MapIcon,
   CheckCircle2,
   Sparkles,
@@ -21,7 +21,9 @@ import {
   MapPin,
   Clock,
   Rocket,
-  ShieldCheck
+  ShieldCheck,
+  Copy,
+  Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -42,7 +44,6 @@ import { REGIONS } from '@/lib/constants';
 const PHASE_CONFIG: Record<EventPhase, { color: string, glow: string }> = {
   registration: { color: 'emerald', glow: 'shadow-emerald-500/20 bg-emerald-500/5' },
   building: { color: 'blue', glow: 'shadow-blue-500/20 bg-blue-500/5' },
-  last_call: { color: 'amber', glow: 'shadow-amber-500/20 bg-amber-500/5' },
   review: { color: 'purple', glow: 'shadow-purple-500/20 bg-purple-500/5' },
   judging: { color: 'pink', glow: 'shadow-pink-500/20 bg-pink-500/5' },
   results: { color: 'yellow', glow: 'shadow-yellow-500/20 bg-yellow-500/5' },
@@ -699,13 +700,36 @@ export default function ManageEventPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">Submission Code</label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <code className="text-sm font-black text-emerald-400 bg-emerald-500/10 px-3 py-2 rounded flex-1 text-center tracking-[0.2em]">
-                      {event.submissionCode || 'NONE'}
-                    </code>
+                <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <label className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Submission Code</label>
+                      <div className="group relative">
+                        <Info size={12} className="text-zinc-500 hover:text-zinc-400 cursor-help" />
+                        <div className="absolute left-0 top-full mt-2 w-64 p-3 bg-zinc-900 border border-zinc-700 rounded-lg text-xs text-zinc-300 leading-relaxed opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 shadow-xl">
+                          Share this code with participants. They'll need it to submit their projects.
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+                      onClick={() => {
+                        navigator.clipboard.writeText(event.submissionCode || '');
+                        showToast?.('Submission code copied!', 'success');
+                      }}
+                    >
+                      <Copy size={12} className="mr-1" />
+                      Copy
+                    </Button>
                   </div>
+                  <code className="block text-2xl font-black text-emerald-400 bg-emerald-500/10 px-4 py-3 rounded-lg text-center tracking-[0.3em] border border-emerald-500/20">
+                    {event.submissionCode || 'NONE'}
+                  </code>
+                  <p className="text-[9px] text-zinc-500 text-center mt-2">
+                    Required for project submissions
+                  </p>
                 </div>
 
                 <div className="pt-2">

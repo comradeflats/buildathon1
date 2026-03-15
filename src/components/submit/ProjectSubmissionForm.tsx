@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Github, Loader2, Star, GitFork, ExternalLink, AlertCircle, Calendar, Globe, Link, CheckCircle, ChevronDown, Lock, Send } from 'lucide-react';
+import { Github, Loader2, Star, GitFork, ExternalLink, AlertCircle, Calendar, Globe, Link, CheckCircle, ChevronDown, Lock, Send, Info } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -207,7 +207,10 @@ export function ProjectSubmissionForm({ initialTeam, preselectedEventId, presele
     // Validate submission code for new submissions (can skip for edits if desired, but safer to keep)
     const selectedEvent = events.find(ev => ev.id === selectedEventId);
     if (selectedEvent?.submissionCode && enteredSubmissionCode.trim().toUpperCase() !== selectedEvent.submissionCode.toUpperCase()) {
-      showToast('Invalid Event Submission Code. Ask the organizer for the code.', 'error');
+      showToast('Incorrect submission code. Please check with the event organizer for the correct code.', 'error');
+      // Focus the code input for easy correction
+      codeInputRef.current?.focus();
+      codeInputRef.current?.select();
       return;
     }
 
@@ -514,23 +517,45 @@ export function ProjectSubmissionForm({ initialTeam, preselectedEventId, presele
         {urlValidated && selectedEventId && (
           <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
             {/* Submission Code Verification */}
-            <Card className="p-6 border-accent/20">
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Lock size={20} className="text-accent" />
-                Event Submission Code
-              </h2>
-              <p className="text-sm text-zinc-400 mb-4">
-                Enter the verification code revealed at the event to submit your project.
+            <Card className="p-6 border-accent/20 bg-gradient-to-br from-accent/5 to-transparent">
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div className="flex items-center gap-2">
+                  <Lock size={20} className="text-accent shrink-0" />
+                  <h2 className="text-lg font-semibold text-white">Event Submission Code</h2>
+                </div>
+                <div className="group relative">
+                  <div className="p-1.5 rounded-lg bg-zinc-800 border border-zinc-700 cursor-help">
+                    <Info size={14} className="text-zinc-400" />
+                  </div>
+                  <div className="absolute right-0 top-full mt-2 w-72 p-4 bg-zinc-900 border border-zinc-700 rounded-xl text-xs text-zinc-300 leading-relaxed opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 shadow-2xl">
+                    <p className="font-bold text-white mb-2">What is a submission code?</p>
+                    <p className="mb-2">
+                      This code prevents spam submissions and ensures only event participants can submit projects.
+                    </p>
+                    <p className="text-emerald-400 font-medium">
+                      Ask the event organizer for the code.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <p className="text-sm text-zinc-400 mb-4 leading-relaxed">
+                Enter the verification code provided by the event organizer. This code is revealed during the event to prevent spam submissions.
               </p>
-              <input
-                ref={codeInputRef}
-                type="text"
-                value={enteredSubmissionCode}
-                onChange={(e) => setEnteredSubmissionCode(e.target.value.toUpperCase())}
-                placeholder="Enter 6-character code"
-                className="w-full max-w-[200px] bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-center font-mono text-xl tracking-widest"
-                maxLength={10}
-              />
+              <div className="space-y-3">
+                <input
+                  ref={codeInputRef}
+                  type="text"
+                  value={enteredSubmissionCode}
+                  onChange={(e) => setEnteredSubmissionCode(e.target.value.toUpperCase())}
+                  placeholder="ENTER CODE"
+                  className="w-full max-w-xs bg-zinc-800 border-2 border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-center font-mono text-xl tracking-[0.3em] font-bold transition-all"
+                  maxLength={10}
+                />
+                <p className="text-[10px] text-zinc-500 flex items-center gap-1.5">
+                  <AlertCircle size={10} />
+                  Don't have the code? Ask your event organizer
+                </p>
+              </div>
             </Card>
 
             {/* Theme Selection */}

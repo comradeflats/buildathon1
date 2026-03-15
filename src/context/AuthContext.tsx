@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signInAnonymously as firebaseSignInAnonymously, signOut as firebaseSignOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signInAnonymously as firebaseSignInAnonymously, signOut as firebaseSignOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { auth, githubProvider, googleProvider, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { isMobileDevice } from '@/lib/deviceUtils';
@@ -16,6 +16,7 @@ interface AuthContextType {
   ownershipToken: string | null;
   authError: string | null;
   userProfile: UserProfile | null;
+  isRedirecting: boolean;
   signInWithGitHub: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
@@ -27,6 +28,7 @@ interface AuthContextType {
   getUserProfile: () => Promise<UserProfile | null>;
   isOrganizer: () => boolean;
   getFirebaseToken: () => Promise<string | null>;
+  migrateGuestData: () => Promise<{ success: boolean; summary?: any; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [ownershipToken, setOwnershipToken] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const clearAuthError = useCallback(() => {
     setAuthError(null);
@@ -88,18 +91,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // First, check for redirect result (for mobile auth)
         console.log('[AUTH] Checking redirect result...');
         const result = await getRedirectResult(auth);
-        
+
         if (result?.user && isMounted) {
-          console.log('[AUTH] Setting user from redirect result:', result.user.uid);
+          console.log('[AUTH] ✓ Redirect successful! User:', result.user.uid, 'Provider:', result.providerId);
           setUser(result.user);
           setAuthError(null);
+          setIsRedirecting(false);
         } else if (result === null) {
-          console.log('[AUTH] No redirect result found');
+          console.log('[AUTH] No redirect result found (user may not have come from auth redirect)');
         }
       } catch (error: any) {
-        console.error('[AUTH] Redirect error:', error);
+        console.error('[AUTH] ✗ Redirect error:', error);
         if (isMounted) {
-          setAuthError(`Redirect error: ${error?.code || error?.message || 'Unknown'}`);
+          const errorMessage = error?.code === 'auth/popup-closed-by-user'
+            ? 'Authentication was cancelled. Please try again.'
+            : error?.code === 'auth/network-request-failed'
+            ? 'Network error. Please check your connection and try again.'
+            : error?.code === 'auth/unauthorized-domain'
+            ? 'This domain is not authorized for authentication. Please contact support.'
+            : `Authentication error: ${error?.code || error?.message || 'Unknown'}`;
+          setAuthError(errorMessage);
+          setIsRedirecting(false);
         }
       } finally {
         redirectChecked = true;
@@ -150,7 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGitHub = useCallback(async (): Promise<void> => {
     console.log('[AUTH] signInWithGitHub called');
     const isMobile = isMobileDevice();
-    console.log('[AUTH] isMobile:', isMobile);
+    console.log('[AUTH] Device type - Mobile:', isMobile);
     setAuthError(null);
 
     if (!auth || !githubProvider) {
@@ -161,21 +173,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // Use redirect on mobile, popup on desktop
+      // ALWAYS use redirect on mobile - no popup fallback
       if (isMobile) {
-        console.log('[AUTH] Using signInWithRedirect...');
+        console.log('[AUTH] Mobile device detected - using signInWithRedirect (required for mobile browsers)');
+        setIsRedirecting(true);
         await signInWithRedirect(auth, githubProvider);
-        console.log('[AUTH] Redirect initiated');
+        console.log('[AUTH] ✓ Redirect initiated - browser will navigate to GitHub');
+        // Note: Code after signInWithRedirect won't execute as page will redirect
       } else {
-        console.log('[AUTH] Using signInWithPopup...');
+        // Desktop: Use popup
+        console.log('[AUTH] Desktop device - using signInWithPopup');
         try {
           await signInWithPopup(auth, githubProvider);
-          console.log('[AUTH] Popup auth complete');
+          console.log('[AUTH] ✓ Popup auth completed successfully');
         } catch (popupError: any) {
-          // If popup is blocked or not supported, try redirect
-          if (popupError.code === 'auth/operation-not-supported-in-this-environment' || 
-              popupError.code === 'auth/popup-blocked') {
-            console.warn('[AUTH] Popup failed, falling back to redirect');
+          // If popup is blocked on desktop, fallback to redirect
+          if (popupError.code === 'auth/popup-blocked') {
+            console.warn('[AUTH] Popup blocked - falling back to redirect');
+            setIsRedirecting(true);
             await signInWithRedirect(auth, githubProvider);
           } else {
             throw popupError;
@@ -183,8 +198,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (error: any) {
-      console.error('[AUTH] Sign-in error:', error);
-      setAuthError(`Sign-in error: ${error?.code || error?.message || 'Unknown'}`);
+      console.error('[AUTH] ✗ GitHub sign-in error:', error);
+      const errorMessage = error?.code === 'auth/popup-closed-by-user'
+        ? 'Authentication was cancelled. Please try again.'
+        : error?.code === 'auth/network-request-failed'
+        ? 'Network error. Please check your connection and try again.'
+        : `Sign-in error: ${error?.code || error?.message || 'Unknown'}`;
+      setAuthError(errorMessage);
+      setIsRedirecting(false);
       throw error;
     }
   }, []);
@@ -192,6 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = useCallback(async (): Promise<void> => {
     console.log('[AUTH] signInWithGoogle called');
     const isMobile = isMobileDevice();
+    console.log('[AUTH] Device type - Mobile:', isMobile);
     setAuthError(null);
 
     if (!auth || !googleProvider) {
@@ -202,14 +224,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      // ALWAYS use redirect on mobile - no popup fallback
       if (isMobile) {
+        console.log('[AUTH] Mobile device detected - using signInWithRedirect (required for mobile browsers)');
+        setIsRedirecting(true);
         await signInWithRedirect(auth, googleProvider);
+        console.log('[AUTH] ✓ Redirect initiated - browser will navigate to Google');
+        // Note: Code after signInWithRedirect won't execute as page will redirect
       } else {
+        // Desktop: Use popup
+        console.log('[AUTH] Desktop device - using signInWithPopup');
         try {
           await signInWithPopup(auth, googleProvider);
+          console.log('[AUTH] ✓ Popup auth completed successfully');
         } catch (popupError: any) {
-          if (popupError.code === 'auth/operation-not-supported-in-this-environment' || 
-              popupError.code === 'auth/popup-blocked') {
+          // If popup is blocked on desktop, fallback to redirect
+          if (popupError.code === 'auth/popup-blocked') {
+            console.warn('[AUTH] Popup blocked - falling back to redirect');
+            setIsRedirecting(true);
             await signInWithRedirect(auth, googleProvider);
           } else {
             throw popupError;
@@ -217,8 +249,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (error: any) {
-      console.error('[AUTH] Google Sign-in error:', error);
-      setAuthError(`Google Sign-in error: ${error?.code || error?.message || 'Unknown'}`);
+      console.error('[AUTH] ✗ Google sign-in error:', error);
+      const errorMessage = error?.code === 'auth/popup-closed-by-user'
+        ? 'Authentication was cancelled. Please try again.'
+        : error?.code === 'auth/network-request-failed'
+        ? 'Network error. Please check your connection and try again.'
+        : `Sign-in error: ${error?.code || error?.message || 'Unknown'}`;
+      setAuthError(errorMessage);
+      setIsRedirecting(false);
       throw error;
     }
   }, []);
@@ -255,13 +293,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      // Store current anonymous UID if user is anonymous (for guest migration)
+      const wasAnonymous = user?.isAnonymous;
+      const anonymousUid = wasAnonymous ? user?.uid : null;
+
+      if (wasAnonymous && anonymousUid) {
+        console.log('[AUTH] User is anonymous, storing UID for migration:', anonymousUid);
+        localStorage.setItem('guestUidForMigration', anonymousUid);
+      }
+
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      console.log('[AUTH] Account created successfully');
+
+      // Send email verification
+      try {
+        await sendEmailVerification(userCredential.user, {
+          url: typeof window !== 'undefined' ? window.location.origin + '/dashboard' : '',
+          handleCodeInApp: false,
+        });
+        console.log('[AUTH] Verification email sent');
+      } catch (verificationError) {
+        // Don't fail signup if verification email fails
+        console.error('[AUTH] Failed to send verification email:', verificationError);
+      }
     } catch (error: any) {
       console.error('[AUTH] Email Sign-up error:', error);
       setAuthError(`Email Sign-up error: ${error?.code || error?.message || 'Unknown'}`);
       throw error;
     }
-  }, []);
+  }, [user]);
 
   const signInAnonymously = useCallback(async (): Promise<void> => {
     if (!auth) {
@@ -343,6 +403,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
+  // Migrate guest data after account upgrade
+  const migrateGuestData = useCallback(async (): Promise<{ success: boolean; summary?: any; error?: string }> => {
+    console.log('[AUTH] Checking for guest data migration...');
+
+    // Check if there's a stored guest UID
+    const guestUid = localStorage.getItem('guestUidForMigration');
+    if (!guestUid) {
+      console.log('[AUTH] No guest UID found, skipping migration');
+      return { success: false, error: 'No guest data to migrate' };
+    }
+
+    // Get ownership token
+    const token = await ensureOwnershipToken();
+    if (!token) {
+      console.error('[AUTH] No ownership token available');
+      return { success: false, error: 'No ownership token available' };
+    }
+
+    try {
+      const firebaseToken = await getFirebaseToken();
+      if (!firebaseToken) {
+        throw new Error('Authentication required');
+      }
+
+      console.log('[AUTH] Migrating guest data from UID:', guestUid);
+
+      const response = await fetch('/api/user/migrate-guest-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${firebaseToken}`
+        },
+        body: JSON.stringify({
+          guestUid,
+          ownershipToken: token
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Migration failed');
+      }
+
+      // Clear the stored guest UID
+      localStorage.removeItem('guestUidForMigration');
+
+      console.log('[AUTH] Migration successful:', data.summary);
+      return { success: true, summary: data.summary };
+    } catch (error: any) {
+      console.error('[AUTH] Migration error:', error);
+      return { success: false, error: error.message };
+    }
+  }, [ensureOwnershipToken, getFirebaseToken]);
+
   // Load user profile when user changes
   useEffect(() => {
     if (!user || user.isAnonymous) {
@@ -368,6 +483,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ownershipToken,
         authError,
         userProfile,
+        isRedirecting,
         signInWithGitHub,
         signInWithGoogle,
         signInWithEmail,
@@ -379,6 +495,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         getUserProfile,
         isOrganizer,
         getFirebaseToken,
+        migrateGuestData,
       }}
     >
       {children}
